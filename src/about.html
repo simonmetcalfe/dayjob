@@ -1,0 +1,37 @@
+<html>
+    <head>
+        <title>About dayjob</title>
+        <link rel="stylesheet" type="text/css" href="main.css"></head>
+    </head>
+    <body>
+        <h1><span id="dayjobcolour">d</span>ay<span id="dayjobcolour">j</span>ob <span id="version"></span></h1>
+        <h5>Make great Spotify playlists while you work.</h5>
+        </div>
+        <h4>Environment</h4>
+        </div>
+        <div id="list">
+            <span>Node.js <script>document.write(process.versions.node)</script></span></span><br>
+            <span>Chromium <script>document.write(process.versions.chrome)</script></span><br>
+            <span>Electron <script>document.write(process.versions.electron)</script></span><br>
+        </div>
+        <h4>With thanks to the following</h4>
+        <div id="credits">
+                <a href="#" onclick="openExternal('http://electron.atom.io/');">Electron<span id="electron-version"></span></a><br>
+                <a href="#" onclick="openExternal('https://github.com/maxogden/menubar');">menubar</a><br>
+                <a href="#" onclick="openExternal('https://github.com/thelinmichael/spotify-web-api-node');">spotify-web-api-node</a><br>
+                <a href="#" onclick="openExternal('https://github.com/sindresorhus/electron-store');">electron-store</a><br>
+                <a href="#" onclick="openExternal('https://github.com/megahertz/electron-log');">electron-log</a><br>
+                <a href="#" onclick="openExternal('https://github.com/electron-userland/electron-packager');">electron-packager</a><br>
+        </div>
+    </body>
+    <script type="text/javascript">
+        /* Handle opening of links in the Shell */
+        var shell = require('electron').shell;
+        function openExternal(url) {
+            shell.openExternal(url);
+        }
+        /* Retrieve version info from package.json */
+        document.getElementById('version').innerHTML = ' ' + require('../package.json').version;
+        document.getElementById('electron-version').innerHTML = ' v' + process.versions.electron;
+    </script>
+</html>

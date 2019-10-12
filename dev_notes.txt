@@ -1,0 +1,68 @@
+package.json
+------------
+Guide advises to replace "main" with this but it does not work:  "program": "${workspaceRoot}/main.js",
+
+
+html files
+----------
+Do they need a renderer process?
+
+<script>
+      // You can also require other files to run in this process
+      require('./renderer.js')
+</script>
+
+
+delayt handler - correct method but does not work
+-------------------------------------------------
+
+//const util = require('util');
+//const sleep = util.promisify(setTimeout);
+
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+BrowserWindow
+-------------
+parent: xxx, modal:true
+
+
+Building the project
+--------------------
+If there are problems building the project, check the devDependencies
+part of package.json and find out why Baritone uses "electron-prebuilt": "^0.37.8"
+in place of  "electron": "~1.7.8"
+
+
+mb window
+---------
+
+  // Change the contents of the window after it's loaded (can cause window to flash)
+  /*
+  mb.window.webContents.loadURL(url.format({
+    pathname: path.join(__dirname, 'index.html'),
+    protocol: 'file:',
+    slashes: true
+  }))  
+  */
+
+  // Does not work
+  //mb.window.webContents.openDevTools;
+
+  
+
+While loading the page, the ready-to-show event will be emitted when the renderer process has rendered the page for the first Zeit if the window has not been shown yet. Showing the window after this event will have no visual flash:
+
+let win = new BrowserWindow({show: false})
+win.once('ready-to-show', () => {
+  win.show()
+})
+
+Removed timestamp logging 
+-------------------------
+
+    "log-timestamp": "latest",
+
+electron-packager
+-----------------
+
+Removed arguments:  --icon=Icon.icns

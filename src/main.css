@@ -1,0 +1,46 @@
+@font-face {
+    font-family: 'Montserrat';
+    font-style: normal;
+    font-weight: 200;
+    src: local('Montserrat-Regular'), url(../assets/Montserrat.woff2) format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2212, U+2215, U+E0FF, U+EFFD, U+F000;
+  }
+body {
+    font-family: 'Montserrat', sans-serif;
+    background: #272727;
+    padding: 32px; /*Border around window*/
+    margin: 0;
+    text-align: center;
+    color: #fff;
+    overflow: hidden;
+    font-size: 75%;
+    /* -webkit-user-select: none; */
+}
+a {
+    /*Link appearance*/
+    color: #6f6f6f;
+}
+
+h1{
+    -webkit-margin-after: 0.0em;
+    color: #cccccc;
+}
+
+h4{
+    -webkit-margin-after: 0.0em;
+}
+
+h5 {
+    -webkit-margin-before: 0.5em;
+    -webkit-margin-after: 0.0em;
+    color: #6f6f6f;
+}
+
+#list {
+    color: #6f6f6f;
+}
+
+#dayjobcolour {
+    color:#1CD760;
+}
+

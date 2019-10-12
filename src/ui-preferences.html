@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+        <!-- <link rel="stylesheet" href="dashboard.css"> -->
+        <title>Dayjob Preferences</title>
+        <!-- Bootstrap -->
+        <link rel="stylesheet" href="./bootstrap.css">
+    </head>
+    <body>
+      <div class="container m-3">
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+          <li class="nav-item">
+            <a class="nav-link active" id="home-tab" data-toggle="tab" href="#spotify-connection" role="tab" aria-controls="spotify-connection" aria-selected="true">Spotify Connection</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" id="profile-tab" data-toggle="tab" href="#playlists" role="tab" aria-controls="playlists" aria-selected="false">Playlists</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" id="contact-tab" data-toggle="tab" href="#general" role="tab" aria-controls="general" aria-selected="false">General</a>
+          </li>
+        </ul>
+        <div class="tab-content" id="myTabContent">
+          <div class="tab-pane fade show active" id="spotify-connection" role="tabpanel" aria-labelledby="spotify-connection-tab">
+            <div class="container m-3">
+              <div class="row mb-3">
+                <div class="col">
+                  <label for="basic-url"><span class="badge badge-success mr-2">1</span>Create a Client ID for DayJob in your Spotify developer dashboard, and use the following settings</label>
+                  <table class="table table-bordered m-3">
+                    <tr>
+                        <td>Application name</td>
+                        <td>dayjob</td>
+                    </tr>
+                    <tr>
+                        <td>Redirect URI</td>
+                        <td>http://localhost:8888/callback</td>
+                    </tr>
+                  </table>
+                  <button type="button" id="btnOpenDashboard" class="btn btn-primary" >
+                      Open dashboard
+                  </button>
+                </div>
+              </div>
+            
+              <div class="row mb-3">
+                <div class="col">
+                  <label for="basic-url"><span class="badge badge-success mr-2">2</span>Enter the Client ID and Client secret provided by the dashboard</label>
+                  <div class="input-group m-3">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text">Client ID</span>
+                      </div>
+                      <input type="text" class="form-control" placeholder="" id="fldClientId" aria-label="client-id" aria-describedby="basic-addon1">
+                  </div>
+                  <div class="input-group m-3">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text">Client secret</span>
+                      </div>
+                      <input type="text" class="form-control" placeholder="" id="fldClientSecret" aria-label="client-secret" aria-describedby="basic-addon1">
+                  </div>
+                </div>                  
+              </div>
+              <div class="row mb-3">
+                <div class="col">
+                  <label for="basic-url"><span class="badge badge-success mr-2">3</span>Hit 'Connect to Spotify' and follow the prompts to authorise DayJob</label>
+                  <br/>
+                  <button type="button" id="btnConnectToSpotify" class="btn btn-primary">
+                      Connect to Spotify
+                  </button>
+                  <div class="alert alert-primary" role="alert">
+                      Not possible to confirm connection status
+                    </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="tab-pane fade" id="playlists" role="tabpanel" aria-labelledby="playlists-tab">
+            <div class="container m-3">
+              <p class="mb-3">
+                List the playlists you want to add songs to using DayJob's keyboard shortcuts.  DayJob currently supports 11 playlists. 
+                </br></br>
+                To add a playlist, right-click on it in Spotify and go to Share > Copy Spotify URI.  Paste the URI into a slot in DayJob.
+              </p>
+              
+              <div class="list-group">
+                  <a href="#" class="list-group-item list-group-item-action flex-column align-items-start active">
+                    <div class="d-flex w-100 justify-content-between">
+                      <h5 class="mb-1">
+                          Playlist 1
+                      </h5>
+                      <small>OPT + CTRL + `</small>
+                    </div>
+                    <p class="mb-1">
+                      <div class="input-group mb-3">
+                          <div class="input-group-prepend">
+                            <span class="input-group-text">Playlist name</span>
+                          </div>
+                          <input type="text" class="form-control" placeholder="Your playlist name" id="fldPlaylistName1" aria-label="playlist-name" aria-describedby="basic-addon1">
+                      </div>
+                      <div class="input-group mb-3">
+                          <div class="input-group-prepend">
+                            <span class="input-group-text">Playlist URI</span>
+                          </div>
+                          <input type="text" class="form-control" placeholder="spotify:user:someuser:playlist:ab1234cdeFGH567ijklM89" id="fldPlaylistId1" aria-label="playlist-id" aria-describedby="basic-addon1">
+                      </div>
+                  </a>
+              </div>
+            </div>
+          </div>
+          <div class="tab-pane fade" id="general" role="tabpanel" aria-labelledby="general-tab">
+            <div class="container">
+                ...
+            </div>
+          </div>
+        </div>
+      </div>
+
+      
+
+        <!--
+        <h3 id='notificationText'>Preferences</h3>
+        <div id='trackName'></div>
+        <div id='trackArtist'></div>
+        <div id='trackAlbum'></div>        
+        <a href="#" id="btnOpenNewWindow">Open main window</a>
+        -->
+    </body>
+    <!-- Unsure if needed 
+ 
+    -->
+
+    <script>
+        require('./ui-preferences.js');
+        $("#btnOpenDashboard").on( "click", function(event){
+          console.log("Gahhhhh");
+        }); 
+    </script>
+    <!---->
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <!-- <script src="./../node_modules/jquery/dist/jquery.min.js"></script> -->
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <!--<script src="./../node_modules/bootstrap/dist/js/bootstrap.min.js"></script> -->
+
+
+</html>
