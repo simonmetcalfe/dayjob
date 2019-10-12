@@ -39,6 +39,22 @@ btnOpenNewWindow.addEventListener('click',function(event){
     ipcRenderer.send('btnOpenNewWindow');
 })
 
+const btnSkipTrack = document.getElementById('btnOpenNewWindow');
+btnSkipTrack.addEventListener('click',function(event){
+    log.warn('notification.js:  btnSkipTrack event raised');
+    browserWindow.webContents.sendInputEvent({
+        type: "keyDown",
+        keyCode: '\u0008'
+      });
+      
+      browserWindow.webContents.sendInputEvent({
+        type: "keyUp",
+        keyCode: '\u0008'
+      });
+    //ipcRenderer.send('btnSkipTrack');
+
+})
+
 ///////////////////////////////////////////////////////////////////
 //// Exported methods
 ///////////////////////////////////////////////////////////////////

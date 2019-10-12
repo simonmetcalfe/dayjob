@@ -18,14 +18,6 @@ var log = require('electron-log');
 //// Playback commands
 ///////////////////////////////////////////////////////////////////
 
-/*
-// Not functional - Needs to be updated to be passed track length information
-module.exports.seek = function(percent) {
-  var time = (percent / 100) * track.length;
-  exec('osascript -e \'tell application "Spotify" to set player position to ' + time + '\'');
-};
-*/
-
 module.exports.pause = function(pause) {
     log.warn('spotify-audiocontrol.js:  Sent pause request (OSX) to Spotify with value: ' + pause);
     exec('osascript -e \'tell application "Spotify" to ' + pause ? 'pause' : 'play' + '\'');
