@@ -1,6 +1,6 @@
 # SIMON - Project specific
-build_temp
-installers
+build-temp/
+installers/
 .vscode
 
 # Logs
