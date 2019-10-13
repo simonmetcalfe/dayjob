@@ -8,7 +8,6 @@ const electron = require('electron');
 var shell = require('electron').shell;
 const { app, globalShortcut, ipcMain } = require('electron');  //globalShortcut must be defined with app or it does not work
 const menubar = require('menubar');
-const spotifyAudioControl = require('./spotify-audiocontrol.js');
 const spotifyServer = require('./spotify-server.js');
 const prefsLocal = require('./prefs.js');
 
@@ -240,7 +239,6 @@ app.on('ready', () => {
       }).then(function (result) {
         // Now get the playlist details
         log.warn('Getting playlist info for playlist ID ' + sourcePlaylistId)
-        console.log('IM RUNNING');
         return spotifyServer.getPlaylistName(sourcePlaylistId);
       }).then(function (result) {
         sourcePlaylistName = result;
@@ -253,7 +251,7 @@ app.on('ready', () => {
         // We're done, skip song, log and show notification
         log.warn('main.js:  Removed track ' + serverCurrentPlayingTrackJson.body.item.name + ', ' + serverCurrentPlayingTrackJson.body.item.album.name + ', ' + serverCurrentPlayingTrackJson.body.item.artists[0].name + ', ' + serverCurrentPlayingTrackJson.body.item.uri + ' from ' + sourcePlaylistName + " , " + sourcePlaylistId + ' : ' + result);
         showNotification('Removed track ' + serverCurrentPlayingTrackJson.body.item.name + ' from ' + sourcePlaylistName, '', '', '');
-        return Promise.resolve(spotifyAudioControl.nextTrack());
+        return Promise.resolve(spotifyServer.skipToNext()); //Always resolve - we don't care if skipping fails        
       }, function (err) {
         log.warn('main.js: Error when talking to Spotify API (1).  Error ' + err);
         showNotification('Exception when talking to Spotify API', err.message, '', '');
@@ -483,7 +481,7 @@ ipcMain.on('btnConnectToSpotify', function (event) {
 // Likely to be obsolete
 ipcMain.on('skip', function (event, data) {
   log.warn('main.js:  Spotify skip request with data ' + data);
-  spotifyAudioControl.skip(data);
+  spotifyAudioControl.skip(data); // replace with spotifyServer.skipToNext()  
 });
 */
 

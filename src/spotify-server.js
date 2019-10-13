@@ -22,7 +22,7 @@ var log = require('electron-log');
 ///////////////////////////////////////////////////////////////////
 
 //let _this; // For calling exported modules within this js file
-var scopes = ['user-read-private', 'user-read-email', 'playlist-read-private', 'playlist-modify-private', 'playlist-read-collaborative', 'playlist-modify-public', 'user-read-recently-played', 'user-read-currently-playing'];
+var scopes = ['user-read-private', 'user-read-email', 'playlist-read-private', 'playlist-modify-private', 'playlist-read-collaborative', 'playlist-modify-public', 'user-read-recently-played', 'user-read-currently-playing','user-modify-playback-state'];
 var redirectUri = 'http://localhost:8888/callback';
 var tokenExpirationEpoch;
 var state; //For dayjob to verify requests to the redirect URI
@@ -134,17 +134,18 @@ function checkApiConnection() {
     });
 }
 
+
 module.exports.getAuthUrl = function () {
     // spotifyApi.createAuthorizeURL does not return a promise, so we resolve one manually
     return Promise.resolve().then(function () {
         spotifyApi.resetAccessToken();
         spotifyApi.resetRefreshToken();
-        prefsLocal.setPref('spotify-server_access_token', undefined);
-        prefsLocal.setPref('spotify-server_refresh_token', undefined);
-        prefsLocal.setPref('spotify-server_authorizationCode', undefined);
-        prefsLocal.setPref('spotify-server_token_expiration_date', undefined);
-        prefsLocal.setPref('spotify-server_user_display_name', undefined);
-        prefsLocal.setPref('spotify-server_user_id', undefined);
+        prefsLocal.deletePref('spotify-server_access_token');
+        prefsLocal.deletePref('spotify-server_refresh_token');
+        prefsLocal.deletePref('spotify-server_authorizationCode');
+        prefsLocal.deletePref('spotify-server_token_expiration_date');
+        prefsLocal.deletePref('spotify-server_user_display_name');
+        prefsLocal.deletePref('spotify-server_user_id');
         // Generate random state ID for client to verify request
         state = generateRandomString(16);
         log.warn('spotify-server.js:  Generated random state ID for verifying requests to redirect URI: ' + state);
@@ -160,11 +161,11 @@ function authCodeGrant() {
     // Clear tokens if retrying auth code grant
     spotifyApi.resetAccessToken();
     spotifyApi.resetRefreshToken();
-    prefsLocal.setPref('spotify-server_access_token', undefined);
-    prefsLocal.setPref('spotify-server_refresh_token', undefined);
-    prefsLocal.setPref('spotify-server_token_expiration_date', undefined);
-    prefsLocal.setPref('spotify-server_user_display_name', undefined);
-    prefsLocal.setPref('spotify-server_user_id', undefined);
+    prefsLocal.deletePref('spotify-server_access_token');
+    prefsLocal.deletePref('spotify-server_refresh_token');
+    prefsLocal.deletePref('spotify-server_token_expiration_date');
+    prefsLocal.deletePref('spotify-server_user_display_name');
+    prefsLocal.deletePref('spotify-server_user_id');
     spotifyApi.authorizationCodeGrant(prefsLocal.getPref('spotify-server_authorizationCode'))
         .then(function (data) {
             log.warn('spotify-server.js:  Authorisation granted.');
@@ -219,7 +220,9 @@ function refreshAccessToken() {
 //// API calls 
 ///////////////////////////////////////////////////////////////////
 
-// Provides external access to API calls
+
+//// Directly exportable functions
+///////////////////////////////////////////////////////////////////
 
 module.exports.getMyCurrentPlayingTrack = function () {
     // Directly exports the result of the spotify-web-api-node function
@@ -236,6 +239,29 @@ module.exports.getPlaylist = function (playlistId) {
     return spotifyApi.getPlaylist(playlistId);
 }
 
+//// Skip track
+///////////////////////////////////////////////////////////////////
+
+// Does not return a promiise - just logs any failure silently
+module.exports.skipToNext = function() {
+    return skipToNext();
+}
+function skipToNext(){
+    spotifyApi.skipToNext()
+        .then(function (result){
+            log.warn('spotify-server.js: Skipping track result: ' + result);
+        }, function (err) {
+            log.warn('main.js: Error when talking to Spotify API.  Error ' + err);
+            //showNotification('Error when talking to Spotify API', err.message, '', '');
+        }).catch(function (err) {
+            log.warn('main.js:  Exception when talking to Spotify API.  Error ' + err);
+            //showNotification('Exception when talking to Spotify API', err.message, '', '');
+        })
+    return Promise.resolve();
+}
+
+//// Get playlist name
+///////////////////////////////////////////////////////////////////
 
 module.exports.getPlaylistName = function(playlistId) {
     return getPlaylistName(playlistId);

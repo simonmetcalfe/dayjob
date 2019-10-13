@@ -67,5 +67,13 @@ module.exports.getPref  = function(key){
         log.warn('prefs.js:  Requested key not found: ' + key) 
         return undefined;
     }
+
+}
+///////////////////////////////////////////////////////////////////
+////  Delete preferences
+///////////////////////////////////////////////////////////////////
     
+module.exports.deletePref = function(key){
+    prefs_local.delete(key);
+    log.warn('prefs.js:  Deleted preference: ' + key);
 }

@@ -2,6 +2,7 @@
 build-temp/
 installers/
 .vscode
+node_modules_OLD/
 
 # Logs
 logs
