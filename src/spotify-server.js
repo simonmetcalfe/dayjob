@@ -17,15 +17,18 @@ var url = require("url");
 const prefsLocal = require('./prefs.js');
 var log = require('electron-log');
 
+//let _this; // For calling exported modules within this js file
+
+
 ///////////////////////////////////////////////////////////////////
 //// Variables
 ///////////////////////////////////////////////////////////////////
 
-//let _this; // For calling exported modules within this js file
 var scopes = ['user-read-private', 'user-read-email', 'playlist-read-private', 'playlist-modify-private', 'playlist-read-collaborative', 'playlist-modify-public', 'user-read-recently-played', 'user-read-currently-playing','user-modify-playback-state'];
 var redirectUri = 'http://localhost:8888/callback';
 var tokenExpirationEpoch;
 var state; //For dayjob to verify requests to the redirect URI
+
 
 ///////////////////////////////////////////////////////////////////
 //// Initialise web server (for receiving auth code in redirectURI)
@@ -50,6 +53,7 @@ http.createServer(function (request, response) {
     else {
         response.writeHead(200, { "Content-Type": "text/plain" });
         response.write("Thanks for authorising dayjob.  You can close this web page.");
+        // Show a notification in the app that auth is complete?
         log.warn('spotify-server.js:  Successfully received authorization code ' + queryAsObject.code);
         prefsLocal.setPref('spotify-server_authorizationCode', queryAsObject.code);
         authCodeGrant();
@@ -57,10 +61,10 @@ http.createServer(function (request, response) {
     response.end();
 }).listen(8888);
 
+
 ///////////////////////////////////////////////////////////////////
 //// Initialise web API instance
 ///////////////////////////////////////////////////////////////////
-
 //_this = this; 
 
 var spotifyApi = new SpotifyWebApi({
@@ -72,6 +76,10 @@ var spotifyApi = new SpotifyWebApi({
     refreshToken: prefsLocal.getPref('spotify-server_refresh_token')
 });
 
+
+///////////////////////////////////////////////////////////////////
+//// Check API connection
+///////////////////////////////////////////////////////////////////
 // Check the API connection each time before using it.  Will reject promise if there is an error condition or accepts if API 'appears' to be ready for use.
 // The application using the API must handle the following rejections:  no_client_id, no_authorisation_code
 
@@ -134,6 +142,9 @@ function checkApiConnection() {
     });
 }
 
+///////////////////////////////////////////////////////////////////
+//// Generate auth URL
+///////////////////////////////////////////////////////////////////
 
 module.exports.getAuthUrl = function () {
     // spotifyApi.createAuthorizeURL does not return a promise, so we resolve one manually
@@ -156,6 +167,11 @@ module.exports.getAuthUrl = function () {
         return authorizeURL;
     })
 }
+
+///////////////////////////////////////////////////////////////////
+//// Grant auth
+///////////////////////////////////////////////////////////////////
+// Triggered when the auth web server when callback URL is accessed
 
 function authCodeGrant() {
     // Clear tokens if retrying auth code grant
@@ -193,6 +209,10 @@ function authCodeGrant() {
 }
 
 
+///////////////////////////////////////////////////////////////////
+//// Refresh access tokens
+///////////////////////////////////////////////////////////////////
+
 function refreshAccessToken() {
     return new Promise(function (resolve, reject) {
         spotifyApi.refreshAccessToken()
@@ -221,7 +241,7 @@ function refreshAccessToken() {
 ///////////////////////////////////////////////////////////////////
 
 
-//// Directly exportable functions
+//// Get the current playling track
 ///////////////////////////////////////////////////////////////////
 
 module.exports.getMyCurrentPlayingTrack = function () {
@@ -229,20 +249,35 @@ module.exports.getMyCurrentPlayingTrack = function () {
     return spotifyApi.getMyCurrentPlayingTrack();
 }
 
-module.exports.getUserPlaylists = function () {
-    // Directly exports the result of the spotify-web-api-node function
-    return spotifyApi.getUserPlaylists();
+//// Add tracks to playlist
+///////////////////////////////////////////////////////////////////
+
+module.exports.addTracksToPlaylist = function (playlistId, tracks) {
+    return addTracksToPlaylist(playlistId, tracks)
 }
 
-module.exports.getPlaylist = function (playlistId) {
-    // Directly exports the result of the spotify-web-api-node function
-    return spotifyApi.getPlaylist(playlistId);
+function addTracksToPlaylist(playlistId, tracks){
+    // Needs playlistId, tracks, options, callback
+    // Example '3EsfV6XzCHU8SPNdbnFogK','["spotify:track:4iV5W9uYEdYUVa79Axb7Rh", "spotify:track:1301WleyT98MSxVHPZCA6M"]'
+    return spotifyApi.addTracksToPlaylist(playlistId, tracks);
+}
+
+//// Remove track from playlist
+///////////////////////////////////////////////////////////////////
+
+module.exports.removeTracksFromPlaylist = function (playlistId, tracks) {
+    return removeTracksFromPlaylist (playlistId, tracks) 
+}
+
+function removeTracksFromPlaylist (playlistId, tracks) {
+    // Needs playlistId, tracks, options, callback
+    return spotifyApi.removeTracksFromPlaylist(playlistId, tracks);
 }
 
 //// Skip track
 ///////////////////////////////////////////////////////////////////
 
-// Does not return a promiise - just logs any failure silently
+// Always returns a resolved promise - just logs any failure silently
 module.exports.skipToNext = function() {
     return skipToNext();
 }
@@ -252,12 +287,18 @@ function skipToNext(){
             log.warn('spotify-server.js: Skipping track result: ' + result);
         }, function (err) {
             log.warn('main.js: Error when talking to Spotify API.  Error ' + err);
-            //showNotification('Error when talking to Spotify API', err.message, '', '');
         }).catch(function (err) {
             log.warn('main.js:  Exception when talking to Spotify API.  Error ' + err);
-            //showNotification('Exception when talking to Spotify API', err.message, '', '');
         })
     return Promise.resolve();
+}
+
+//// Get playlist
+///////////////////////////////////////////////////////////////////
+
+module.exports.getPlaylist = function (playlistId) {
+    // Directly exports the result of the spotify-web-api-node function
+    return spotifyApi.getPlaylist(playlistId);
 }
 
 //// Get playlist name
@@ -277,6 +318,10 @@ function getPlaylistName(playlistId){
 }
 
 // Move the current track from it's existing playlist to the specified playlist
+
+//// Move current track to specified playlist 
+///////////////////////////////////////////////////////////////////
+
 module.exports.movePlayingTrackToPlaylist = function(destPlaylistId,destPlaylistName){
     var serverCurrentPlayingTrackJson;
     var playingTrackContext;
@@ -368,6 +413,22 @@ module.exports.movePlayingTrackToPlaylist = function(destPlaylistId,destPlaylist
 }
 
 
+///////////////////////////////////////////////////////////////////
+//// PLAYGROUND
+///////////////////////////////////////////////////////////////////
+// Functions here are for future features and are not currently used
+
+
+//// Get user playlists
+///////////////////////////////////////////////////////////////////
+
+module.exports.getUserPlaylists = function () {
+    // Directly exports the result of the spotify-web-api-node function
+    return spotifyApi.getUserPlaylists();
+}
+
+//// Check if song exists in playlist
+///////////////////////////////////////////////////////////////////
 
 // Call the getPlaylistTracks recursively until we have all pages of the playlist tracks??
 module.exports.ifSongExistsInPlaylist = function (trackUri, playlistId) {
@@ -389,25 +450,6 @@ module.exports.ifSongExistsInPlaylist = function (trackUri, playlistId) {
             }
             return Promise.resolve(found);
         });
-}
-
-module.exports.removeTracksFromPlaylist = function (playlistId, tracks) {
-    return removeTracksFromPlaylist (playlistId, tracks) 
-}
-
-function removeTracksFromPlaylist (playlistId, tracks) {
-    // Needs userId, playlistId, tracks, options, callback
-    return spotifyApi.removeTracksFromPlaylist(playlistId, tracks);
-}
-
-module.exports.addTracksToPlaylist = function (playlistId, tracks) {
-    return addTracksToPlaylist(playlistId, tracks)
-}
-
-function addTracksToPlaylist(playlistId, tracks){
-    // Needs playlistId, tracks, options, callback
-    // Example 'thelinmichael', '3EsfV6XzCHU8SPNdbnFogK','["spotify:track:4iV5W9uYEdYUVa79Axb7Rh", "spotify:track:1301WleyT98MSxVHPZCA6M"]'
-    return spotifyApi.addTracksToPlaylist(playlistId, tracks);
 }
 
 /*
