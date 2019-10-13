@@ -215,19 +215,43 @@ app.on('ready', () => {
   log.warn('main.js:  App is ready to start.')
 
   // Register shortcuts
+
+
+  const sct6 = globalShortcut.register('Control+Alt+6', () => {
+    log.warn('main.js:  Control+Alt+6 is pressed');
+    spotifyServer.skipToNext()
+    .then(function (result) {
+      // No action required
+    }, function (err) {
+      log.warn('main.js: Error when talking to Spotify API (6).  Error ' + err);
+      showNotification('Exception when talking to Spotify API', err.message, '', '');
+    }).catch(function (err) {
+      log.warn('main.js:  Exception when talking to Spotify API (6).  Error ' + err);
+      showNotification('Exception when talking to Spotify API', err.message, '', '');
+    })
+  });
+
+  if (!sct6) {
+    log.warn('main.js:  registration failed of:  Control+Alt+6')
+  };
+
+
   const sct7 = globalShortcut.register('Control+Alt+7', () => {
     log.warn('main.js:  Control+Alt+7 is pressed');
     spotifyServer.removePlayingTrackFromPlaylist()
       .then(function (result) {
         // We're done, skip song, log and show notification
-        log.warn('main.js:  Removed track ' + serverCurrentPlayingTrackJson.body.item.name + ', ' + serverCurrentPlayingTrackJson.body.item.album.name + ', ' + serverCurrentPlayingTrackJson.body.item.artists[0].name + ', ' + serverCurrentPlayingTrackJson.body.item.uri + ' from ' + sourcePlaylistName + " , " + sourcePlaylistId + ' : ' + result);
-        showNotification('Removed track ' + serverCurrentPlayingTrackJson.body.item.name + ' from ' + sourcePlaylistName, '', '', '');
-        spotifyServer.skipToNext(); 
+        //log.warn('main.js:  Removed track ' + serverCurrentPlayingTrackJson.body.item.name + ', ' + serverCurrentPlayingTrackJson.body.item.album.name + ', ' + serverCurrentPlayingTrackJson.body.item.artists[0].name + ', ' + serverCurrentPlayingTrackJson.body.item.uri + ' from ' + sourcePlaylistName + " , " + sourcePlaylistId + ' : ' + result);
+        //showNotification('Removed track ' + serverCurrentPlayingTrackJson.body.item.name + ' from ' + sourcePlaylistName, '', '', '');
+        showNotification('Removed track NEED THE INFO');
+        return spotifyServer.skipToNext(); 
+      }).then(function (result) {  
+        // No action required    
       }, function (err) {
-        log.warn('main.js: Error when talking to Spotify API (1).  Error ' + err);
+        log.warn('main.js: Error when talking to Spotify API (7).  Error ' + err);
         showNotification('Exception when talking to Spotify API', err.message, '', '');
       }).catch(function (err) {
-        log.warn('main.js:  Exception when talking to Spotify API.  Error ' + err);
+        log.warn('main.js:  Exception when talking to Spotify API (7).  Error ' + err);
         showNotification('Exception when talking to Spotify API', err.message, '', '');
       })
   });
@@ -272,7 +296,7 @@ app.on('ready', () => {
         // We're done, skip song, log and show notification
         log.warn('main.js:  Removed track ' + serverCurrentPlayingTrackJson.body.item.name + ', ' + serverCurrentPlayingTrackJson.body.item.album.name + ', ' + serverCurrentPlayingTrackJson.body.item.artists[0].name + ', ' + serverCurrentPlayingTrackJson.body.item.uri + ' from ' + sourcePlaylistName + " , " + sourcePlaylistId + ' : ' + result);
         showNotification('Removed track ' + serverCurrentPlayingTrackJson.body.item.name + ' from ' + sourcePlaylistName, '', '', '');
-        return Promise.resolve(spotifyServer.skipToNext()); //Always resolve - we don't care if skipping fails        
+        return spotifyServer.skipToNext();     
       }, function (err) {
         log.warn('main.js: Error when talking to Spotify API (1).  Error ' + err);
         showNotification('Exception when talking to Spotify API', err.message, '', '');

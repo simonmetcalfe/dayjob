@@ -107,6 +107,7 @@ function checkApiConnection() {
             refreshAccessToken()
                 .then(function (data) {
                     resolve('ready')
+                // TODO - IS CATCHING ERRORS REQUIRED HERE, OR SHHOULD THIS BE DONE IN MAIN.JS?
                 }, function (err) {
                     log.warn('spotify-server.js:  [ERROR] Check API connection rejecting promise because refresh access token failed.');
                     //launchAuthUrl();
@@ -126,6 +127,7 @@ function checkApiConnection() {
                     prefsLocal.setPref('spotify-server_user_display_name', data.body['display_name'])
                     prefsLocal.setPref('spotify-server_user_id', data.body['id'])
                     resolve('ready');
+                // TODO - AGAIN, NOT SURE IF WE NEED TO CATCH ERRORS HERE...
                 }, function (err) {
                     log.warn('spotify-server.js:  Error retrieving user details from API: ' + err);
                     reject(err);
@@ -148,6 +150,7 @@ function checkApiConnection() {
 
 module.exports.getAuthUrl = function () {
     // spotifyApi.createAuthorizeURL does not return a promise, so we resolve one manually
+    // TODO - CAN WE IMPROVE THIS PROMISE AND HAVE IT RESOLVE AT THE END ONLY?
     return Promise.resolve().then(function () {
         spotifyApi.resetAccessToken();
         spotifyApi.resetRefreshToken();
@@ -203,6 +206,7 @@ function authCodeGrant() {
             log.warn('spotify-server.js:    Email: ' + data.body.email);
             log.warn('spotify-server.js:    Account type: ' + data.body.product);
             log.warn('spotify-server.js:    Image URL: ' + data.body.images[0].url);
+        // TODO - THIS PROMISE HAS NO ERROR HANDLING, ONLY CATCH, BUT DOES IT NEED A CATCH HERE?
         }).catch(function (err) {
             log.warn('spotify-server.js:  [ERROR] Exception after authorision was not successfully granted.  Try revoking access to the application in the Apps section of your Spotify account, and re-authenticating.  Error ', err.message);
         });
@@ -214,6 +218,7 @@ function authCodeGrant() {
 ///////////////////////////////////////////////////////////////////
 
 function refreshAccessToken() {
+    // TODO - IS THIS NESTED PROMISE NECESSARY?
     return new Promise(function (resolve, reject) {
         spotifyApi.refreshAccessToken()
             .then(function (data) {
@@ -277,20 +282,22 @@ function removeTracksFromPlaylist (playlistId, tracks) {
 //// Skip track
 ///////////////////////////////////////////////////////////////////
 
-// Always returns a resolved promise - just logs any failure silently
 module.exports.skipToNext = function() {
     return skipToNext();
 }
 function skipToNext(){
-    spotifyApi.skipToNext()
-        .then(function (result){
-            log.warn('spotify-server.js: Skipping track result: ' + result);
-        }, function (err) {
-            log.warn('main.js: Error when talking to Spotify API.  Error ' + err);
-        }).catch(function (err) {
-            log.warn('main.js:  Exception when talking to Spotify API.  Error ' + err);
-        })
-    return Promise.resolve();
+    // Always returns a resolved promise even on failure, just logs failure silently
+    return new Promise(function (resolve, reject) {
+        spotifyApi.skipToNext()
+            .then(function (result){
+                log.warn('spotify-server.js: Skipping track result: ' + result);
+            }, function (err) {
+                log.warn('spotify-server.js: Error when talking to Spotify API.  Error ' + err);
+            }).catch(function (err) {
+                log.warn('spotify-server.js:  Exception when talking to Spotify API.  Error ' + err);
+            })
+        resolve(null);
+    })
 }
 
 //// Get playlist
@@ -309,53 +316,76 @@ module.exports.getPlaylistName = function(playlistId) {
 }
 
 function getPlaylistName(playlistId){
-    return spotifyApi.getPlaylist(playlistId)
-        .then(function (result) {
-            console.log('result' + result)
-            console.log('result.body.name)' + result.body.name)
-            return Promise.resolve(result.body.name);
-        });
+    // TODO - IS THIS NESTED PROMISE NECESSARY?
+    return new Promise(function (resolve, reject) {
+        spotifyApi.getPlaylist(playlistId)
+            .then(function (result) {
+                log.warn('spotify-server.js:  Retrieved playlist name \'' + result.body.name + '\' for playlist \'' + playlistId + '\'');
+                resolve(result.body.name);
+            }, function (err) {
+                log.warn('spotify-server.js:  [ERROR] Error with retrieving playlist name.' + err.message);
+                reject(err);
+            }).catch(function (err) {
+                log.warn('spotify-server.js:  [ERROR] Exception with retrieving playlist name.', err.message);
+                reject(err);
+            });
+    })
 }
 
-// Move the current track from it's existing playlist to the specified playlist
 
 //// Get track context
 ///////////////////////////////////////////////////////////////////
+
 // Identify the source of the playling track 
 // Identify is source is read only 
 // Return playlist ID and info if the playlist is the users own 
 // COULD BE IMPROVED to always return the playlist name if available, e.g. for radio and shared playlists
 
 function getTrackContext(playlingTrackJson){
+    // Promise is never rejected, but could error with bad JSON
     return new Promise(function (resolve, reject) {
         context = new Object();  //store context name, readOnly and sourcePlaylistId 
         context.name = null;
         context.readOnly=true;
         context.sourcePlaylistId = null;
         context.sourcePlaylistName = null;
-        if (playlingTrackJson.body.currently_playing_type == "episode") {context.name = "Podcast"}   
-        else if (playlingTrackJson.body.item.is_local) {context.name = "Local file"}  
-        else if (playlingTrackJson.body.context == null) {context.name = "Liked or Recommended"} 
-        else if (playlingTrackJson.body.context.type == "artist"){context.name = "Artist"}                                                      // Artist playback - add only
-        else if (playlingTrackJson.body.context.type == "album"){context.name = "Album"}                                                        // Album playback - add only
+        if (playlingTrackJson.body.currently_playing_type == "episode") {context.name = "Podcast"; resolve(context)}   
+        else if (playlingTrackJson.body.item.is_local) {context.name = "Local file"; resolve(context)}  
+        else if (playlingTrackJson.body.context == null) {context.name = "Liked or Recommended"; resolve(context)} 
+        else if (playlingTrackJson.body.context.type == "artist"){context.name = "Artist"; resolve(context)}                                                      // Artist playback - add only
+        else if (playlingTrackJson.body.context.type == "album"){context.name = "Album"; resolve(context)}                                                        // Album playback - add only
         else if (playlingTrackJson.body.context.type == "playlist" && playlingTrackJson.body.context.uri.split(':').length == 5) {
             if (playlingTrackJson.body.context.uri.split(':')[2] == prefsLocal.getPref('spotify-server_user_id')){                                                                                                                                  // Playlist - add / remove
                 // Only return playlist ID and name if playlist owned by the user 
                 context.name = "Playlist"      
                 context.readOnly=false;
-                context.sourcePlaylistId = serverCurrentPlayingTrackJson.body.context.uri.split(':')[4];
+                context.sourcePlaylistId = playlingTrackJson.body.context.uri.split(':')[4];
                 log.warn('spotify-server.js:  Getting playlist info for playlist ID... ' + context.sourcePlaylistId)
-                return getPlaylistName(sourcePlaylistId);
+                // TODO - IS THIS NESTED PROMISE NECESSARY?
+                getPlaylistName(context.sourcePlaylistId)
+                    .then(function (result) {
+                        context.sourcePlaylistName = result;
+                        log.warn('spotify-server.js:  Got source playlist name: ' + context.sourcePlaylistName);
+                        resolve(context)
+                    }, function (err) {
+                        log.warn('spotify-server.js:  [ERROR] Error with retrieving playlist name.' + err.message);
+                        reject(err);
+                    }).catch(function (err) {
+                        log.warn('spotify-server.js:  [ERROR] Exception with retrieving playlist name.', err.message);
+                        reject(err);
+                    });
             }    
-            else {context.name = "Shared playlist / Radio"}                                                                                                       // Shared playlist - remove only
+            else {
+                context.name = "Shared playlist / Radio"
+                resolve(context)
+            }    
         }   
-        else {playingTrackContext = "Unknown source"}
-        return Promise.resolve(null)
-    }).then(function (result){
-        context.sourcePlaylistName = result;
-        log.warn('spotify-server.js:  Got source playlist name: ' +sourcePlaylistName);
-        return Promise.resolve(context);
-    });
+        else {
+            context.name = "Unknown source"
+            resolve(context)
+        }
+        
+    })
 }
 
 
@@ -384,23 +414,28 @@ function actionPlayingTrack (action, destPlaylistId, destPlaylistName){
     var playingTrackAlbumName;
     var playingTrackContext;
     return new Promise(function (resolve, reject){
-        if (action != 'copy' || action != 'remove' || action != 'move'){
-            Promise.reject('invalid_action')
+        if (action != 'copy' && action != 'remove' && action != 'move'){
+            reject(new Error('invalid_action'))
         }
-        return checkApiConnection()
+        else {resolve(null)}        
+    }).then (function (result) {    
+        return checkApiConnection()        
     }).then (function (result) {
         log.warn('spotify-server.js:  Check API connection succeeded, now getting currently playing track info...');
         return spotifyApi.getMyCurrentPlayingTrack()
     }).then(function (result) {
         serverCurrentPlayingTrackJson = result;
+        playingTrackUri = serverCurrentPlayingTrackJson.body.item.uri;
+        playingTrackName = serverCurrentPlayingTrackJson.body.item.name;
+        playingTrackArtistName = serverCurrentPlayingTrackJson.body.item.artists[0].name;
+        playingTrackAlbumName = serverCurrentPlayingTrackJson.body.item.album.name;
         log.warn('spotify-server.js:  Got serverCurrentPlayingTrackJson: ' + JSON.stringify(serverCurrentPlayingTrackJson));
         return getTrackContext(serverCurrentPlayingTrackJson)
     }).then(function (result) {    
-        playingTrackContext = context
+        playingTrackContext = result
         log.warn('spotify-server.js:  Got track context: ' + JSON.stringify(playingTrackContext));  
         log.warn('spotify-server.js:  Track to be processed:  \n' + 
                                         'playingTrackUri is: ' + playingTrackUri + '\n' + 
-                                        'playingTrackName is: ' + playingTrackName + '\n' + 
                                         'playingTrackName is: ' + playingTrackName + '\n' + 
                                         'playingTrackArtistName is: ' + playingTrackArtistName + '\n' + 
                                         'playingTrackAlbumName is: ' + playingTrackAlbumName + '\n' + 
@@ -411,7 +446,7 @@ function actionPlayingTrack (action, destPlaylistId, destPlaylistName){
                                         'destPlaylistId is: ' + destPlaylistId + '\n' + 
                                         'destPlaylistName is: ' + destPlaylistName + '\n' +
                                         'ACTION:  ' + action);
-        // Copying stage - 
+        // Copying stage
         if (action == 'copy' || action == 'move'){
             log.warn('spotify-server.js:  Adding track ' + playingTrackName + ', ' + playingTrackAlbumName + ', ' + playingTrackArtistName + ', ' + playingTrackUri + ' to ' + destPlaylistName + ' : ' + destPlaylistId);
             return addTracksToPlaylist(destPlaylistId, [playingTrackUri])
@@ -420,35 +455,35 @@ function actionPlayingTrack (action, destPlaylistId, destPlaylistName){
             return Promise.resolve(null)
         }   
     }).then(function (result) {      
-        log.warn('spotify-server.js:  Added track ' + playingTrackName + ', ' + playingTrackAlbumName + ', ' + playingTrackArtistName + ', ' + playingTrackUri + ' to ' + destPlaylistName + ' : ' + destPlaylistId); 
         // Removal stage
         if ((action == 'move' || action == 'remove') && !playingTrackContext.readOnly){
-            log.warn('spotify-server.js:  Removing track ' + playingTrackName + ', ' + playingTrackAlbumName + ', ' + playingTrackArtistName + ', ' + playingTrackUri + ' from ' + sourcePlaylistName + " , " + sourcePlaylistId);
-            return removeTracksFromPlaylist(sourcePlaylistId, [{ uri: playingTrackUri }]) 
+            log.warn('spotify-server.js:  Removing track ' + playingTrackName + ', ' + playingTrackAlbumName + ', ' + playingTrackArtistName + ', ' + playingTrackUri + ' from ' + playingTrackContext.sourcePlaylistName + " , " + playingTrackContext.sourcePlaylistId);
+            return removeTracksFromPlaylist(playingTrackContext.sourcePlaylistId, [{ uri: playingTrackUri }]) 
         }
         else if (action == 'move' && playingTrackContext.readOnly){
             //Read only, can't remove
-            log.warn('spotify-server.js:  NOT removing track ' + playingTrackName + ', ' + playingTrackAlbumName + ', ' + playingTrackArtistName + ', ' + playingTrackUri + ' because the the track source is ' + playingTrackContext);
-            return Promise.resolve("copied_cannot_move")
+            log.warn('spotify-server.js:  NOT removing track ' + playingTrackName + ', ' + playingTrackAlbumName + ', ' + playingTrackArtistName + ', ' + playingTrackUri + ' because the the track source is ' + playingTrackContext.name);
+            resolve("copied_cannot_move")
         }
         else if (action == 'remove' && playingTrackContext.readOnly){
             //Read only, can't remove
-            log.warn('spotify-server.js:  NOT removing track ' + playingTrackName + ', ' + playingTrackAlbumName + ', ' + playingTrackArtistName + ', ' + playingTrackUri + ' because the the track source is ' + playingTrackContext);
-            return Promise.resolve("cannot_remove")
+            log.warn('spotify-server.js:  NOT removing track ' + playingTrackName + ', ' + playingTrackAlbumName + ', ' + playingTrackArtistName + ', ' + playingTrackUri + ' because the the track source is ' + playingTrackContext.name);
+            reject("cannot_remove")
         }
         else{
             // If no removal required (e.g. copy), finish here
-            return Promise.resolve("copied")
+            resolve("copied")
         }
     }).then(function (result) {    
-        log.warn('spotify-server.js:  Removed track ' + playingTrackName + ', ' + playingTrackAlbumName + ', ' + playingTrackArtistName + ', ' + playingTrackUri + ' from ' + sourcePlaylistName + " , " + sourcePlaylistId);
-        return Promise.resolve(JSON.parse('{"playingTrackName":"' + playingTrackName + '", "playingTrackAlbumName":"' + playingTrackAlbumName + '", "playingTrackArtistName":"' + playingTrackArtistName + '", "playingTrackUri":"' + playingTrackUri + '", "playingTrackContext":"' + playingTrackContext + '", "sourcePlaylistName":"' + sourcePlaylistName + '", "sourcePlaylistId":"' + sourcePlaylistId + '", "destPlaylistName":"' + destPlaylistName + '", "destPlaylistId":"' + destPlaylistId + '"}'));  
+        log.warn('spotify-server.js:  Removed track ' + playingTrackName + ', ' + playingTrackAlbumName + ', ' + playingTrackArtistName + ', ' + playingTrackUri + ' from ' + playingTrackContext.sourcePlaylistName + " , " + playingTrackContext.sourcePlaylistId);
+        resolve(JSON.parse('{"playingTrackName":"' + playingTrackName + '", "playingTrackAlbumName":"' + playingTrackAlbumName + '", "playingTrackArtistName":"' + playingTrackArtistName + '", "playingTrackUri":"' + playingTrackUri + '", "playingTrackContext":"' + playingTrackContext.name + '", "sourcePlaylistName":"' + playingTrackContext.sourcePlaylistName + '", "sourcePlaylistId":"' + playingTrackContext.sourcePlaylistId + '", "destPlaylistName":"' + destPlaylistName + '", "destPlaylistId":"' + destPlaylistId + '"}'));  
     });
 }
 
 
 // DELETE ME //
 
+/*
 
 module.exports.movePlayingTrackToPlaylist = function(destPlaylistId,destPlaylistName){
     var serverCurrentPlayingTrackJson;
@@ -521,17 +556,18 @@ module.exports.movePlayingTrackToPlaylist = function(destPlaylistId,destPlaylist
             }
             return Promise.resolve(JSON.parse('{"playingTrackName":"' + playingTrackName + '", "playingTrackAlbumName":"' + playingTrackAlbumName + '", "playingTrackArtistName":"' + playingTrackArtistName + '", "playingTrackUri":"' + playingTrackUri + '", "playingTrackContext":"' + playingTrackContext + '", "sourcePlaylistName":"' + sourcePlaylistName + '", "sourcePlaylistId":"' + sourcePlaylistId + '", "destPlaylistName":"' + destPlaylistName + '", "destPlaylistId":"' + destPlaylistId + '"}'));
         })
-        /*
+        
         // DON'T BELIEVE ANY OF THIS IS NEEDED BECAUSE ERROR HANDING IS IN THE CALLER, BUT IT MEANS THE CONTEXT OF THE ERROR WILL BE LOST
-        , function (err) {
-            log.warn('spotify-server.js:  Error when talking to Spotify API for adding track to ' + destPlaylistId + '.  Error ' + err);
-        }).catch(function (err) {
-            log.warn('spotify-server.js:  Exception when talking to Spotify API for adding track to ' + destPlaylistId + '.  Error ' + err);
-            Promise.reject(JSON.parse('{"err":"' + err + '","playingTrackName":"' + playingTrackName + '", "playingTrackAlbumName":"' + playingTrackAlbumName + '", "playingTrackArtistName":"' + playingTrackArtistName + '", "playingTrackUri":"' + playingTrackUri + '", "sourcePlaylistName":"' + sourcePlaylistName + '", "sourcePlaylistId":"' + sourcePlaylistId + '", "destPlaylistName":"' + destPlaylistName + '", "destPlaylistId":"' + destPlaylistId + '"}'));
-        })
-        */
+        //, function (err) {
+        //    log.warn('spotify-server.js:  Error when talking to Spotify API for adding track to ' + destPlaylistId + '.  Error ' + err);
+        //}).catch(function (err) {
+        //    log.warn('spotify-server.js:  Exception when talking to Spotify API for adding track to ' + destPlaylistId + '.  Error ' + err);
+        //    Promise.reject(JSON.parse('{"err":"' + err + '","playingTrackName":"' + playingTrackName + '", "playingTrackAlbumName":"' + playingTrackAlbumName + '", "playingTrackArtistName":"' + playingTrackArtistName + '", "playingTrackUri":"' + playingTrackUri + '", "sourcePlaylistName":"' + sourcePlaylistName + '", "sourcePlaylistId":"' + sourcePlaylistId + '", "destPlaylistName":"' + destPlaylistName + '", "destPlaylistId":"' + destPlaylistId + '"}'));
+        //})
+        
 }
 
+*/
 
 ///////////////////////////////////////////////////////////////////
 //// PLAYGROUND
