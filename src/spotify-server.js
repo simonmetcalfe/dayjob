@@ -319,8 +319,136 @@ function getPlaylistName(playlistId){
 
 // Move the current track from it's existing playlist to the specified playlist
 
-//// Move current track to specified playlist 
+//// Get track context
 ///////////////////////////////////////////////////////////////////
+// Identify the source of the playling track 
+// Identify is source is read only 
+// Return playlist ID and info if the playlist is the users own 
+// COULD BE IMPROVED to always return the playlist name if available, e.g. for radio and shared playlists
+
+function getTrackContext(playlingTrackJson){
+    return new Promise(function (resolve, reject) {
+        context = new Object();  //store context name, readOnly and sourcePlaylistId 
+        context.name = null;
+        context.readOnly=true;
+        context.sourcePlaylistId = null;
+        context.sourcePlaylistName = null;
+        if (playlingTrackJson.body.currently_playing_type == "episode") {context.name = "Podcast"}   
+        else if (playlingTrackJson.body.item.is_local) {context.name = "Local file"}  
+        else if (playlingTrackJson.body.context == null) {context.name = "Liked or Recommended"} 
+        else if (playlingTrackJson.body.context.type == "artist"){context.name = "Artist"}                                                      // Artist playback - add only
+        else if (playlingTrackJson.body.context.type == "album"){context.name = "Album"}                                                        // Album playback - add only
+        else if (playlingTrackJson.body.context.type == "playlist" && playlingTrackJson.body.context.uri.split(':').length == 5) {
+            if (playlingTrackJson.body.context.uri.split(':')[2] == prefsLocal.getPref('spotify-server_user_id')){                                                                                                                                  // Playlist - add / remove
+                // Only return playlist ID and name if playlist owned by the user 
+                context.name = "Playlist"      
+                context.readOnly=false;
+                context.sourcePlaylistId = serverCurrentPlayingTrackJson.body.context.uri.split(':')[4];
+                log.warn('spotify-server.js:  Getting playlist info for playlist ID... ' + context.sourcePlaylistId)
+                return getPlaylistName(sourcePlaylistId);
+            }    
+            else {context.name = "Shared playlist / Radio"}                                                                                                       // Shared playlist - remove only
+        }   
+        else {playingTrackContext = "Unknown source"}
+        return Promise.resolve(null)
+    }).then(function (result){
+        context.sourcePlaylistName = result;
+        log.warn('spotify-server.js:  Got source playlist name: ' +sourcePlaylistName);
+        return Promise.resolve(context);
+    });
+}
+
+
+
+//// Copy, move or remove playing track to specified playlist 
+///////////////////////////////////////////////////////////////////
+
+module.exports.removePlayingTrackFromPlaylist = function() {
+    return actionPlayingTrack('remove');
+}
+
+module.exports.copyPlayingTrackToPlaylist = function(destPlaylistId, destPlaylistName) {
+    return actionPlayingTrack('copy',destPlaylistId, destPlaylistName);
+}
+
+module.exports.movePlayingTrackToPlaylist = function(destPlaylistId, destPlaylistName) {
+    return actionPlayingTrack('move',destPlaylistId, destPlaylistName);
+}
+
+// Valid actions are copy, remove, move
+function actionPlayingTrack (action, destPlaylistId, destPlaylistName){ 
+    var serverCurrentPlayingTrackJson;
+    var playingTrackUri;
+    var playingTrackName;
+    var playingTrackArtistName;
+    var playingTrackAlbumName;
+    var playingTrackContext;
+    return new Promise(function (resolve, reject){
+        if (action != 'copy' || action != 'remove' || action != 'move'){
+            Promise.reject('invalid_action')
+        }
+        return checkApiConnection()
+    }).then (function (result) {
+        log.warn('spotify-server.js:  Check API connection succeeded, now getting currently playing track info...');
+        return spotifyApi.getMyCurrentPlayingTrack()
+    }).then(function (result) {
+        serverCurrentPlayingTrackJson = result;
+        log.warn('spotify-server.js:  Got serverCurrentPlayingTrackJson: ' + JSON.stringify(serverCurrentPlayingTrackJson));
+        return getTrackContext(serverCurrentPlayingTrackJson)
+    }).then(function (result) {    
+        playingTrackContext = context
+        log.warn('spotify-server.js:  Got track context: ' + JSON.stringify(playingTrackContext));  
+        log.warn('spotify-server.js:  Track to be processed:  \n' + 
+                                        'playingTrackUri is: ' + playingTrackUri + '\n' + 
+                                        'playingTrackName is: ' + playingTrackName + '\n' + 
+                                        'playingTrackName is: ' + playingTrackName + '\n' + 
+                                        'playingTrackArtistName is: ' + playingTrackArtistName + '\n' + 
+                                        'playingTrackAlbumName is: ' + playingTrackAlbumName + '\n' + 
+                                        'playingTrackContext.name: ' + playingTrackContext.name + '\n' + 
+                                        'playingTrackContext.readOnly: ' + playingTrackContext.readOnly + '\n' + 
+                                        'playingTrackContext.sourcePlaylistId: ' + playingTrackContext.sourcePlaylistId + '\n' + 
+                                        'sourcePlaylistName is: ' + playingTrackContext.sourcePlaylistName + '\n' + 
+                                        'destPlaylistId is: ' + destPlaylistId + '\n' + 
+                                        'destPlaylistName is: ' + destPlaylistName + '\n' +
+                                        'ACTION:  ' + action);
+        // Copying stage - 
+        if (action == 'copy' || action == 'move'){
+            log.warn('spotify-server.js:  Adding track ' + playingTrackName + ', ' + playingTrackAlbumName + ', ' + playingTrackArtistName + ', ' + playingTrackUri + ' to ' + destPlaylistName + ' : ' + destPlaylistId);
+            return addTracksToPlaylist(destPlaylistId, [playingTrackUri])
+        }
+        if (action == 'remove'){
+            return Promise.resolve(null)
+        }   
+    }).then(function (result) {      
+        log.warn('spotify-server.js:  Added track ' + playingTrackName + ', ' + playingTrackAlbumName + ', ' + playingTrackArtistName + ', ' + playingTrackUri + ' to ' + destPlaylistName + ' : ' + destPlaylistId); 
+        // Removal stage
+        if ((action == 'move' || action == 'remove') && !playingTrackContext.readOnly){
+            log.warn('spotify-server.js:  Removing track ' + playingTrackName + ', ' + playingTrackAlbumName + ', ' + playingTrackArtistName + ', ' + playingTrackUri + ' from ' + sourcePlaylistName + " , " + sourcePlaylistId);
+            return removeTracksFromPlaylist(sourcePlaylistId, [{ uri: playingTrackUri }]) 
+        }
+        else if (action == 'move' && playingTrackContext.readOnly){
+            //Read only, can't remove
+            log.warn('spotify-server.js:  NOT removing track ' + playingTrackName + ', ' + playingTrackAlbumName + ', ' + playingTrackArtistName + ', ' + playingTrackUri + ' because the the track source is ' + playingTrackContext);
+            return Promise.resolve("copied_cannot_move")
+        }
+        else if (action == 'remove' && playingTrackContext.readOnly){
+            //Read only, can't remove
+            log.warn('spotify-server.js:  NOT removing track ' + playingTrackName + ', ' + playingTrackAlbumName + ', ' + playingTrackArtistName + ', ' + playingTrackUri + ' because the the track source is ' + playingTrackContext);
+            return Promise.resolve("cannot_remove")
+        }
+        else{
+            // If no removal required (e.g. copy), finish here
+            return Promise.resolve("copied")
+        }
+    }).then(function (result) {    
+        log.warn('spotify-server.js:  Removed track ' + playingTrackName + ', ' + playingTrackAlbumName + ', ' + playingTrackArtistName + ', ' + playingTrackUri + ' from ' + sourcePlaylistName + " , " + sourcePlaylistId);
+        return Promise.resolve(JSON.parse('{"playingTrackName":"' + playingTrackName + '", "playingTrackAlbumName":"' + playingTrackAlbumName + '", "playingTrackArtistName":"' + playingTrackArtistName + '", "playingTrackUri":"' + playingTrackUri + '", "playingTrackContext":"' + playingTrackContext + '", "sourcePlaylistName":"' + sourcePlaylistName + '", "sourcePlaylistId":"' + sourcePlaylistId + '", "destPlaylistName":"' + destPlaylistName + '", "destPlaylistId":"' + destPlaylistId + '"}'));  
+    });
+}
+
+
+// DELETE ME //
+
 
 module.exports.movePlayingTrackToPlaylist = function(destPlaylistId,destPlaylistName){
     var serverCurrentPlayingTrackJson;
@@ -339,20 +467,12 @@ module.exports.movePlayingTrackToPlaylist = function(destPlaylistId,destPlaylist
         }).then(function (result) {
             serverCurrentPlayingTrackJson = result;
             log.warn('spotify-server.js:  Got serverCurrentPlayingTrackJson: ' + JSON.stringify(serverCurrentPlayingTrackJson));
-            // Determine the context of the currently playing track (so we know if should try and remove it from a playlist)
-            if (serverCurrentPlayingTrackJson.body.context == null){playingTrackContext = "radio"}                                                                             // Radio station - add only
-            else if (serverCurrentPlayingTrackJson.body.item.is_local) {playingTrackContext = "local"}                                                                 // Local file - skip
-            else if (serverCurrentPlayingTrackJson.body.context.type == "artist"){playingTrackContext = "artist"}                                                      // Artist playback - add only
-            else if (serverCurrentPlayingTrackJson.body.context.type == "album"){playingTrackContext = "album"}                                                        // Album playback - add only
-            else if (serverCurrentPlayingTrackJson.body.context.type == "playlist" && serverCurrentPlayingTrackJson.body.context.uri.split(':').length == 5) {
-                if (serverCurrentPlayingTrackJson.body.context.uri.split(':')[2] == prefsLocal.getPref('spotify-server_user_id')){                            
-                    playingTrackContext = "playlist"                                                                                                                   // Playlist - add / remove
-                    // Only get the playlist ID from the URI if we are sure the track is in a playlist owned by the user
-                    sourcePlaylistId = serverCurrentPlayingTrackJson.body.context.uri.split(':')[4];
-                }    
-                else {playingTrackContext = "playlist_shared"}                                                                                                         // Shared playlist - remove only
-            }   
-            else {playingTrackContext = "unknown"}
+            return getTrackContext(serverCurrentPlayingTrackJson)
+        }).then(function (result) {    
+            log.warn('spotify-server.js:  Got track context: ' + JSON.stringify(context));
+            // Determine if we can remove or move the track through the context.readOnly property
+            playingTrackContext = context.name
+            sourcePlaylistId = context.sourcePlaylistId
             // Get track info to add (should always be the same regardless of context)
             playingTrackName = serverCurrentPlayingTrackJson.body.item.name;
             playingTrackAlbumName = serverCurrentPlayingTrackJson.body.item.album.name;

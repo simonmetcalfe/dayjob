@@ -215,6 +215,27 @@ app.on('ready', () => {
   log.warn('main.js:  App is ready to start.')
 
   // Register shortcuts
+  const sct7 = globalShortcut.register('Control+Alt+7', () => {
+    log.warn('main.js:  Control+Alt+7 is pressed');
+    spotifyServer.removePlayingTrackFromPlaylist()
+      .then(function (result) {
+        // We're done, skip song, log and show notification
+        log.warn('main.js:  Removed track ' + serverCurrentPlayingTrackJson.body.item.name + ', ' + serverCurrentPlayingTrackJson.body.item.album.name + ', ' + serverCurrentPlayingTrackJson.body.item.artists[0].name + ', ' + serverCurrentPlayingTrackJson.body.item.uri + ' from ' + sourcePlaylistName + " , " + sourcePlaylistId + ' : ' + result);
+        showNotification('Removed track ' + serverCurrentPlayingTrackJson.body.item.name + ' from ' + sourcePlaylistName, '', '', '');
+        spotifyServer.skipToNext(); 
+      }, function (err) {
+        log.warn('main.js: Error when talking to Spotify API (1).  Error ' + err);
+        showNotification('Exception when talking to Spotify API', err.message, '', '');
+      }).catch(function (err) {
+        log.warn('main.js:  Exception when talking to Spotify API.  Error ' + err);
+        showNotification('Exception when talking to Spotify API', err.message, '', '');
+      })
+  });
+
+  if (!sct7) {
+    log.warn('main.js:  registration failed of:  Control+Alt+7')
+  };
+
   const sctRemoveTrack = globalShortcut.register('Control+Alt+-', () => {
     log.warn('main.js:  Control+Alt+- is pressed');
     var serverCurrentPlayingTrackJson;
