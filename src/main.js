@@ -221,7 +221,9 @@ app.on('ready', () => {
     log.warn('main.js:  Control+Alt+6 is pressed');
     spotifyServer.skipToNext()
     .then(function (result) {
-      // No action required
+      return spotifyServer.getPlayingTrackInfo()
+    }).then(function (result) {
+      log.warn('out: '+ JSON.stringify(result));
     }, function (err) {
       log.warn('main.js: Error when talking to Spotify API (6).  Error ' + err);
       showNotification('Exception when talking to Spotify API', err.message, '', '');
@@ -238,22 +240,6 @@ app.on('ready', () => {
 
   const sct7 = globalShortcut.register('Control+Alt+7', () => {
     log.warn('main.js:  Control+Alt+7 is pressed');
-    spotifyServer.removePlayingTrackFromPlaylist()
-      .then(function (result) {
-        // We're done, skip song, log and show notification
-        //log.warn('main.js:  Removed track ' + serverCurrentPlayingTrackJson.body.item.name + ', ' + serverCurrentPlayingTrackJson.body.item.album.name + ', ' + serverCurrentPlayingTrackJson.body.item.artists[0].name + ', ' + serverCurrentPlayingTrackJson.body.item.uri + ' from ' + sourcePlaylistName + " , " + sourcePlaylistId + ' : ' + result);
-        //showNotification('Removed track ' + serverCurrentPlayingTrackJson.body.item.name + ' from ' + sourcePlaylistName, '', '', '');
-        showNotification('Removed track NEED THE INFO');
-        return spotifyServer.skipToNext(); 
-      }).then(function (result) {  
-        // No action required    
-      }, function (err) {
-        log.warn('main.js: Error when talking to Spotify API (7).  Error ' + err);
-        showNotification('Exception when talking to Spotify API', err.message, '', '');
-      }).catch(function (err) {
-        log.warn('main.js:  Exception when talking to Spotify API (7).  Error ' + err);
-        showNotification('Exception when talking to Spotify API', err.message, '', '');
-      })
   });
 
   if (!sct7) {
@@ -262,48 +248,21 @@ app.on('ready', () => {
 
   const sctRemoveTrack = globalShortcut.register('Control+Alt+-', () => {
     log.warn('main.js:  Control+Alt+- is pressed');
-    var serverCurrentPlayingTrackJson;
-    var playingTrackUri;
-    var sourcePlaylistId;
-    var sourcePlaylistName;
-
-    // Remove the current track from the source playlist
-    // TODO this needs to be moved to spotify-client, integrated and tidied
-    spotifyServer.checkApiConnection()
-      .then(function (result) {
-        //Get currently playing track info
-        log.warn('main.js:  Getting currently playing track info');
-        return spotifyServer.getMyCurrentPlayingTrack()
-      }).then(function (result) {
-        serverCurrentPlayingTrackJson = result;
-        sourcePlaylistId = serverCurrentPlayingTrackJson.body.context.uri.split(':')[4]
-        playingTrackUri = serverCurrentPlayingTrackJson.body.item.uri;
-        log.warn('main.js:  Got serverCurrentPlayingTrackJson: ' + JSON.stringify(serverCurrentPlayingTrackJson));
-        log.warn('main.js:  sourcePlaylistId is: ' + sourcePlaylistId);
-        log.warn('main.js:  playingTrackUri is: ' + playingTrackUri);
-      }).then(function (result) {
-        // Now get the playlist details
-        log.warn('Getting playlist info for playlist ID ' + sourcePlaylistId)
-        return spotifyServer.getPlaylistName(sourcePlaylistId);
-      }).then(function (result) {
-        sourcePlaylistName = result;
-        log.warn('main.js:  sourcePlaylistName is: ' + sourcePlaylistName);
-      }).then(function (result) {
-        // Finally remove the track from the current playlist
-        log.warn('main.js:  Removing track ' + serverCurrentPlayingTrackJson.body.item.name + ', ' + serverCurrentPlayingTrackJson.body.item.album.name + ', ' + serverCurrentPlayingTrackJson.body.item.artists[0].name + ', ' + serverCurrentPlayingTrackJson.body.item.uri + ' from ' + sourcePlaylistName + " , " + sourcePlaylistId + ' : ' + result);
-        return spotifyServer.removeTracksFromPlaylist(sourcePlaylistId, [{ uri: playingTrackUri }])
-      }).then(function (result) {
-        // We're done, skip song, log and show notification
-        log.warn('main.js:  Removed track ' + serverCurrentPlayingTrackJson.body.item.name + ', ' + serverCurrentPlayingTrackJson.body.item.album.name + ', ' + serverCurrentPlayingTrackJson.body.item.artists[0].name + ', ' + serverCurrentPlayingTrackJson.body.item.uri + ' from ' + sourcePlaylistName + " , " + sourcePlaylistId + ' : ' + result);
-        showNotification('Removed track ' + serverCurrentPlayingTrackJson.body.item.name + ' from ' + sourcePlaylistName, '', '', '');
-        return spotifyServer.skipToNext();     
-      }, function (err) {
-        log.warn('main.js: Error when talking to Spotify API (1).  Error ' + err);
-        showNotification('Exception when talking to Spotify API', err.message, '', '');
-      }).catch(function (err) {
-        log.warn('main.js:  Exception when talking to Spotify API.  Error ' + err);
-        showNotification('Exception when talking to Spotify API', err.message, '', '');
-      })
+    spotifyServer.removePlayingTrackFromPlaylist()
+    .then(function (result) {
+      // We're done, skip song, log and show notification
+      log.warn('main.js:  Removed track ' + result.name + ', ' + result.albumName + ', ' + result.artistName + ', ' + result.uri + ' from ' + result.context.sourcePlaylistName + " , " + result.context.sourcePlaylistId + ' : ' + result.result);
+      showNotification('Removed track ' + result.name + ' from ' + result.context.sourcePlaylistName, '', '', '');
+      return spotifyServer.skipToNext(); 
+    }).then(function (result) {  
+      // No action required    
+    }, function (err) {
+      log.warn('main.js: Error when talking to Spotify API (-).  Error ' + err);
+      showNotification('Exception when talking to Spotify API', err.message, '', '');
+    }).catch(function (err) {
+      log.warn('main.js:  Exception when talking to Spotify API (-).  Error ' + err);
+      showNotification('Exception when talking to Spotify API', err.message, '', '');
+    })
   });
 
   if (!sctRemoveTrack) {
@@ -314,25 +273,18 @@ app.on('ready', () => {
     log.warn('main.js:  Control+Alt+= is pressed');
     // Add the current track to DayJobTest and remove it from the source playlist
     spotifyServer.movePlayingTrackToPlaylist('4SAk2gITCgpbAKkZOnVNZY','DayJobTest')
-      .then(function (result) {
-        // We're done, log and show notification
-        if (result.playingTrackContext == 'playlist'){
-          // Song can be removed
-          log.warn('main.js:  Removed track ' + result.playingTrackName + ', ' + result.playingTrackAlbumName + ', ' + result.playingTrackArtistName + ', ' + result.playingTrackUri + ' from ' + result.sourcePlaylistName + " , " + result.sourcePlaylistId);
-          showNotification('Moved ' + result.playingTrackName + ' to ' + result.destPlaylistName, 'Removed from', result.sourcePlaylistName, '');
-        }
-        else {
-          // Not a user playlist, show notification song cannot be removed
-          log.warn('main.js:  Added track ' + result.playingTrackName + ', ' + result.playingTrackAlbumName + ', ' + result.playingTrackArtistName + ', ' + result.playingTrackUri + ' but not removed from source because playing from ' + result.playingTrackContext);
-          showNotification('Added ' + result.playingTrackName + ' to ' + result.destPlaylistName, 'Not removed from source because playing from ', result.playingTrackContext, '');
-        }
-      }, function (err) {
-        log.warn('main.js: Error when talking to Spotify API for adding track.  Error ' + JSON.stringify(err));
-        showNotification('Error when talking to Spotify API ', err.message, '', '');
-      }).catch(function (err) {
-        log.warn('main.js:  Exception when talking to Spotify API for adding track.  Error ' + JSON.stringify(err));
-        showNotification('Exception when talking to Spotify API when adding ', err.message, '', '');
-      })
+    .then(function (result) {
+      // We're done, skip song, log and show notification
+      log.warn('main.js:  Added track ' + result.name + ', ' + result.albumName + ', ' + result.artistName + ', ' + result.uri + ' to ' + result.destPlaylistName + " , " + result.destPlaylistId + ' : ' + result.result);
+      log.warn('main.js:  Removed track ' + result.name + ', ' + result.albumName + ', ' + result.artistName + ', ' + result.uri + ' from ' + result.context.sourcePlaylistName + " , " + result.context.sourcePlaylistId);
+      showNotification('Removed track ' + result.name + ' from ' + result.context.sourcePlaylistName, '', '', '');
+    }, function (err) {
+      log.warn('main.js: Error when talking to Spotify API (+).  Error ' + err);
+      showNotification('Exception when talking to Spotify API', err.message, '', '');
+    }).catch(function (err) {
+      log.warn('main.js:  Exception when talking to Spotify API (+).  Error ' + err);
+      showNotification('Exception when talking to Spotify API', err.message, '', '');
+    })     
   });
 
   if (!sctAddTrack) {
@@ -341,30 +293,9 @@ app.on('ready', () => {
 
   const sctNewBands = globalShortcut.register('Control+Alt+`', () => {
     log.warn('main.js:  Control+Alt+` is pressed');
-
     // Add the current track to DayJobNewBands and remove it from the source playlist
-    spotifyServer.movePlayingTrackToPlaylist('5RSreRiji8KaKNBqStRbJm','DayJobNewBands')
-      .then(function (result) {
-        // We're done, log and show notification
-        if (result.playingTrackContext == 'playlist'){
-          // Song can be removed
-          log.warn('main.js:  Removed track ' + result.playingTrackName + ', ' + result.playingTrackAlbumName + ', ' + result.playingTrackArtistName + ', ' + result.playingTrackUri + ' from ' + result.sourcePlaylistName + " , " + result.sourcePlaylistId);
-          showNotification('Moved ' + result.playingTrackName + ' to ' + result.destPlaylistName, 'Removed from', result.sourcePlaylistName, '');
-        }
-        else {
-          // Not a user playlist, show notification song cannot be removed
-          log.warn('main.js:  Added track ' + result.playingTrackName + ', ' + result.playingTrackAlbumName + ', ' + result.playingTrackArtistName + ', ' + result.playingTrackUri + ' but not removed from source because playing from ' + result.playingTrackContext);
-          showNotification('Added ' + result.playingTrackName + ' to ' + result.destPlaylistName, 'Not removed from source because playing from ', result.playingTrackContext, '');
-        }
-      }, function (err) {
-        log.warn('spotify-server.js: Error when talking to Spotify API for adding track.  Error ' + JSON.stringify(err));
-        showNotification('Error when talking to Spotify API ', err.message, '', '');
-      }).catch(function (err) {
-        log.warn('spotify-server.js:  Exception when talking to Spotify API for adding track.  Error ' + JSON.stringify(err));
-        showNotification('Exception when talking to Spotify API when adding ', err.message, '', '');
-      })
+    //spotifyServer.movePlayingTrackToPlaylist('5RSreRiji8KaKNBqStRbJm','DayJobNewBands')
   });
-
 
   if (!sctNewBands) {
     log.warn('main.js:  registration failed of:  Control+Alt+`')
@@ -374,26 +305,7 @@ app.on('ready', () => {
     log.warn('main.js:  Control+Alt+0 is pressed');
 
     // Add the current track to _DUMP and remove it from the source playlist
-    spotifyServer.movePlayingTrackToPlaylist('1lkqDHoGm03GXS63tkkmyi','_DUMP')
-      .then(function (result) {
-        // We're done, log and show notification
-        if (result.playingTrackContext == 'playlist'){
-          // Song can be removed
-          log.warn('main.js:  Removed track ' + result.playingTrackName + ', ' + result.playingTrackAlbumName + ', ' + result.playingTrackArtistName + ', ' + result.playingTrackUri + ' from ' + result.sourcePlaylistName + " , " + result.sourcePlaylistId);
-          showNotification('Moved ' + result.playingTrackName + ' to ' + result.destPlaylistName, 'Removed from', result.sourcePlaylistName, '');
-        }
-        else {
-          // Not a user playlist, show notification song cannot be removed
-          log.warn('main.js:  Added track ' + result.playingTrackName + ', ' + result.playingTrackAlbumName + ', ' + result.playingTrackArtistName + ', ' + result.playingTrackUri + ' but not removed from source because playing from ' + result.playingTrackContext);
-          showNotification('Added ' + result.playingTrackName + ' to ' + result.destPlaylistName, 'Not removed from source because playing from ', result.playingTrackContext, '');
-        }
-      }, function (err) {
-        log.warn('main.js: Error when talking to Spotify API for adding track.  Error ' + JSON.stringify(err));
-        showNotification('Error when talking to Spotify API ', err.message, '', '');
-      }).catch(function (err) {
-        log.warn('main.js:  Exception when talking to Spotify API for adding track.  Error ' + JSON.stringify(err));
-        showNotification('Exception when talking to Spotify API when adding ', err.message, '', '');
-      })
+    //spotifyServer.movePlayingTrackToPlaylist('1lkqDHoGm03GXS63tkkmyi','_DUMP')
   });
 
   if (!sctAddToDump) {
@@ -558,5 +470,4 @@ app.on('will-quit', function () {
   // Unregister all shortcuts.
   globalShortcut.unregisterAll();
 })
-
 
