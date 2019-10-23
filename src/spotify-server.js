@@ -348,14 +348,24 @@ function getPlayingTrackInfo(){
         }).then(function (result) {
             log.warn('spotify-server.js:  Got current track JSON: ' + JSON.stringify(result));
             trackInfo = new Object(); 
-            // TODO - HANDLE MISSING URI FIELD WHEN PLAYING PODCASTS
+            if (result.body.currently_playing_type == "episode"){
+                // We can't process podcasts at all so just abort 
+                return Promise.reject(new Error("podcast"))
+            }
             trackInfo.uri = result.body.item.uri;
             trackInfo.name = result.body.item.name;
             trackInfo.artistName = result.body.item.artists[0].name;
             trackInfo.albumName = result.body.item.album.name;
             trackInfo.fullJson = result
             return Promise.resolve(trackInfo)
-        });  
+        })/*,function (err){
+            console.log("new err caught it")
+        }).then(function(result){
+            console.log("app was allowed to continue")
+            return Promise.resolve("allowed to continue");
+        },function(err){
+            console.log("new err 2 caught it")
+        }); // try adding error code here */
 }
 
 
@@ -369,13 +379,13 @@ function getPlayingTrackInfo(){
 function getTrackContext(playlingTrackJson){
     // Promise is never rejected, but could error with bad JSON
     return new Promise(function (resolve, reject) {
+        log.warn('spotify-server.js:  Determing the context of track...')
         context = new Object();  //store context name, readOnly and sourcePlaylistId 
         context.name = null;
         context.readOnly=true;
         context.sourcePlaylistId = null;
         context.sourcePlaylistName = null;
-        if (playlingTrackJson.body.currently_playing_type == "episode") {context.name = "Podcast"; resolve(context)}   
-        else if (playlingTrackJson.body.item.is_local) {context.name = "Local file"; resolve(context)}  
+        if (playlingTrackJson.body.item.is_local) {context.name = "Local file"; resolve(context)}  
         else if (playlingTrackJson.body.context == null) {context.name = "Liked or Recommended"; resolve(context)} 
         else if (playlingTrackJson.body.context.type == "artist"){context.name = "Artist"; resolve(context)}                                                      // Artist playback - add only
         else if (playlingTrackJson.body.context.type == "album"){context.name = "Album"; resolve(context)}                                                        // Album playback - add only

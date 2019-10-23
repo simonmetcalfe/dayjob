@@ -226,7 +226,7 @@ app.on('ready', () => {
       log.warn('out: '+ JSON.stringify(result));
     }, function (err) {
       log.warn('main.js: Error when talking to Spotify API (6).  Error ' + err);
-      showNotification('Exception when talking to Spotify API', err.message, '', '');
+      showNotification('Error when talking to Spotify API', err.message, '', '');
     }).catch(function (err) {
       log.warn('main.js:  Exception when talking to Spotify API (6).  Error ' + err);
       showNotification('Exception when talking to Spotify API', err.message, '', '');
@@ -258,7 +258,7 @@ app.on('ready', () => {
       // No action required    
     }, function (err) {
       log.warn('main.js: Error when talking to Spotify API (-).  Error ' + err);
-      showNotification('Exception when talking to Spotify API', err.message, '', '');
+      showNotification('Error when talking to Spotify API', err.message, '', '');
     }).catch(function (err) {
       log.warn('main.js:  Exception when talking to Spotify API (-).  Error ' + err);
       showNotification('Exception when talking to Spotify API', err.message, '', '');
@@ -280,7 +280,7 @@ app.on('ready', () => {
       showNotification('Removed track ' + result.name + ' from ' + result.context.sourcePlaylistName, '', '', '');
     }, function (err) {
       log.warn('main.js: Error when talking to Spotify API (+).  Error ' + err);
-      showNotification('Exception when talking to Spotify API', err.message, '', '');
+      showNotification('Error when talking to Spotify API', err.message, '', '');
     }).catch(function (err) {
       log.warn('main.js:  Exception when talking to Spotify API (+).  Error ' + err);
       showNotification('Exception when talking to Spotify API', err.message, '', '');
