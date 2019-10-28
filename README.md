@@ -7,7 +7,7 @@ dayjob lets you quickly add and remove songs to your playlists without opening t
 
 |Play some music on Spotify|When you hear a good song, press a shortcut |dayjob adds it to your playlist|
 |:-----:|:-----:|:-----:|
-|<img src="https://github.com/simonmetcalfe/dayjob/blob/master/assets_readme/spotify_playlist.png" width=200>|<img src="https://github.com/simonmetcalfe/dayjob/blob/master/assets_readme/ctrl+alt+1to0.png" width=250>|
+|<img src="assets_readme/spotify_playlist.png" width=200>|<img src="assets_readme/ctrl+alt+1to0.png" width=250>|
 
 In no time you'll have a new playlist with awesome songs!  dayjob currently supports upto 11 different playlists, and can also move or remove songs from the current playlist.
 
