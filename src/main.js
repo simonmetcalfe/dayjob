@@ -172,7 +172,7 @@ function connectApi(){
   log.warn('main.js:  Attempting to connect to the Spotify API...');
   spotifyServer.checkApiConnection()
     .then(function (result) {
-      showNotification('Connected to Spotify as ' + prefsLocal.getPref('spotify-server_user_display_name'), '', '', '');
+      showNotification('Connected to Spotify as ' + spotifyServer.getspotifyDisplayName(), '', '', '');
     }, function (err) {
       if (err.message == 'no_client_id') {
         log.warn('main.js:  Can\'t connect to Spotify without a client ID and Secret!')
@@ -190,6 +190,10 @@ function connectApi(){
             log.warn('main.js:  Exception getting authorisation URL: ' + err);
             showNotification('Exception getting authorisation URL: ' + err, '', '', '');
           })
+      }
+      else {
+        log.warn('main.js:  Unknown error checking API: ' + err);
+        showNotification('Unknown error checking API: ' + err, '', '', '');
       }
     }).catch(function (err) {
       showNotification('Exception when connecting to Spotify: ' + err);
@@ -258,6 +262,11 @@ app.on('ready', () => {
       // No action required    
     }, function (err) {
       log.warn('main.js: Error when talking to Spotify API (-).  Error ' + err);
+      console.log("msg " + err.message)
+      console.log("code " + err.code)
+      console.log("error " + err.error)
+      console.log("stack " + err.stack)
+      console.log("obj " + err)
       showNotification('Error when talking to Spotify API', err.message, '', '');
     }).catch(function (err) {
       log.warn('main.js:  Exception when talking to Spotify API (-).  Error ' + err);
@@ -341,6 +350,7 @@ app.on('ready', () => {
         log.warn('main.js:  playingTrackUri is ' + playingTrackUri);
       }).then(function (result) {
         //Now get track info with playlist
+        // THIS FUNCTION HAS BEEN REMOVED, IT IS NOW INTERNAL ONLY
         return spotifyServer.getMyCurrentPlayingTrack()
       }).then(function (result) {
         serverCurrentPlayingTrackJson = result;
@@ -350,6 +360,7 @@ app.on('ready', () => {
       }).then(function (result) {
         // Now get the playlist details
         log.warn('Getting playlist info for playlist ID ' + sourcePlaylistId)
+        // THIS FUNCTION HAS BEEN REMOVED
         return spotifyServer.getPlaylistName(sourcePlaylistId);
       }).then(function (result) {
         sourcePlaylistName = result;

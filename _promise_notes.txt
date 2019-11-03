@@ -2,17 +2,17 @@ MAIN.JS PROMISES AND WORKFLOW
 
 connectApi called in background
 |
-checkApiConnection
+checkApiConnection DONE
 |
-refreshAccessToken
+refreshAccessToken DONE 
 |
-spotifyApi.getMe
+spotifyApi.getMe DONE
 |
 RESOLVE 'ready' (users name displayed from Preferences)
 ERR 'no_client_id'
 ERR 'no_authorisation_code'
-* ERR 'cannot_refresh_access_token' - refreshAccessToken should return this if spotifyApi.refreshAccessToken returns an error
-* ERR 'cannot_get_users_details' - checkApiConnection should return this if spotifyApi.getMe fails
+DONE * ERR 'cannot_refresh_access_token' - refreshAccessToken should return this if spotifyApi.refreshAccessToken returns an error
+DONE * ERR 'cannot_get_users_details' - checkApiConnection should return this if spotifyApi.getMe fails
 |
 getAuthUrl (if error 'no_authorisation_code')
 |
@@ -26,7 +26,7 @@ movePlayingTrackToPlaylist
 |
 getPlayingTrackInfo
 |
-checkApiConnection
+checkApiConnection DONE
 |
 spotifyApi.getMyCurrentPlayingTrack
 |
@@ -47,13 +47,13 @@ spotifyApi.removeTracksFromPlaylist
 
 |
 RESOLVE result
-* ERR 'cannot_get_playing_track_info' - getPlayingTrackInfo could return this if an error is received from the API
-* ERR 'track_not_playing' - getPlayingTrackInfo could return this if it's determined a track is not playing 
+DONE * ERR 'cannot_get_playing_track_info' - getPlayingTrackInfo could return this if an error is received from the API
+DONE * ERR 'track_not_playing' - getPlayingTrackInfo could return this if it's determined a track is not playing 
 * ERR 'podcast' - already returned from getPlayingTrackInfo, should be handled becuase NOTHING can be done with a podcast
 * ERR 'cannot_get_track_context' - getContext COULD be updated to return this if the context cannot be determined 
-* ERR 'cannot_get_playlist_name' - getPlaylistName COULD be updated return this alongside the error from the API
-* ERR 'cannot_add_track_to_playlist' - addTrackToPlaylist could return if API fails
-* ERR 'cannot_remove_track_from_playlist' - removeTraksFromPlaylist could return if API fails
+DONE * ERR 'cannot_get_playlist_info' - getPlaylistName COULD be updated return this alongside the error from the API
+DONE * ERR 'cannot_add_track_to_playlist' - addTrackToPlaylist could return if API fails
+DONE * ERR 'cannot_remove_track_from_playlist' - removeTraksFromPlaylist could return if API fails
 * ERR 'playlist_is_read_only' - removePlaylingTracksFromPlaylist could throw this error because nothing can be removed if playlist is read only
 ALSO CONSIDER ANY OF THE API ERRORS
 
@@ -155,3 +155,5 @@ remove/move/copyPlayingTrackFromPlaylist()
 TODO:
 * Add handling for port 8080 already in use when webserver is initialised
 * Check if spotifyApi.resetAccessToken() or spotifyApi.resetRefreshToken() or spotifyApi.createAuthorizeURL() can return a Promise, and updatee getAuthUrl if they do
+* log.warn usage is incorrect
+* Clear the users name at startup to force checkApiConnection to actually try a connection once (otherwise it will say 'connected' if the token is valid without even trying)

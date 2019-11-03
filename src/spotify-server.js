@@ -26,9 +26,16 @@ var log = require('electron-log');
 
 var scopes = ['user-read-private', 'user-read-email', 'playlist-read-private', 'playlist-modify-private', 'playlist-read-collaborative', 'playlist-modify-public', 'user-read-recently-played', 'user-read-currently-playing','user-modify-playback-state'];
 var redirectUri = 'http://localhost:8888/callback';
-var tokenExpirationEpoch;
 var state; //For dayjob to verify requests to the redirect URI
+var spotifyUserId; // 
+var spotifyDisplayName;
 
+///////////////////////////////////////////////////////////////////
+//// Variables external access
+///////////////////////////////////////////////////////////////////
+
+module.exports.getSpotifyUserId = function(){return spotifyUserId;}
+module.exports.getspotifyDisplayName = function(){return spotifyDisplayName;}
 
 ///////////////////////////////////////////////////////////////////
 //// Initialise web server (for receiving auth code in redirectURI)
@@ -77,6 +84,7 @@ var spotifyApi = new SpotifyWebApi({
 });
 
 
+
 ///////////////////////////////////////////////////////////////////
 //// Check API connection
 ///////////////////////////////////////////////////////////////////
@@ -89,59 +97,52 @@ module.exports.checkApiConnection = function () {
 
 function checkApiConnection() {
     log.warn('spotify-server:  Checking the state of the API connection...')
-    return new Promise(function (resolve, reject) {
+    return Promise.resolve().then(function(){
         if (prefsLocal.getPref('spotify-server_clientId') == undefined || prefsLocal.getPref('spotify-server_clientSecret') == undefined) {
             // Spotify-client hasn't been provided ap ID/secret parameters 
             log.warn('spotify-server:  [ERROR] Cannot authenticate without a client ID and secret.  Get user to create an register an application for API usage with Spotify, and provide the parameters.')
-            reject(new Error('no_client_id'));
+            Promise.reject(new Error('no_client_id'));
         }
         else if (prefsLocal.getPref('spotify-server_authorizationCode') == undefined || prefsLocal.getPref('spotify-server_access_token') == undefined) {
             // Not authorised in the past, authorise app and clear access tokens if any
             log.warn('spotify-server.js:  No authorisation code or access token, Spotify not authorised with API before, need to launch auth URL.')
-            //launchAuthUrl();
-            reject(new Error('no_authorisation_code'));
+            Promise.reject(new Error('no_authorisation_code'));
         }
         else if (new Date().getTime() >= prefsLocal.getPref('spotify-server_token_expiration_date') - 10000) {
             // Token has expired, refresh it
             log.warn('spotify-server.js:  Current time ' + new Date().getTime() + ' exceeds token expiry ' + prefsLocal.getPref('spotify-server_token_expiration_date') + ' within 10000 ms, refreshing token...');
-            refreshAccessToken()
-                .then(function (data) {
-                    resolve('ready')
-                // TODO - IS CATCHING ERRORS REQUIRED HERE, OR SHHOULD THIS BE DONE IN MAIN.JS?
-                }, function (err) {
-                    log.warn('spotify-server.js:  [ERROR] Check API connection rejecting promise because refresh access token failed.');
-                    //launchAuthUrl();
-                    reject(err);
-                }).catch(function (err) {
-                    log.warn('spotify-server.js:  [ERROR] Exception with refresing access token.', err);
-                    reject(err);
-                });
+            return refreshAccessToken()
+        } 
+        else {
+            log.warn('spotify-server.js:  Access token appears to be valid.');
+            Promise.resolve('ready');
         }
-        else if (prefsLocal.getPref('spotify-server_user_display_name') == undefined || prefsLocal.getPref('spotify-server_user_id') == undefined) {
+    }).then(function (result) {
+        if (spotifyDisplayName == undefined || spotifyUserId == undefined) {
             // No Spotify user has been retrieved yet, get the user
             log.warn('spotify-server.js:  User ID and display name are not saved, retrieving them now...');
-            spotifyApi.getMe()
-                .then(function (data) {
-                    log.warn('spotify-server.js:  Retrieved Spotify user data for ' + data.body['display_name'] + ' (' + data.body['id'] + ')');
-                    log.warn('spotify-server.js:  Full data JSON: ' + JSON.stringify(data.body));
-                    prefsLocal.setPref('spotify-server_user_display_name', data.body['display_name'])
-                    prefsLocal.setPref('spotify-server_user_id', data.body['id'])
-                    resolve('ready');
-                // TODO - AGAIN, NOT SURE IF WE NEED TO CATCH ERRORS HERE...
-                }, function (err) {
-                    log.warn('spotify-server.js:  Error retrieving user details from API: ' + err);
-                    reject(err);
-                }).catch(function (err) {
-                    log.warn('spotify-server.js:  Exception retrieving user details from API ' + err);
-                    reject(err);
-                });
-        }
-
+            return spotifyApi.getMe()
+        } 
         else {
-            log.warn('spotify-server.js:  API appears to be ready for use.');
-            resolve('ready');
+            log.warn('spotify-server.js:  Already have user ID and display name; no need to query API.');
+            return Promise.resolve('ready');
+        } 
+    }).then(function (result){   
+        if (result != 'ready'){
+            // Log the result of .getMe and store the users name and ID 
+            log.warn('spotify-server.js:  Retrieved user data JSON: ' + JSON.stringify(result.body));
+            spotifyDisplayName = result.body['display_name'];
+            spotifyUserId = result.body['id'];
         }
-    });
+        log.warn('spotify-server.js:  Spotify connected for user ' + spotifyDisplayName + ' (' + spotifyUserId + ')');    
+        return Promise.resolve('ready');
+    },function (err){
+        /* It migh be worth changing this to a .catch handler just in case the returned JSON is garbage and an error occurs in the result() statement above */
+        // Handle spotifyApi.getMe promise error gracefully
+        handledErr = new Error("cannot_get_users_details")
+        handledErr.error = err;
+        return Promise.reject(handledErr);
+    })
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -150,7 +151,7 @@ function checkApiConnection() {
 
 module.exports.getAuthUrl = function () {
     // spotifyApi.createAuthorizeURL does not return a promise, so we resolve one manually
-    // TODO - CAN WE IMPROVE THIS PROMISE AND HAVE IT RESOLVE AT THE END ONLY?
+    // THIS TOP LINE MIGHT BE THE BEST METHOD FOR WRITING PROMISES 
     return Promise.resolve().then(function () {
         spotifyApi.resetAccessToken();
         spotifyApi.resetRefreshToken();
@@ -158,8 +159,8 @@ module.exports.getAuthUrl = function () {
         prefsLocal.deletePref('spotify-server_refresh_token');
         prefsLocal.deletePref('spotify-server_authorizationCode');
         prefsLocal.deletePref('spotify-server_token_expiration_date');
-        prefsLocal.deletePref('spotify-server_user_display_name');
-        prefsLocal.deletePref('spotify-server_user_id');
+        spotifyDisplayName = undefined;
+        spotifyUserId = undefined;
         // Generate random state ID for client to verify request
         state = generateRandomString(16);
         log.warn('spotify-server.js:  Generated random state ID for verifying requests to redirect URI: ' + state);
@@ -183,29 +184,29 @@ function authCodeGrant() {
     prefsLocal.deletePref('spotify-server_access_token');
     prefsLocal.deletePref('spotify-server_refresh_token');
     prefsLocal.deletePref('spotify-server_token_expiration_date');
-    prefsLocal.deletePref('spotify-server_user_display_name');
-    prefsLocal.deletePref('spotify-server_user_id');
+    spotifyDisplayName = undefined;
+    spotifyUserId = undefined;
     spotifyApi.authorizationCodeGrant(prefsLocal.getPref('spotify-server_authorizationCode'))
-        .then(function (data) {
+        .then(function (result) {
             log.warn('spotify-server.js:  Authorisation granted.');
-            log.warn('spotify-server.js:    Access token: ', data.body['access_token']);
-            log.warn('spotify-server.js:    Access token expiry: ' + data.body['expires_in']);
-            log.warn('spotify-server.js:    Refresh token: ' + data.body['refresh_token']);
+            log.warn('spotify-server.js:    Access token: ', result.body['access_token']);
+            log.warn('spotify-server.js:    Access token expiry: ' + result.body['expires_in']);
+            log.warn('spotify-server.js:    Refresh token: ' + result.body['refresh_token']);
             // Save and set the access and refresh tokens
-            prefsLocal.setPref('spotify-server_access_token', data.body['access_token']);
-            prefsLocal.setPref('spotify-server_refresh_token', data.body['refresh_token']);
-            spotifyApi.setAccessToken(data.body['access_token']);
-            spotifyApi.setRefreshToken(data.body['refresh_token']);
+            prefsLocal.setPref('spotify-server_access_token', result.body['access_token']);
+            prefsLocal.setPref('spotify-server_refresh_token', result.body['refresh_token']);
+            spotifyApi.setAccessToken(result.body['access_token']);
+            spotifyApi.setRefreshToken(result.body['refresh_token']);
             // Calculate date of access token expiry in ms
-            prefsLocal.setPref('spotify-server_token_expiration_date', new Date().getTime() + data.body['expires_in'] * 1000); //Convert seconds to ms
+            prefsLocal.setPref('spotify-server_token_expiration_date', new Date().getTime() + result.body['expires_in'] * 1000); //Convert seconds to ms
             log.warn('spotify-server.js:  Token expiration date set (ms):  ' + prefsLocal.getPref('spotify-server_token_expiration_date'));
             return spotifyApi.getMe();
-        }).then(function (data) {
+        }).then(function (result) {
             // Success
-            log.warn('spotify-server.js:  Connected successfully.  Retrieved data for ' + data.body['display_name']);
-            log.warn('spotify-server.js:    Email: ' + data.body.email);
-            log.warn('spotify-server.js:    Account type: ' + data.body.product);
-            log.warn('spotify-server.js:    Image URL: ' + data.body.images[0].url);
+            log.warn('spotify-server.js:  Connected successfully.  Retrieved data for ' + result.body['display_name']);
+            log.warn('spotify-server.js:    Email: ' + result.body.email);
+            log.warn('spotify-server.js:    Account type: ' + result.body.product);
+            log.warn('spotify-server.js:    Image URL: ' + result.body.images[0].url);
         // TODO - THIS PROMISE HAS NO ERROR HANDLING, ONLY CATCH, BUT DOES IT NEED A CATCH HERE?
         }).catch(function (err) {
             log.warn('spotify-server.js:  [ERROR] Exception after authorision was not successfully granted.  Try revoking access to the application in the Apps section of your Spotify account, and re-authenticating.  Error ', err.message);
@@ -218,27 +219,23 @@ function authCodeGrant() {
 ///////////////////////////////////////////////////////////////////
 
 function refreshAccessToken() {
-    // TODO - IS THIS NESTED PROMISE NECESSARY?
-    return new Promise(function (resolve, reject) {
-        spotifyApi.refreshAccessToken()
-            .then(function (data) {
-                // Save the access token so that it's used in future calls
-                spotifyApi.setAccessToken(data.body['access_token']);
-                prefsLocal.setPref('spotify-server_access_token', data.body['access_token']);
-                log.warn('spotify-server.js:  The access token has been refreshed: ' + data.body['access_token']);
-                // Calculate date of access token expiry in ms
-                prefsLocal.setPref('spotify-server_token_expiration_date', new Date().getTime() + (data.body['expires_in'] * 1000)); //Convert seconds to ms
-                log.warn('spotify-server.js:  Token expiration date refreshed (ms):  ' + new Date().getTime() + " / " + prefsLocal.getPref('spotify-server_token_expiration_date'));
-                resolve('access_token_refreshed')
-            }, function (err) {
-                log.warn('spotify-server.js:  [ERROR] Could not refresh access token.  It is possible the user revoked access to dayjob.  Clearing auth data and re-launching auth URL.  Error ' + err.message);
-                //launchAuthUrl();
-                reject(err);
-            }).catch(function (err) {
-                log.warn('spotify-server.js:  [ERROR] Exception with refresing access token.', err.message);
-                reject(err);
-            });
-    })
+    return spotifyApi.refreshAccessToken()
+        .then(function (result) {
+            log.warn('spotify-server.js:  The access token has been refreshed: ' + result.body['access_token']);
+            // Save the access token so that it's used in future calls (setAccessToken does not return a Promise)
+            spotifyApi.setAccessToken(result.body['access_token']);
+            prefsLocal.setPref('spotify-server_access_token', result.body['access_token']);
+            // Calculate date of access token expiry in ms
+            prefsLocal.setPref('spotify-server_token_expiration_date', new Date().getTime() + (result.body['expires_in'] * 1000)); //Convert seconds to ms
+            log.warn('spotify-server.js:  The access token expiration date refreshed (ms):  ' + new Date().getTime() + " / " + prefsLocal.getPref('spotify-server_token_expiration_date'));
+            return Promise.resolve('access_token_refreshed')
+        }, function (err) {
+            log.warn('spotify-server.js:  [ERROR] Could not refresh access token.  It is possible the user revoked access to dayjob.  Clearing auth data and re-launching auth URL.  Error ' + err.message);
+            // Handle spotifyApi.refreshAccessToken promise error gracefully
+            handledErr = new Error("cannot_refresh_access_token")
+            handledErr.error = err;
+            return Promise.reject(handledErr);
+        })
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -249,9 +246,17 @@ function refreshAccessToken() {
 //// Get the current playling track
 ///////////////////////////////////////////////////////////////////
 
-module.exports.getMyCurrentPlayingTrack = function () {
+function getMyCurrentPlayingTrack() {
     // Directly exports the result of the spotify-web-api-node function
-    return spotifyApi.getMyCurrentPlayingTrack();
+    return spotifyApi.getMyCurrentPlayingTrack()
+        .then(function (result){
+            return result;
+        },function (err){
+            // Handle external promise error gracefully
+            handledErr = new Error("cannot_get_playing_track_info")
+            handledErr.error = err;
+            return Promise.reject(handledErr);
+        })
 }
 
 //// Add tracks to playlist
@@ -264,7 +269,15 @@ module.exports.addTracksToPlaylist = function (playlistId, tracks) {
 function addTracksToPlaylist(playlistId, tracks){
     // Needs playlistId, tracks, options, callback
     // Example '3EsfV6XzCHU8SPNdbnFogK','["spotify:track:4iV5W9uYEdYUVa79Axb7Rh", "spotify:track:1301WleyT98MSxVHPZCA6M"]'
-    return spotifyApi.addTracksToPlaylist(playlistId, tracks);
+    return spotifyApi.addTracksToPlaylist(playlistId, tracks)
+        .then(function (result){
+            return result;
+        },function (err){
+            // Handle external promise error gracefully
+            handledErr = new Error("cannot_add_track_to_playlist")
+            handledErr.error = err;
+            return Promise.reject(handledErr);
+        })
 }
 
 //// Remove track from playlist
@@ -276,36 +289,32 @@ module.exports.removeTracksFromPlaylist = function (playlistId, tracks) {
 
 function removeTracksFromPlaylist (playlistId, tracks) {
     // Needs playlistId, tracks, options, callback
-    return spotifyApi.removeTracksFromPlaylist(playlistId, tracks);
+    return spotifyApi.removeTracksFromPlaylist(playlistId, tracks)
+        .then(function (result){
+            return result;
+        },function (err){
+            // Handle external promise error gracefully
+            handledErr = new Error("cannot_remove_track_from_playlist")
+            handledErr.error = err;
+            return Promise.reject(handledErr);
+        })
 }
 
-//// Skip track
-///////////////////////////////////////////////////////////////////
-
-module.exports.skipToNext = function() {
-    return skipToNext();
-}
-function skipToNext(){
-    // Always returns a resolved promise even on failure, just logs failure silently
-    return new Promise(function (resolve, reject) {
-        spotifyApi.skipToNext()
-            .then(function (result){
-                log.warn('spotify-server.js: Skipping track result: ' + result);
-            }, function (err) {
-                log.warn('spotify-server.js: Error when talking to Spotify API.  Error ' + err);
-            }).catch(function (err) {
-                log.warn('spotify-server.js:  Exception when talking to Spotify API.  Error ' + err);
-            })
-        resolve(null);
-    })
-}
 
 //// Get playlist
 ///////////////////////////////////////////////////////////////////
 
-module.exports.getPlaylist = function (playlistId) {
+function getPlaylist() {
     // Directly exports the result of the spotify-web-api-node function
-    return spotifyApi.getPlaylist(playlistId);
+    return spotifyApi.getPlaylist(playlistId)
+        .then(function (result){
+            return result;
+        },function (err){
+            // Handle external promise error gracefully
+            handledErr = new Error("cannot_get_playlist_info")
+            handledErr.error = err;
+            return Promise.reject(handledErr);
+        })
 }
 
 //// Get playlist name
@@ -316,20 +325,29 @@ module.exports.getPlaylistName = function(playlistId) {
 }
 
 function getPlaylistName(playlistId){
-    // TODO - IS THIS NESTED PROMISE NECESSARY?
-    return new Promise(function (resolve, reject) {
-        spotifyApi.getPlaylist(playlistId)
-            .then(function (result) {
-                log.warn('spotify-server.js:  Retrieved playlist name \'' + result.body.name + '\' for playlist \'' + playlistId + '\'');
-                resolve(result.body.name);
-            }, function (err) {
-                log.warn('spotify-server.js:  [ERROR] Error with retrieving playlist name.' + err.message);
-                reject(err);
-            }).catch(function (err) {
-                log.warn('spotify-server.js:  [ERROR] Exception with retrieving playlist name.', err.message);
-                reject(err);
-            });
+    return spotifyApi.getPlaylist(playlistId)
+    .then(function (result){
+        log.warn('spotify-server.js:  Retrieved playlist name \'' + result.body.name + '\' for playlist \'' + playlistId + '\'');
+        Promise.resolve(result.body.name);
     })
+}
+
+//// Skip track
+///////////////////////////////////////////////////////////////////
+
+module.exports.skipToNext = function() {
+    return skipToNext();
+}
+function skipToNext(){
+    return spotifyApi.skipToNext()
+        .then(function (result){
+            log.warn('spotify-server.js: Skipping track using Spotify API successful: ' + result);
+            return result;
+        },function (err){
+            log.warn('spotify-server.js: Skipping track using Spotify APU failed: ' + err);
+            // Always returns a resolved promise even on failure, just logs failure silently
+            return Promise.resolve(null);
+        })
 }
 
 
@@ -344,10 +362,14 @@ function getPlayingTrackInfo(){
     return checkApiConnection()
         .then(function (result) {
             log.warn('spotify-server.js:  Check API connection succeeded, now getting currently playing track info...');
-            return spotifyApi.getMyCurrentPlayingTrack()
+            return getMyCurrentPlayingTrack()
         }).then(function (result) {
             log.warn('spotify-server.js:  Got current track JSON: ' + JSON.stringify(result));
             trackInfo = new Object(); 
+            if (result.statusCode == 204){
+                // No music is playing
+                return Promise.reject(new Error("track_not_playing"))
+            }
             if (result.body.currently_playing_type == "episode"){
                 // We can't process podcasts at all so just abort 
                 return Promise.reject(new Error("podcast"))
@@ -358,14 +380,7 @@ function getPlayingTrackInfo(){
             trackInfo.albumName = result.body.item.album.name;
             trackInfo.fullJson = result
             return Promise.resolve(trackInfo)
-        })/*,function (err){
-            console.log("new err caught it")
-        }).then(function(result){
-            console.log("app was allowed to continue")
-            return Promise.resolve("allowed to continue");
-        },function(err){
-            console.log("new err 2 caught it")
-        }); // try adding error code here */
+        }); 
 }
 
 
@@ -390,7 +405,7 @@ function getTrackContext(playlingTrackJson){
         else if (playlingTrackJson.body.context.type == "artist"){context.name = "Artist"; resolve(context)}                                                      // Artist playback - add only
         else if (playlingTrackJson.body.context.type == "album"){context.name = "Album"; resolve(context)}                                                        // Album playback - add only
         else if (playlingTrackJson.body.context.type == "playlist" && playlingTrackJson.body.context.uri.split(':').length == 5) {
-            if (playlingTrackJson.body.context.uri.split(':')[2] == prefsLocal.getPref('spotify-server_user_id')){                                                                                                                                  // Playlist - add / remove
+            if (playlingTrackJson.body.context.uri.split(':')[2] == spotifyUserId){                                                                                                                                  // Playlist - add / remove
                 // Only return playlist ID and name if playlist owned by the user 
                 context.name = "Playlist"      
                 context.readOnly=false;
@@ -509,182 +524,6 @@ function movePlayingTrackToPlaylist(destPlaylistId, destPlaylistName){
         });
 }
 
-
-///////////////////////////////////////////////////////////////////
-//// PLAYGROUND
-///////////////////////////////////////////////////////////////////
-// Functions here are for future features and are not currently used
-
-
-//// Get user playlists
-///////////////////////////////////////////////////////////////////
-
-module.exports.getUserPlaylists = function () {
-    // Directly exports the result of the spotify-web-api-node function
-    return spotifyApi.getUserPlaylists();
-}
-
-//// Check if song exists in playlist
-///////////////////////////////////////////////////////////////////
-
-// Call the getPlaylistTracks recursively until we have all pages of the playlist tracks??
-module.exports.ifSongExistsInPlaylist = function (trackUri, playlistId) {
-    return spotifyApi.getPlaylistTracks(prefsLocal.getPref('spotify-server_user_id'), playlistId, { offset: 0 })
-        .then(function (result) {
-            console.log('spotify-server.js:  Got playlist tracks JSON: ' + JSON.stringify(result));
-            console.log('spotify-server.js:  Got playlist tracks JSON with an offset of ' + result.body.offset + ' of ' + result.body.total + ' tracks (limit: ' + result.body.limit) + ')';
-            return Promise.resolve(result);
-        }).then(function (result) {
-            var found = false;
-            console.log('spotify-server.js:  Checking playlist ' + playlistId + ' with ' + result.body.items.length + ' tracks for track URI ' + trackUri);
-            for (var i = 0; i < 34; ++i) {
-
-                if (result.body.items[i].track.uri == trackUri) {
-                    console.log('spotify-server.js:    ' + trackUri + ' matched at track position ' + i);
-                    found = true;
-                }
-
-            }
-            return Promise.resolve(found);
-        });
-}
-
-/*
-module.exports.getMyCurrentPlayingTrack = function(){
-    /*return new Promise(function (resolve, reject){
-    checkApiConnection()
-    .then(spotifyApi.getMyCurrentPlayingTrack())
-    
-    /*.then(function(data){
-        log.warn('spotify-server.js:  My currently playing track: ' + data.body.item['uri']);
-        log.warn('spotify-server.js:  My currently playing track playlist: ' +  data.body.context['uri']);
-        //resolve (data.body)
-    
-    
-    })
-    
-    ,function(err){
-        log.warn('spotify-server.js:  Error retrieving my currently playing track from API ' + err);
-        reject (err);
-    }).catch(function(err){
-        log.warn('spotify-server.js:  Exception retrieving my currently playing track from API ' + err);
-        reject (err);
-    });
-    }, function(err){
-        log.warn('spotify-server.js:  Error when calling Spotify API getMyCurrentPlayingTrack: ' + err);
-        reject (err);
-    }).catch(function(err){
-        log.warn('spotify-server.js:  Exception when calling Spotify API getMyCurrentPlayingTrack ' + err);
-        reject (err);
-    });
-    /*})
-};
-
-*/
-
-
-
-
-
-/*
-
-module.exports.getPlaylist = function(id,uri){
-    return new Promise(function (resolve, reject){
-        checkApiConnection()
-        .then(function(data){
-            spotifyApi.getPlaylist(id,uri)
-            .then(function(data){
-                log.warn('spotify-server.js:  Retrieved playlist: ' + JSON.stringify(data.body));
-                resolve (data.body)
-            },function(err){
-                log.warn('spotify-server.js:  Error retrieving playlist from API ' + err);
-                reject (err);
-            }).catch(function(err){
-                log.warn('spotify-server.js:  Exception retrieving playlist from API ' + err);
-                reject (err);
-            });
-        }, function(err){
-            log.warn('spotify-server.js:  Error when calling Spotify API getPlaylist: ' + err);
-            reject (err);
-        }).catch(function(err){
-            log.warn('spotify-server.js:  Exception when calling Spotify API getPlaylist ' + err);
-            reject (err);
-        });
-    });
-}
-
-*/
-
-
-
-/* 
-module.exports.removeCurrentPlayingTrackFromPlaylist = function(){
-    return new Promise(function (resolve, reject){
-        checkApiConnection()
-        .then(function(data){
-            // Finish me
-            //removeTracksFromPlaylist: function(userId, playlistId, tracks, options, callback) 
-            //spotifyApi.removeTracksFromPlaylist(prefsLocal.getPref('spotify-server_user_id'))
-        }, function(err){
-            log.warn('spotify-server.js:  Error when calling Spotify API removeCurrentPlayingTrackFromPlaylist: ' + err);
-            reject (err);
-        }).catch(function(err){
-            log.warn('spotify-server.js:  Exception when calling Spotify API removeCurrentPlayingTrackFromPlaylist ' + err);
-        });
-    })
-}
-
-*/
-
-
-
-
-/* 
-module.exports.addTracksToPlaylist = function(trackUri, playlistUri){
-    return new Promise (function (resolve, reject){
-        checkApiConnection()
-        .then(function(data){
-            // do somethig
-        }, function(err){
-            log.warn('spotify-server.js:  Error when calling Spotify API addTracksToPlaylist: ' + err);
-            reject (err);
-        }).catch(function(err){
-            log.warn('spotify-server.js:  Exception when calling Spotify API addTracksToPlaylist ' + err);
-        });
-    })
-}
-
-*/
-
-/* TODO
-*  getFollowedArtists
-*  getUserPlaylists: function(userId, options, callback) {
-*  addTracksToPlaylist: function(userId, playlistId, tracks, options, callback) {
-*  removeTracksFromPlaylist: function(userId, playlistId, tracks, options, callback) {
-*  createPlaylist: function(userId, playlistName, options, callback) {   
-*/
-
-
-///////////////////////////////////////////////////////////////////
-//// API calls 
-///////////////////////////////////////////////////////////////////
-
-/*
-module.exports.getRecentlyPlayedTracks = function(){
-    return new Promise(function (resolve, reject){
-        spotifyApi.getMyRecentlyPlayedTracks()
-        .then(function(data){
-            log.warn('spotify-server.js:  My recently played tracks: ' +  JSON.stringify(data.body));
-            resolve (data.body)
-        },function(err){
-            log.warn('spotify-server.js:  Error retrieving my recently played tracks from API ' + err);
-        }.catch(function(err){
-            log.warn('spotify-server.js:  Exception retrieving my recently played tracks from API ' + err);
-            reject (err);
-        });
-    });
-}
-*/
 
 ///////////////////////////////////////////////////////////////////
 //// Playlist settings

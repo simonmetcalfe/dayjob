@@ -47,12 +47,13 @@ Add the playlists you want to be able to add songs to.  Currently 10 playlists a
 ### Adding and removing songs
 
 dayjob uses the following keyboard shortcuts
+
 <img src="assets_readme/keyboard-shortcut-keys.png" height=200>
 
 * For songs you like, use the shorcuts *ctrl + alt + 1* _to_ *0* to add them to your playlists.  
-   <img src="assets_readme/ctrl+alt+1to0.png" height=50>
+   * <img src="assets_readme/ctrl+alt+1to0.png" height=50>
 * For songs you don't like, use the shotcut *ctrl + alt + -* to remove it from the playlist it is playing in \* 
-   <img src="assets_readme/ctrl+alt+minus.png" height=50>
+   * <img src="assets_readme/ctrl+alt+minus.png" height=50>
 
 \* Songs can only be moved or removed from the source playlist if you created the playlist.  If you're playling songs from someone elses playlist, the radio, artists, albums etc., the song won't be removed.
 
