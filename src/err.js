@@ -11,6 +11,8 @@
 //// Error array
 ///////////////////////////////////////////////////////////////////
 
+// NEW ERRORS TO HANDLE - error_parsing_playing_track_json, cannot_get_source_playlist_name, playlist_is_read_only
+
 errors = new Array(          // Error code                        // Error title                       // Error description                                                                   // Action code          // Action CTA
                    new Array('no_client_id',                      'Check Spotify connection',          'Can\'t connect to Spotify without a client ID and secret',                            'check_api_connection', 'Open Spotify connection settings'),
                    new Array('no_authorisation_code',             'Check Spotify connection',          'dayjob needs authorising with Spotify.',                                              'authorise_dayjob',     'Authorise in web browser'),
@@ -18,7 +20,6 @@ errors = new Array(          // Error code                        // Error title
                    new Array('cannot_get_users_details',          'Error talking to Spotify',          'Couldn\'t get the users details.  It may be an internet issue.  Please try again.',             'connect_api',             'Try again'),
                    new Array('cannot_get_auth_url',               'Error talking to Spotify',          'Couldn\'t get the authorisation URL.  It may be an internet issue.  Please try again.',         'authorise_dayjob',             'Try authorising again'),
                    new Array('cannot_get_playing_track_info',     'Error talking to Spotify',          'Couldn\'t get info on the playing track.  It may be an internet issue.  Please try again.',     'no_action',             ''),
-                   new Array('cannot_get_track_context',          'Error talking to Spotify',          'Couldn\'t get track context.  It may be an internet issue.  Please try again.',                 'no_action',             ''),
                    new Array('cannot_get_playlist_info',          'Error talking to Spotify',          'Couldn\'t get playlist info.  It may be an internet issue.  Please try again.',               'no_action',             ''),
                    new Array('cannot_add_track_to_playlist',      'Error talking to Spotify',          'Couldn\'t add track to playlist.  It may be an internet issue.  Please try again.',             'no_action',             ''),
                    new Array('cannot_remove_track_from_playlist', 'Error talking to Spotify',          'Couldn\'t remopve track from playlist.  It may be an internet issue.  Please try again.',       'no_action',             ''),

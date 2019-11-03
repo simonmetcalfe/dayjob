@@ -261,12 +261,8 @@ app.on('ready', () => {
     }).then(function (result) {  
       // No action required    
     }, function (err) {
-      log.warn('main.js: Error when talking to Spotify API (-).  Error ' + err);
-      console.log("msg " + err.message)
-      console.log("code " + err.code)
-      console.log("error " + err.error)
-      console.log("stack " + err.stack)
-      console.log("obj " + err)
+      log.warn('main.js: Error when talking to Spotify API (-). ' + err.stack);
+      if (err.hasOwnProperty("error")){log.warn('main.js: Original error stack: ' + err.error.stack)}
       showNotification('Error when talking to Spotify API', err.message, '', '');
     }).catch(function (err) {
       log.warn('main.js:  Exception when talking to Spotify API (-).  Error ' + err);

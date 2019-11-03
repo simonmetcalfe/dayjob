@@ -49,13 +49,14 @@ spotifyApi.removeTracksFromPlaylist
 RESOLVE result
 DONE * ERR 'cannot_get_playing_track_info' - getPlayingTrackInfo could return this if an error is received from the API
 DONE * ERR 'track_not_playing' - getPlayingTrackInfo could return this if it's determined a track is not playing 
-* ERR 'podcast' - already returned from getPlayingTrackInfo, should be handled becuase NOTHING can be done with a podcast
-* ERR 'cannot_get_track_context' - getContext COULD be updated to return this if the context cannot be determined 
+DONE * ERR 'track_is_podcast' - already returned from getPlayingTrackInfo, should be handled becuase NOTHING can be done with a podcast
+DONE * ERR 'error_parsing_playing_track_json'
+DONE * ERR 'cannot_get_source_playlist_name'
 DONE * ERR 'cannot_get_playlist_info' - getPlaylistName COULD be updated return this alongside the error from the API
 DONE * ERR 'cannot_add_track_to_playlist' - addTrackToPlaylist could return if API fails
 DONE * ERR 'cannot_remove_track_from_playlist' - removeTraksFromPlaylist could return if API fails
-* ERR 'playlist_is_read_only' - removePlaylingTracksFromPlaylist could throw this error because nothing can be removed if playlist is read only
-ALSO CONSIDER ANY OF THE API ERRORS
+DONE * ERR 'playlist_is_read_only' - removePlaylingTracksFromPlaylist could throw this error because nothing can be removed if playlist is read only
+N/A ALSO CONSIDER ANY OF THE API ERRORS
 
 SPOTIFY-SERVER.JS PROMISES
 --------------------------

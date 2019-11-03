@@ -250,7 +250,7 @@ function getMyCurrentPlayingTrack() {
     // Directly exports the result of the spotify-web-api-node function
     return spotifyApi.getMyCurrentPlayingTrack()
         .then(function (result){
-            return result;
+            return Promise.resolve(result);
         },function (err){
             // Handle external promise error gracefully
             handledErr = new Error("cannot_get_playing_track_info")
@@ -271,7 +271,7 @@ function addTracksToPlaylist(playlistId, tracks){
     // Example '3EsfV6XzCHU8SPNdbnFogK','["spotify:track:4iV5W9uYEdYUVa79Axb7Rh", "spotify:track:1301WleyT98MSxVHPZCA6M"]'
     return spotifyApi.addTracksToPlaylist(playlistId, tracks)
         .then(function (result){
-            return result;
+            return Promise.resolve(result);
         },function (err){
             // Handle external promise error gracefully
             handledErr = new Error("cannot_add_track_to_playlist")
@@ -291,7 +291,7 @@ function removeTracksFromPlaylist (playlistId, tracks) {
     // Needs playlistId, tracks, options, callback
     return spotifyApi.removeTracksFromPlaylist(playlistId, tracks)
         .then(function (result){
-            return result;
+            return Promise.resolve(result);
         },function (err){
             // Handle external promise error gracefully
             handledErr = new Error("cannot_remove_track_from_playlist")
@@ -304,11 +304,12 @@ function removeTracksFromPlaylist (playlistId, tracks) {
 //// Get playlist
 ///////////////////////////////////////////////////////////////////
 
-function getPlaylist() {
+function getPlaylist(playlistId) {
     // Directly exports the result of the spotify-web-api-node function
     return spotifyApi.getPlaylist(playlistId)
         .then(function (result){
-            return result;
+            //log.warn('spotify-server.js:  Retrieved playlist \'' + playlistId + ', JSON: ' + JSON.stringify(result));
+            return Promise.resolve(result);
         },function (err){
             // Handle external promise error gracefully
             handledErr = new Error("cannot_get_playlist_info")
@@ -325,10 +326,10 @@ module.exports.getPlaylistName = function(playlistId) {
 }
 
 function getPlaylistName(playlistId){
-    return spotifyApi.getPlaylist(playlistId)
+    return getPlaylist(playlistId)
     .then(function (result){
         log.warn('spotify-server.js:  Retrieved playlist name \'' + result.body.name + '\' for playlist \'' + playlistId + '\'');
-        Promise.resolve(result.body.name);
+        return Promise.resolve(result.body.name);
     })
 }
 
@@ -342,7 +343,7 @@ function skipToNext(){
     return spotifyApi.skipToNext()
         .then(function (result){
             log.warn('spotify-server.js: Skipping track using Spotify API successful: ' + result);
-            return result;
+            return Promise.resolve(result);
         },function (err){
             log.warn('spotify-server.js: Skipping track using Spotify APU failed: ' + err);
             // Always returns a resolved promise even on failure, just logs failure silently
@@ -353,91 +354,69 @@ function skipToNext(){
 
 //// Get playing track info
 ///////////////////////////////////////////////////////////////////
+// Get basic track info from JSON response
+// Identify the source of the playling track using logic, and if it is read only 
+// Lookup name of playlist if possible (2nd API call)
 
 module.exports.getPlayingTrackInfo = function() {
     return getPlayingTrackInfo();
 }
 
 function getPlayingTrackInfo(){
+    trackInfo = new Object(); 
+    trackInfo.context = new Object();
     return checkApiConnection()
         .then(function (result) {
             log.warn('spotify-server.js:  Check API connection succeeded, now getting currently playing track info...');
             return getMyCurrentPlayingTrack()
         }).then(function (result) {
             log.warn('spotify-server.js:  Got current track JSON: ' + JSON.stringify(result));
-            trackInfo = new Object(); 
-            if (result.statusCode == 204){
-                // No music is playing
-                return Promise.reject(new Error("track_not_playing"))
-            }
-            if (result.body.currently_playing_type == "episode"){
-                // We can't process podcasts at all so just abort 
-                return Promise.reject(new Error("podcast"))
-            }
+            // Detect unsupported responses and reject
+            if (result.statusCode == 204){return Promise.reject(new Error("track_not_playing"))}  // No music is playing
+            if (result.body.currently_playing_type == "episode"){return Promise.reject(new Error("track_is_podcast"))}  // We can't process podcasts at all so just abort 
+            //Write basic track info
             trackInfo.uri = result.body.item.uri;
             trackInfo.name = result.body.item.name;
             trackInfo.artistName = result.body.item.artists[0].name;
             trackInfo.albumName = result.body.item.album.name;
             trackInfo.fullJson = result
+            // Set context defaults
+            trackInfo.context.name = null;
+            trackInfo.context.readOnly = true;
+            trackInfo.context.sourcePlaylistId = null;
+            trackInfo.context.sourcePlaylistName = null;
+            // Determine context
+            if (result.body.item.is_local)                    {trackInfo.context.name = "Local file" }  
+            else if (result.body.context == null)             {trackInfo.context.name = "Liked or Recommended" }         
+            else if (result.body.context.type == "artist")    {trackInfo.context.name = "Artist"}                       
+            else if (result.body.context.type == "album")     {trackInfo.context.name = "Album"}             
+            else if (result.body.context.type == "playlist" && result.body.context.uri.split(':').length == 3) {trackInfo.context.name = "Radio"} // When radio songs played from radio thumbnail         
+            else if (result.body.context.type == "playlist" && result.body.context.uri.split(':').length == 5) {
+                if (result.body.context.uri.split(':')[2] == spotifyUserId){
+                    trackInfo.context.readOnly=false;
+                    trackInfo.context.name = "Playlist"    
+                }    
+                else {trackInfo.context.name = "Shared playlist / Radio";}  // Radio songs indistinguisable from shared playlists if songs are played from the list screen
+                trackInfo.context.sourcePlaylistId = result.body.context.uri.split(':')[4];
+                log.warn('spotify-server.js:  Getting playlist name for playlist ID... ' + trackInfo.context.sourcePlaylistId)
+                return getPlaylistName(trackInfo.context.sourcePlaylistId)
+            }
+            else {trackInfo.context.name = "Unknown source";}
+            return Promise.resolve('ready')
+        }).then(function(result){
+            if (result != 'ready'){
+                // Set the source playlist name
+                log.warn('spotify-server.js:  Setting source playlust name to  ' + result)
+                trackInfo.context.sourcePlaylistName = result
+            }
             return Promise.resolve(trackInfo)
-        }); 
+        },function (err){
+            // Catch any errors we might have parsing the JSON
+            handledErr = new Error("error_parsing_playing_track_json")
+            handledErr.error = err;
+            return Promise.reject(handledErr);
+        })
 }
-
-
-//// Get track context
-///////////////////////////////////////////////////////////////////
-
-// Identify the source of the playling track and if it is read only 
-// Return playlist ID and info if the playlist is the users own 
-// COULD BE IMPROVED to always return the playlist name if available, e.g. for radio and shared playlists
-
-function getTrackContext(playlingTrackJson){
-    // Promise is never rejected, but could error with bad JSON
-    return new Promise(function (resolve, reject) {
-        log.warn('spotify-server.js:  Determing the context of track...')
-        context = new Object();  //store context name, readOnly and sourcePlaylistId 
-        context.name = null;
-        context.readOnly=true;
-        context.sourcePlaylistId = null;
-        context.sourcePlaylistName = null;
-        if (playlingTrackJson.body.item.is_local) {context.name = "Local file"; resolve(context)}  
-        else if (playlingTrackJson.body.context == null) {context.name = "Liked or Recommended"; resolve(context)} 
-        else if (playlingTrackJson.body.context.type == "artist"){context.name = "Artist"; resolve(context)}                                                      // Artist playback - add only
-        else if (playlingTrackJson.body.context.type == "album"){context.name = "Album"; resolve(context)}                                                        // Album playback - add only
-        else if (playlingTrackJson.body.context.type == "playlist" && playlingTrackJson.body.context.uri.split(':').length == 5) {
-            if (playlingTrackJson.body.context.uri.split(':')[2] == spotifyUserId){                                                                                                                                  // Playlist - add / remove
-                // Only return playlist ID and name if playlist owned by the user 
-                context.name = "Playlist"      
-                context.readOnly=false;
-                context.sourcePlaylistId = playlingTrackJson.body.context.uri.split(':')[4];
-                log.warn('spotify-server.js:  Getting playlist info for playlist ID... ' + context.sourcePlaylistId)
-                // TODO - IS THIS NESTED PROMISE NECESSARY?
-                getPlaylistName(context.sourcePlaylistId)
-                    .then(function (result) {
-                        context.sourcePlaylistName = result;
-                        log.warn('spotify-server.js:  Got source playlist name: ' + context.sourcePlaylistName);
-                        resolve(context)
-                    }, function (err) {
-                        log.warn('spotify-server.js:  [ERROR] Error with retrieving playlist name.' + err.message);
-                        reject(err);
-                    }).catch(function (err) {
-                        log.warn('spotify-server.js:  [ERROR] Exception with retrieving playlist name.', err.message);
-                        reject(err);
-                    });
-            }    
-            else {
-                context.name = "Shared playlist / Radio"
-                resolve(context)
-            }    
-        }   
-        else {
-            context.name = "Unknown source"
-            resolve(context)
-        }
-        
-    })
-}
-
 
 //// Remove playing track from its playlist 
 ///////////////////////////////////////////////////////////////////
@@ -451,12 +430,9 @@ function removePlayingTrackFromPlaylist(){
     return getPlayingTrackInfo()
         .then(function (result) {
             trackInfo = result;
-            return getTrackContext(result.fullJson)
-        }).then(function (result) {
-            trackInfo.context = result;
             if (trackInfo.context.readOnly == true){
                 // Can't modify the playlist so throw an error
-                return Promise.reject(new Error("Cannot remove tracks playing from " + trackInfo.context.name))
+                return Promise.reject(new Error("playlist_is_read_only")) //Does not communicate playlist name, may need to improve this
             }
             log.warn('spotify-server.js:  Removing track ' + trackInfo.name + ', ' + trackInfo.albumName + ', ' + trackInfo.artistName + ', ' + trackInfo.uri + ' from ' + trackInfo.context.sourcePlaylistName + " , " + trackInfo.context.sourcePlaylistId);
             return removeTracksFromPlaylist(trackInfo.context.sourcePlaylistId, [{ uri: trackInfo.uri }])  
@@ -481,9 +457,6 @@ function copyPlayingTrackToPlaylist(destPlaylistId, destPlaylistName){
             trackInfo = result;
             trackInfo.destPlaylistId = destPlaylistId;
             trackInfo.destPlaylistName = destPlaylistName;
-            return getTrackContext(result.fullJson)
-        }).then(function (result) {
-            trackInfo.context = result;
             log.warn('spotify-server.js:  Adding track ' + trackInfo.name + ', ' + trackInfo.albumName + ', ' + trackInfo.artistName + ', ' + trackInfo.uri + ' from ' + trackInfo.context.sourcePlaylistName + " , " + trackInfo.context.sourcePlaylistId + " to " + trackInfo.destPlaylistId + " , " + trackInfo.destPlaylistName);
             return addTracksToPlaylist(trackInfo.destPlaylistId, [trackInfo.uri])
         }).then(function (result) {    
@@ -507,9 +480,6 @@ function movePlayingTrackToPlaylist(destPlaylistId, destPlaylistName){
             trackInfo = result;
             trackInfo.destPlaylistId = destPlaylistId;
             trackInfo.destPlaylistName = destPlaylistName;
-            return getTrackContext(result.fullJson)
-        }).then(function (result) {
-            trackInfo.context = result;
             log.warn('spotify-server.js:  Adding track ' + trackInfo.name + ', ' + trackInfo.albumName + ', ' + trackInfo.artistName + ', ' + trackInfo.uri + ' from ' + trackInfo.context.sourcePlaylistName + " , " + trackInfo.context.sourcePlaylistId + " to " + trackInfo.destPlaylistId + " , " + trackInfo.destPlaylistName);
             return addTracksToPlaylist(trackInfo.destPlaylistId, [trackInfo.uri])
         }).then(function (result) {    
