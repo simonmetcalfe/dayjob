@@ -37,30 +37,42 @@ log.warn('main.js:  app.getAppPath path is reported as: ' + app.getAppPath());
 
 
 ///////////////////////////////////////////////////////////////////
+////  Load application defaults
+///////////////////////////////////////////////////////////////////
+
+// Any variables that should have a default should be specified here
+
+if (prefsLocal.getPref('dayjob_always_move_tracks') == undefined){prefsLocal.setPref('dayjob_always_move_tracks',0)}
+
+///////////////////////////////////////////////////////////////////
 ////  Load saved playlist array
 ///////////////////////////////////////////////////////////////////
 
 // Playlist storage
-var playlists = [];
+var playlists = {};
 
 // v1 playlist storage is an 11 object multimensional array (0 to 10), representing the keyboard keys `1234567890 in order
 // Each array item contains an array with (keyboard_key,playlist_uri,playlist_name,boolean_move_track) 
 
 if (prefsLocal.getPref('dayjob_playlists_v1') == undefined){
   // No playlists stored, create a blank array
-  playlists = new Array(new Array('`','test','',0),
-                        new Array('1','test','',0),
-                        new Array('2','','',0),
-                        new Array('3','','',0),
-                        new Array('4','','',0),
-                        new Array('5','','',0),
-                        new Array('6','','',0),
-                        new Array('7','','',0),
-                        new Array('8','','',0),
-                        new Array('9','','',0),
-                        new Array('0','','',0));
+  playlists = 
+    {
+      "`" : {playlistID: "", playlistName:""},
+      "1" : {playlistID: "", playlistName:""},
+      "2" : {playlistID: "", playlistName:""},
+      "3" : {playlistID: "", playlistName:""},
+      "4" : {playlistID: "", playlistName:""},
+      "5" : {playlistID: "", playlistName:""},
+      "6" : {playlistID: "", playlistName:""},
+      "7" : {playlistID: "", playlistName:""},
+      "8" : {playlistID: "", playlistName:""},
+      "9" : {playlistID: "", playlistName:""},
+      "0" : {playlistID: "", playlistName:""},
+    }
   prefsLocal.setPref('dayjob_playlists_v1',playlists);
 }
+
 else {
   // Load stored playlists
   playlists = prefsLocal.getPref('dayjob_playlists_v1');
@@ -129,7 +141,6 @@ function openMainWindow(urlToOpen) {
   //await sleep(1000);
 
 }
-
 
 ///////////////////////////////////////////////////////////////////
 //// About window handler
@@ -215,178 +226,178 @@ mb.on('after-create-window', function ready() {
   });
 });
 
-
 app.on('ready', () => {
   log.warn('main.js:  App is ready to start.')
 
-  // Register shortcuts
+///////////////////////////////////////////////////////////////////
+//// Keyboard shortcuts
+///////////////////////////////////////////////////////////////////
 
-
-  const sct6 = globalShortcut.register('Control+Alt+6', () => {
-    log.warn('main.js:  Control+Alt+6 is pressed');
-    spotifyServer.skipToNext()
-    .then(function (result) {
-      return spotifyServer.getPlayingTrackInfo()
-    }).then(function (result) {
-      log.warn('out: '+ JSON.stringify(result));
-    }, function (err) {
-      log.warn('main.js: Error when talking to Spotify API (6).  Error ' + err);
-      showNotification('Error when talking to Spotify API', err.message, '', '');
-    }).catch(function (err) {
-      log.warn('main.js:  Exception when talking to Spotify API (6).  Error ' + err);
-      showNotification('Exception when talking to Spotify API', err.message, '', '');
-    })
-  });
-
-  if (!sct6) {
-    log.warn('main.js:  registration failed of:  Control+Alt+6')
-  };
-
-
-  const sct7 = globalShortcut.register('Control+Alt+7', () => {
-    log.warn('main.js:  Control+Alt+7 is pressed');
-  });
-
-  if (!sct7) {
-    log.warn('main.js:  registration failed of:  Control+Alt+7')
-  };
-
-  const sctRemoveTrack = globalShortcut.register('Control+Alt+-', () => {
-    log.warn('main.js:  Control+Alt+- is pressed');
-    spotifyServer.removePlayingTrackFromPlaylist()
-    .then(function (result) {
-      // We're done, skip song, log and show notification
-      log.warn('main.js:  Removed track ' + result.name + ', ' + result.albumName + ', ' + result.artistName + ', ' + result.uri + ' from ' + result.context.sourcePlaylistName + " , " + result.context.sourcePlaylistId + ' : ' + result.result);
-      showNotification('Removed track ' + result.name + ' from ' + result.context.sourcePlaylistName, '', '', '');
-      return spotifyServer.skipToNext(); 
-    }).then(function (result) {  
-      // No action required    
-    }, function (err) {
-      log.warn('main.js: Error when talking to Spotify API (-). ' + err.stack);
-      if (err.hasOwnProperty("error")){log.warn('main.js: Original error stack: ' + err.error.stack)}
-      showNotification('Error when talking to Spotify API', err.message, '', '');
-    }).catch(function (err) {
-      log.warn('main.js:  Exception when talking to Spotify API (-).  Error ' + err);
-      showNotification('Exception when talking to Spotify API', err.message, '', '');
-    })
-  });
-
-  if (!sctRemoveTrack) {
-    log.warn('main.js:  registration failed of:  Control+Alt+-')
-  };
-
-  const sctAddTrack = globalShortcut.register('Control+Alt+=', () => {
-    log.warn('main.js:  Control+Alt+= is pressed');
-    // Add the current track to DayJobTest and remove it from the source playlist
-    spotifyServer.movePlayingTrackToPlaylist('4SAk2gITCgpbAKkZOnVNZY','DayJobTest')
-    .then(function (result) {
-      // We're done, skip song, log and show notification
-      log.warn('main.js:  Added track ' + result.name + ', ' + result.albumName + ', ' + result.artistName + ', ' + result.uri + ' to ' + result.destPlaylistName + " , " + result.destPlaylistId + ' : ' + result.result);
-      log.warn('main.js:  Removed track ' + result.name + ', ' + result.albumName + ', ' + result.artistName + ', ' + result.uri + ' from ' + result.context.sourcePlaylistName + " , " + result.context.sourcePlaylistId);
-      showNotification('Removed track ' + result.name + ' from ' + result.context.sourcePlaylistName, '', '', '');
-    }, function (err) {
-      log.warn('main.js: Error when talking to Spotify API (+).  Error ' + err);
-      showNotification('Error when talking to Spotify API', err.message, '', '');
-    }).catch(function (err) {
-      log.warn('main.js:  Exception when talking to Spotify API (+).  Error ' + err);
-      showNotification('Exception when talking to Spotify API', err.message, '', '');
-    })     
-  });
-
-  if (!sctAddTrack) {
-    log.warn('main.js:  registration failed of:  Control+Alt+=')
-  };
-
-  const sctNewBands = globalShortcut.register('Control+Alt+`', () => {
-    log.warn('main.js:  Control+Alt+` is pressed');
-    // Add the current track to DayJobNewBands and remove it from the source playlist
-    //spotifyServer.movePlayingTrackToPlaylist('5RSreRiji8KaKNBqStRbJm','DayJobNewBands')
-  });
-
-  if (!sctNewBands) {
-    log.warn('main.js:  registration failed of:  Control+Alt+`')
-  };
-
-  const sctAddToDump = globalShortcut.register('Control+Alt+0', () => {
-    log.warn('main.js:  Control+Alt+0 is pressed');
-
-    // Add the current track to _DUMP and remove it from the source playlist
-    //spotifyServer.movePlayingTrackToPlaylist('1lkqDHoGm03GXS63tkkmyi','_DUMP')
-  });
-
-  if (!sctAddToDump) {
-    log.warn('main.js:  registration failed of:  Control+Alt+`')
-  };
-
- 
-
-  /*
-  }).then(function(result){
-  // Get the user's playlists (because we need playlist owner IDs)
-  return spotifyServer.getUserPlaylists()
-  }).then(function (result) {
-  serverUserPlaylistsJson = result;
-  log.warn('main.js:  Got : getUserPlaylists' + JSON.stringify(serverUserPlaylistsJson));
-  */
-  const sctTest1 = globalShortcut.register('Control+Alt+1', () => {
-    var clientJson;
-    var serverCurrentPlayingTrackJson;
-    var playingTrackUri;
-    var sourcePlaylistId;
-    var sourcePlaylistName;
-
-    // This is a test function to check if a song exists in a playlist already
-    spotifyServer.checkApiConnection()
-      .then(function (result) {
-        log.warn('main.js:  Getting Spotify client JSON');
-        return spotifyClient.getTrackInfo()
-      }).then(function (result) {
-        clientJson = result;
-        log.warn('main.js:  Got clientJson: ' + JSON.stringify(clientJson));
-        playingTrackUri = clientJson.track.track_resource.uri;
-        log.warn('main.js:  playingTrackUri is ' + playingTrackUri);
-      }).then(function (result) {
-        //Now get track info with playlist
-        // THIS FUNCTION HAS BEEN REMOVED, IT IS NOW INTERNAL ONLY
-        return spotifyServer.getMyCurrentPlayingTrack()
-      }).then(function (result) {
-        serverCurrentPlayingTrackJson = result;
-        sourcePlaylistId = serverCurrentPlayingTrackJson.body.context.uri.split(':')[4]
-        log.warn('main.js:  Got serverCurrentPlayingTrackJson: ' + JSON.stringify(serverCurrentPlayingTrackJson));
-        log.warn('sourcePlaylistId is ' + sourcePlaylistId);
-      }).then(function (result) {
-        // Now get the playlist details
-        log.warn('Getting playlist info for playlist ID ' + sourcePlaylistId)
-        // THIS FUNCTION HAS BEEN REMOVED
-        return spotifyServer.getPlaylistName(sourcePlaylistId);
-      }).then(function (result) {
-        sourcePlaylistName = result;
-        log.warn('main.js:  Got sourcePlaylistName: ' + sourcePlaylistName);
-        showNotification('Got information', 'Source playlist:' + sourcePlaylistName, '', '');
-      }).then(function (result) {
-        return spotifyServer.ifSongExistsInPlaylist(playingTrackUri, sourcePlaylistId);
-      }).then(function (result) {
-        log.warn('main.js:  Got ifSongExistsInPlaylist result: ' + result);
-      }, function (err) {
-        log.warn('main.js: Error when talking to Spotify API.  Error ' + err);
-        showNotification('Error when talking to Spotify API', err.message, '', '');
-      }).catch(function (err) {
-        log.warn('main.js:  Exception when talking to Spotify API.  Error ' + err);
-        showNotification('Exception when talking to Spotify API', err.message, '', '');
-      })
-  });
-
-  if (!sctTest1) {
-    log.warn('main.js:  registration failed of:  Control+Alt+1')
-  };
-
-  
+  // There appears to be a bug with globalShortcut.registerAll so every key / modifier combination must be assigned separately
+  // All shortcuts call keyPressed() and pass a JSON object with keys: "modifiers" and "key" 
+  // Register CRTL + ALT shortcuts
+  const ctrlAltApostrophe = globalShortcut.register('Control+Alt+`', () => {keyPressed({modifiers: ["Control","Alt"],key: "`"})});
+  const ctrlAlt1 = globalShortcut.register('Control+Alt+1', () =>          {keyPressed({modifiers: ["Control","Alt"],key: "1"})});
+  const ctrlAlt2 = globalShortcut.register('Control+Alt+2', () =>          {keyPressed({modifiers: ["Control","Alt"],key: "2"})});
+  const ctrlAlt3 = globalShortcut.register('Control+Alt+3', () =>          {keyPressed({modifiers: ["Control","Alt"],key: "3"})});
+  const ctrlAlt4 = globalShortcut.register('Control+Alt+4', () =>          {keyPressed({modifiers: ["Control","Alt"],key: "4"})});
+  const ctrlAlt5 = globalShortcut.register('Control+Alt+5', () =>          {keyPressed({modifiers: ["Control","Alt"],key: "5"})});
+  const ctrlAlt6 = globalShortcut.register('Control+Alt+6', () =>          {keyPressed({modifiers: ["Control","Alt"],key: "6"})});
+  const ctrlAlt7 = globalShortcut.register('Control+Alt+7', () =>          {keyPressed({modifiers: ["Control","Alt"],key: "7"})});
+  const ctrlAlt8 = globalShortcut.register('Control+Alt+8', () =>          {keyPressed({modifiers: ["Control","Alt"],key: "8"})});
+  const ctrlAlt9 = globalShortcut.register('Control+Alt+9', () =>          {keyPressed({modifiers: ["Control","Alt"],key: "9"})});
+  const ctrlAlt0 = globalShortcut.register('Control+Alt+0', () =>          {keyPressed({modifiers: ["Control","Alt"],key: "0"})});
+  const ctrlAltMinus = globalShortcut.register('Control+Alt+-', () =>      {keyPressed({modifiers: ["Control","Alt"],key: "-"})});
+  const ctrlAltPlus = globalShortcut.register('Control+Alt+=', () =>       {keyPressed({modifiers: ["Control","Alt"],key: "="})});
+  // Register CRTL + ALT + SHIFT shortcuts
+  const ctrlAltShfApostrophe = globalShortcut.register('Control+Alt+Shift+`', () => {keyPressed({modifiers: ["Control","Alt","Shift"],key: "`"})});
+  const ctrlAltShf1 = globalShortcut.register('Control+Alt+Shift+1', () =>          {keyPressed({modifiers: ["Control","Alt","Shift"],key: "1"})});
+  const ctrlAltShf2 = globalShortcut.register('Control+Alt+Shift+2', () =>          {keyPressed({modifiers: ["Control","Alt","Shift"],key: "2"})});
+  const ctrlAltShf3 = globalShortcut.register('Control+Alt+Shift+3', () =>          {keyPressed({modifiers: ["Control","Alt","Shift"],key: "3"})});
+  const ctrlAltShf4 = globalShortcut.register('Control+Alt+Shift+4', () =>          {keyPressed({modifiers: ["Control","Alt","Shift"],key: "4"})});
+  const ctrlAltShf5 = globalShortcut.register('Control+Alt+Shift+5', () =>          {keyPressed({modifiers: ["Control","Alt","Shift"],key: "5"})});
+  const ctrlAltShf6 = globalShortcut.register('Control+Alt+Shift+6', () =>          {keyPressed({modifiers: ["Control","Alt","Shift"],key: "6"})});
+  const ctrlAltShf7 = globalShortcut.register('Control+Alt+Shift+7', () =>          {keyPressed({modifiers: ["Control","Alt","Shift"],key: "7"})});
+  const ctrlAltShf8 = globalShortcut.register('Control+Alt+Shift+8', () =>          {keyPressed({modifiers: ["Control","Alt","Shift"],key: "8"})});
+  const ctrlAltShf9 = globalShortcut.register('Control+Alt+Shift+9', () =>          {keyPressed({modifiers: ["Control","Alt","Shift"],key: "9"})});
+  const ctrlAltShf0 = globalShortcut.register('Control+Alt+Shift+0', () =>          {keyPressed({modifiers: ["Control","Alt","Shift"],key: "0"})});
+  const ctrlAltShfMinus = globalShortcut.register('Control+Alt+Shift+-', () =>      {keyPressed({modifiers: ["Control","Alt","Shift"],key: "-"})});
+  const ctrlAltShfPlus = globalShortcut.register('Control+Alt+Shift+=', () =>       {keyPressed({modifiers: ["Control","Alt","Shift"],key: "="})});
+  // Warn if registration of CRTL + ALT shortcuts fail
+  if (!ctrlAltApostrophe) {log.warn('main.js:  registration failed of: ctrlAltApostrophe (Control+Alt+`)')};
+  if (!ctrlAlt1) {log.warn('main.js:  registration failed of: ctrlAlt1 (Control+Alt+1)')};
+  if (!ctrlAlt2) {log.warn('main.js:  registration failed of: ctrlAlt2 (Control+Alt+2)')};
+  if (!ctrlAlt3) {log.warn('main.js:  registration failed of: ctrlAlt3 (Control+Alt+3)')};
+  if (!ctrlAlt4) {log.warn('main.js:  registration failed of: ctrlAlt4 (Control+Alt+4)')};
+  if (!ctrlAlt5) {log.warn('main.js:  registration failed of: ctrlAlt5 (Control+Alt+5)')};
+  if (!ctrlAlt6) {log.warn('main.js:  registration failed of: ctrlAlt6 (Control+Alt+6)')};
+  if (!ctrlAlt7) {log.warn('main.js:  registration failed of: ctrlAlt7 (Control+Alt+7)')};
+  if (!ctrlAlt8) {log.warn('main.js:  registration failed of: ctrlAlt8 (Control+Alt+8)')};
+  if (!ctrlAlt9) {log.warn('main.js:  registration failed of: ctrlAlt9 (Control+Alt+9)')};
+  if (!ctrlAlt0) {log.warn('main.js:  registration failed of: ctrlAlt0 (Control+Alt+0)')};
+  if (!ctrlAltMinus) {log.warn('main.js:  registration failed of: ctrlAltMinus (Control+Alt+-)')};
+  if (!ctrlAltPlus) {log.warn('main.js:  registration failed of: ctrlAltPlus (Control+Alt+=)')};
+  // Warn if registration of CRTL + ALT + SHIFT shortcuts fail
+  if (!ctrlAltShfApostrophe) {log.warn('main.js:  registration failed of: ctrlAltApostrophe (Control+Alt+Shift+`)')};
+  if (!ctrlAltShf1) {log.warn('main.js:  registration failed of: ctrlAlt1 (Control+Alt+Shift+1)')};
+  if (!ctrlAltShf2) {log.warn('main.js:  registration failed of: ctrlAlt2 (Control+Alt+Shift+2)')};
+  if (!ctrlAltShf3) {log.warn('main.js:  registration failed of: ctrlAlt3 (Control+Alt+Shift+3)')};
+  if (!ctrlAltShf4) {log.warn('main.js:  registration failed of: ctrlAlt4 (Control+Alt+Shift+4)')};
+  if (!ctrlAltShf5) {log.warn('main.js:  registration failed of: ctrlAlt5 (Control+Alt+Shift+5)')};
+  if (!ctrlAltShf6) {log.warn('main.js:  registration failed of: ctrlAlt6 (Control+Alt+Shift+6)')};
+  if (!ctrlAltShf7) {log.warn('main.js:  registration failed of: ctrlAlt7 (Control+Alt+Shift+7)')};
+  if (!ctrlAltShf8) {log.warn('main.js:  registration failed of: ctrlAlt8 (Control+Alt+Shift+8)')};
+  if (!ctrlAltShf9) {log.warn('main.js:  registration failed of: ctrlAlt9 (Control+Alt+Shift+9)')};
+  if (!ctrlAltShf0) {log.warn('main.js:  registration failed of: ctrlAlt0 (Control+Alt+Shift+0)')};
+  if (!ctrlAltShfMinus) {log.warn('main.js:  registration failed of: ctrlAltMinus (Control+Alt+Shift+-)')};
+  if (!ctrlAltShfPlus) {log.warn('main.js:  registration failed of: ctrlAltPlus (Control+Alt+Shift+=)')};
 
   // Check whether a shortcut is registered.
   //log.warn(globalShortcut.isRegistered('CommandOrControl+X'))
 });
 
 
+///////////////////////////////////////////////////////////////////
+//// Keyboard shortcut actions
+///////////////////////////////////////////////////////////////////
+
+function keyPressed(key){
+  log.warn('main.js:  Keyboard shortcut pressed: Modifiers: ' + JSON.stringify(key.modifiers) + ', Key: ' + key.key);
+
+  //// Remove track
+  ///////////////////////////////////////////////////////////////////
+  
+  if (key.modifiers.includes('Control') && key.modifiers.includes('Alt') && key.key == '-'){
+    log.warn('main.js:  Remove track keyboard shortcut pressed...');
+    spotifyServer.removePlayingTrackFromPlaylist()
+      .then(function (result) {
+        // We're done, skip song, log and show notification
+        log.warn('main.js:  Removed track ' + result.name + ', ' + result.albumName + ', ' + result.artistName + ', ' + result.uri + ' from ' + result.context.sourcePlaylistName + " , " + result.context.sourcePlaylistId + ' : ' + result.result);
+        showNotification('Removed track ' + result.name + ' from ' + result.context.sourcePlaylistName, '', '', '');
+        return spotifyServer.skipToNext(); 
+      }).then(function (result) {  
+        // No action required    
+      }, function (err) {
+        log.warn('main.js: Error when talking to Spotify API (-). ' + err.stack);
+        if (err.hasOwnProperty("error")){log.warn('main.js: Original error stack: ' + err.error.stack)}
+        showNotification('Error when talking to Spotify API', err.message, '', '');
+      }).catch(function (err) {
+        log.warn('main.js:  Exception when talking to Spotify API (-).  Error ' + err);
+        showNotification('Exception when talking to Spotify API', err.message, '', '');
+      })
+  }
+
+  //// Add or move track to specifed playlist (+) 
+  ///////////////////////////////////////////////////////////////////
+
+  if (key.modifiers.includes('Control') && key.modifiers.includes('Alt') && key.key == '='){
+    log.warn('main.js:  Add/move track to specified playlist (+) shortcut pressed... THIS FEATURE ISN\'T SUPPORTED YET SORRY!');
+    // Add logic for copy / move - as below
+    // Feature not supported yet, coming!
+  }
+
+  //// Add or more track to playlist in slot #
+  ///////////////////////////////////////////////////////////////////
+  
+  if (key.modifiers.includes('Control') && key.modifiers.includes('Alt') && ['`','1','2','3','4','5','6','7','8','9','0'].includes(key.key)){
+    var move = 0;
+    // Determine if track should be moved
+    if (prefsLocal.getPref('dayjob_always_move_tracks') == 0 && key.modifiers.includes('Shift')) {move = 1} 
+    if (prefsLocal.getPref('dayjob_always_move_tracks') == 1 && !key.modifiers.includes('Shift')){move = 1}
+    log.warn('main.js:  Add/move track to playlist in slot shortcut pressed:  Slot: ' + key.key + ' Move: ' + move);
+    // Add the current track to DayJobTest and remove it from the source playlist
+    spotifyServer.copyOrMovePlayingTrackToPlaylist(playlists[key.key].playlistID,playlists[key.key].playlistID, move)
+    .then(function (result) {
+      // We're done, skip song, log and show notification
+      log.warn('main.js:  Added track ' + result.name + ', ' + result.albumName + ', ' + result.artistName + ', ' + result.uri + ' to ' + result.destPlaylistName + " , " + result.destPlaylistId + ' : ' + result.result);
+      log.warn('main.js:  Removed track ' + result.name + ', ' + result.albumName + ', ' + result.artistName + ', ' + result.uri + ' from ' + result.context.sourcePlaylistName + " , " + result.context.sourcePlaylistId);
+      showNotification('Added track ' + result.name + ' to ' + result.context.destPlaylistName + ' (removed from ' + result.context.sourcePlaylistName + ')', '', '', '');
+    }, function (err) {
+      log.warn('main.js: Error when talking to Spotify API (+).  Error ' + err);
+      showNotification('Error when talking to Spotify API', err.message, '', '');
+    }).catch(function (err) {
+      log.warn('main.js:  Exception when talking to Spotify API (+).  Error ' + err);
+      showNotification('Exception when talking to Spotify API', err.message, '', '');
+    })
+    }
+
+////////
+
+
+const sctAddTrack = globalShortcut.register('Control+Alt+=', () => {
+  log.warn('main.js:  Control+Alt+= is pressed');
+  // Add the current track to DayJobTest and remove it from the source playlist
+  spotifyServer.movePlayingTrackToPlaylist('4SAk2gITCgpbAKkZOnVNZY','DayJobTest')
+  .then(function (result) {
+    // We're done, skip song, log and show notification
+    log.warn('main.js:  Added track ' + result.name + ', ' + result.albumName + ', ' + result.artistName + ', ' + result.uri + ' to ' + result.destPlaylistName + " , " + result.destPlaylistId + ' : ' + result.result);
+    log.warn('main.js:  Removed track ' + result.name + ', ' + result.albumName + ', ' + result.artistName + ', ' + result.uri + ' from ' + result.context.sourcePlaylistName + " , " + result.context.sourcePlaylistId);
+    showNotification('Removed track ' + result.name + ' from ' + result.context.sourcePlaylistName, '', '', '');
+  }, function (err) {
+    log.warn('main.js: Error when talking to Spotify API (+).  Error ' + err);
+    showNotification('Error when talking to Spotify API', err.message, '', '');
+  }).catch(function (err) {
+    log.warn('main.js:  Exception when talking to Spotify API (+).  Error ' + err);
+    showNotification('Exception when talking to Spotify API', err.message, '', '');
+  })     
+});
+
+
+
+
+
+
+
+////////
+
+
+
+  if (key.modifiers.includes('Control') && key.modifiers.includes('Alt') && key.modifiers.includes('Shift')){
+    // Code for when shift keyu is held
+    log.warn('Shift modifer in operation')
+  }
+
+}
 
 function showNotification(title, line1, line2, line3) {
   // A generic function to show the notification window...

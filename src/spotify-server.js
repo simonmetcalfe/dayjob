@@ -455,6 +455,15 @@ function removePlayingTrackFromPlaylist(){
         });
 }
 
+//// Copy OR Move playing track to specified playlist based on parameter
+///////////////////////////////////////////////////////////////////
+
+module.exports.copyOrMovePlayingTrackToPlaylist = function(destPlaylistId, destPlaylistName, move) {
+    if (move == 0) {return copyPlayingTrackToPlaylist(destPlaylistId, destPlaylistName);}
+    if (move == 1) {return movePlayingTrackToPlaylist(destPlaylistId, destPlaylistName);}
+}
+
+
 //// Copy playing track to specified playlist 
 ///////////////////////////////////////////////////////////////////
 

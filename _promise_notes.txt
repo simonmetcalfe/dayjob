@@ -154,17 +154,22 @@ remove/move/copyPlayingTrackFromPlaylist()
 
 
 TODO:
-* Add handling for port 8080 already in use when webserver is initialised
-* log.warn usage is incorrect
+
 * DONE Check if spotifyApi.resetAccessToken() can return a Promise, and update getAuthUrl if they do
 * DONE Check if sspotifyApi.resetRefreshToken() can return a Promise, and update getAuthUrl if they do
 * DONE Check if sspotifyApi.createAuthorizeURL() can return a Promise, and update getAuthUrl if they do
 * DONE Clear the users name at startup to force checkApiConnection to actually try a connection once (otherwise it will say 'connected' if the token is valid without even trying)
-- spotify-server.js - Check the status of: shell.openExternal(authorizeURL);
-- Package.json - multiple version changes made to resolve issues, see package.json.backup
--spotify-web-api-node - to solve problems try version 3.1.1
-- package.json - npm WARN dayjob@0.0.8 No repository field.
--package.json - npm WARN dayjob@0.0.8 license should be a valid SPDX license expression
+* DONE spotify-web-api-node - to solve problems try version 3.1.1
+* DONE REVIEWED Package.json - multiple version changes made to resolve issues, see package.json.backup
+* spotify-server.js - Check the status of: shell.openExternal(authorizeURL);
+* Add handling for port 8080 already in use when webserver is initialised
+* log.warn usage is incorrect
+* package.json - npm WARN dayjob@0.0.8 No repository field.
+* package.json - npm WARN dayjob@0.0.8 license should be a valid SPDX license expression
+* Update "electron-log": "3.0.1"
+* Update "electron-store": "3.0.0"
+* Update "menubar": "5.2.3",
+
 
 
 
