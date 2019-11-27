@@ -6,10 +6,11 @@
 // require('log-timestamp');
 const electron = require('electron');
 var shell = require('electron').shell;
-const { app, globalShortcut, ipcMain } = require('electron');  //globalShortcut must be defined with app or it does not work
+const {app, globalShortcut, ipcMain} = require('electron');  //globalShortcut must be defined with app or it does not work
 const menubar = require('menubar');
 const spotifyServer = require('./spotify-server.js');
 const prefsLocal = require('./prefs.js');
+const fs = require ('fs');
 
 ///////////////////////////////////////////////////////////////////
 ////  Global variables
@@ -35,6 +36,12 @@ log.warn('main.js:  dayjob started...');
 log.warn('main.js:  __dirname path is reported as: ' + __dirname);
 log.warn('main.js:  app.getAppPath path is reported as: ' + app.getAppPath());
 
+///////////////////////////////////////////////////////////////////
+////  Load error message db
+///////////////////////////////////////////////////////////////////
+
+let errors = JSON.parse(fs.readFileSync(__dirname + '/err.json'));
+console.log('main.js:  Loaded error handling database: ') // + JSON.stringify(errors));
 
 ///////////////////////////////////////////////////////////////////
 ////  Load application defaults
@@ -346,12 +353,12 @@ function keyPressed(key){
     if (prefsLocal.getPref('dayjob_always_move_tracks') == 1 && !key.modifiers.includes('Shift')){move = 1}
     log.warn('main.js:  Add/move track to playlist in slot shortcut pressed:  Slot: ' + key.key + ' Move: ' + move);
     // Add the current track to DayJobTest and remove it from the source playlist
-    spotifyServer.copyOrMovePlayingTrackToPlaylist(playlists[key.key].playlistID,playlists[key.key].playlistID, move)
+    spotifyServer.copyOrMovePlayingTrackToPlaylist(playlists[key.key].playlistID,playlists[key.key].playlistName, move)
     .then(function (result) {
       // We're done, skip song, log and show notification
       log.warn('main.js:  Added track ' + result.name + ', ' + result.albumName + ', ' + result.artistName + ', ' + result.uri + ' to ' + result.destPlaylistName + " , " + result.destPlaylistId + ' : ' + result.result);
       log.warn('main.js:  Removed track ' + result.name + ', ' + result.albumName + ', ' + result.artistName + ', ' + result.uri + ' from ' + result.context.sourcePlaylistName + " , " + result.context.sourcePlaylistId);
-      showNotification('Added track ' + result.name + ' to ' + result.context.destPlaylistName + ' (removed from ' + result.context.sourcePlaylistName + ')', '', '', '');
+      showNotification('Added track ' + result.name + ' to ' + result.destPlaylistName + ' (removed from ' + result.context.sourcePlaylistName + ')', '', '', '');
     }, function (err) {
       log.warn('main.js: Error when talking to Spotify API (+).  Error ' + err);
       showNotification('Error when talking to Spotify API', err.message, '', '');
@@ -360,44 +367,12 @@ function keyPressed(key){
       showNotification('Exception when talking to Spotify API', err.message, '', '');
     })
     }
-
-////////
-
-
-const sctAddTrack = globalShortcut.register('Control+Alt+=', () => {
-  log.warn('main.js:  Control+Alt+= is pressed');
-  // Add the current track to DayJobTest and remove it from the source playlist
-  spotifyServer.movePlayingTrackToPlaylist('4SAk2gITCgpbAKkZOnVNZY','DayJobTest')
-  .then(function (result) {
-    // We're done, skip song, log and show notification
-    log.warn('main.js:  Added track ' + result.name + ', ' + result.albumName + ', ' + result.artistName + ', ' + result.uri + ' to ' + result.destPlaylistName + " , " + result.destPlaylistId + ' : ' + result.result);
-    log.warn('main.js:  Removed track ' + result.name + ', ' + result.albumName + ', ' + result.artistName + ', ' + result.uri + ' from ' + result.context.sourcePlaylistName + " , " + result.context.sourcePlaylistId);
-    showNotification('Removed track ' + result.name + ' from ' + result.context.sourcePlaylistName, '', '', '');
-  }, function (err) {
-    log.warn('main.js: Error when talking to Spotify API (+).  Error ' + err);
-    showNotification('Error when talking to Spotify API', err.message, '', '');
-  }).catch(function (err) {
-    log.warn('main.js:  Exception when talking to Spotify API (+).  Error ' + err);
-    showNotification('Exception when talking to Spotify API', err.message, '', '');
-  })     
-});
-
-
-
-
-
-
-
-////////
-
-
-
-  if (key.modifiers.includes('Control') && key.modifiers.includes('Alt') && key.modifiers.includes('Shift')){
-    // Code for when shift keyu is held
-    log.warn('Shift modifer in operation')
-  }
-
 }
+
+
+///////////////////////////////////////////////////////////////////
+//// Notifications display
+///////////////////////////////////////////////////////////////////
 
 function showNotification(title, line1, line2, line3) {
   // A generic function to show the notification window...
