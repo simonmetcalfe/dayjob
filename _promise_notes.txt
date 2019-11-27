@@ -17,7 +17,7 @@ DONE * ERR 'cannot_get_users_details' - checkApiConnection should return this if
 getAuthUrl (if error 'no_authorisation_code')
 |
 RESOLVE createAuthorizeURL
-* ERR 'cannot_get_auth_url' - getAuthUrl should be returned this if 
+NOT DOING * ERR 'cannot_get_auth_url' - getAuthUrl should be returned this if 
 
 
 ctrl+alt+plus pressed
@@ -155,6 +155,31 @@ remove/move/copyPlayingTrackFromPlaylist()
 
 TODO:
 * Add handling for port 8080 already in use when webserver is initialised
-* Check if spotifyApi.resetAccessToken() or spotifyApi.resetRefreshToken() or spotifyApi.createAuthorizeURL() can return a Promise, and updatee getAuthUrl if they do
 * log.warn usage is incorrect
-* Clear the users name at startup to force checkApiConnection to actually try a connection once (otherwise it will say 'connected' if the token is valid without even trying)
+* DONE Check if spotifyApi.resetAccessToken() can return a Promise, and update getAuthUrl if they do
+* DONE Check if sspotifyApi.resetRefreshToken() can return a Promise, and update getAuthUrl if they do
+* DONE Check if sspotifyApi.createAuthorizeURL() can return a Promise, and update getAuthUrl if they do
+* DONE Clear the users name at startup to force checkApiConnection to actually try a connection once (otherwise it will say 'connected' if the token is valid without even trying)
+- spotify-server.js - Check the status of: shell.openExternal(authorizeURL);
+- Package.json - multiple version changes made to resolve issues, see package.json.backup
+-spotify-web-api-node - to solve problems try version 3.1.1
+- package.json - npm WARN dayjob@0.0.8 No repository field.
+-package.json - npm WARN dayjob@0.0.8 license should be a valid SPDX license expression
+
+
+
+
+Options for keyboard control:
+
+browserWindow.webContents.sendInputEvent({
+  type: "keyDown",
+  keyCode: '\u0008'
+});
+
+browserWindow.webContents.sendInputEvent({
+  type: "keyUp",
+  keyCode: '\u0008'
+});
+
+
+webview.getWebContents().sendInputEvent({ type: 'char', keyCode: '\u000d', charCode: 13 })

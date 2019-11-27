@@ -27,7 +27,7 @@ var log = require('electron-log');
 var scopes = ['user-read-private', 'user-read-email', 'playlist-read-private', 'playlist-modify-private', 'playlist-read-collaborative', 'playlist-modify-public', 'user-read-recently-played', 'user-read-currently-playing','user-modify-playback-state'];
 var redirectUri = 'http://localhost:8888/callback';
 var state; //For dayjob to verify requests to the redirect URI
-var spotifyUserId; // 
+var spotifyUserId;
 var spotifyDisplayName;
 
 ///////////////////////////////////////////////////////////////////
@@ -64,6 +64,7 @@ http.createServer(function (request, response) {
         log.warn('spotify-server.js:  Successfully received authorization code ' + queryAsObject.code);
         prefsLocal.setPref('spotify-server_authorizationCode', queryAsObject.code);
         authCodeGrant();
+        // TODO - if Promise response fails, show a messsage
     }
     response.end();
 }).listen(8888);
@@ -131,13 +132,13 @@ function checkApiConnection() {
         if (result != 'ready'){
             // Log the result of .getMe and store the users name and ID 
             log.warn('spotify-server.js:  Retrieved user data JSON: ' + JSON.stringify(result.body));
-            spotifyDisplayName = result.body['display_name'];
-            spotifyUserId = result.body['id'];
+            spotifyDisplayName = result.body.display_name;
+            spotifyUserId = result.body.id;
         }
         log.warn('spotify-server.js:  Spotify connected for user ' + spotifyDisplayName + ' (' + spotifyUserId + ')');    
         return Promise.resolve('ready');
     },function (err){
-        /* It migh be worth changing this to a .catch handler just in case the returned JSON is garbage and an error occurs in the result() statement above */
+        /* TODO - It migh be worth changing this to a .catch handler just in case the returned JSON is garbage and an error occurs in the result() statement above */
         // Handle spotifyApi.getMe promise error gracefully
         handledErr = new Error("cannot_get_users_details")
         handledErr.error = err;
@@ -151,7 +152,6 @@ function checkApiConnection() {
 
 module.exports.getAuthUrl = function () {
     // spotifyApi.createAuthorizeURL does not return a promise, so we resolve one manually
-    // THIS TOP LINE MIGHT BE THE BEST METHOD FOR WRITING PROMISES 
     return Promise.resolve().then(function () {
         spotifyApi.resetAccessToken();
         spotifyApi.resetRefreshToken();
@@ -189,27 +189,32 @@ function authCodeGrant() {
     spotifyApi.authorizationCodeGrant(prefsLocal.getPref('spotify-server_authorizationCode'))
         .then(function (result) {
             log.warn('spotify-server.js:  Authorisation granted.');
-            log.warn('spotify-server.js:    Access token: ', result.body['access_token']);
-            log.warn('spotify-server.js:    Access token expiry: ' + result.body['expires_in']);
-            log.warn('spotify-server.js:    Refresh token: ' + result.body['refresh_token']);
+            log.warn('spotify-server.js:    Access token: ', result.body.access_token);
+            log.warn('spotify-server.js:    Access token expiry: ' + result.body.expires_in);
+            log.warn('spotify-server.js:    Refresh token: ' + result.body.refresh_token);
             // Save and set the access and refresh tokens
-            prefsLocal.setPref('spotify-server_access_token', result.body['access_token']);
-            prefsLocal.setPref('spotify-server_refresh_token', result.body['refresh_token']);
-            spotifyApi.setAccessToken(result.body['access_token']);
-            spotifyApi.setRefreshToken(result.body['refresh_token']);
+            prefsLocal.setPref('spotify-server_access_token', result.body.access_token);
+            prefsLocal.setPref('spotify-server_refresh_token', result.body.refresh_token);
+            spotifyApi.setAccessToken(result.body.access_token);
+            spotifyApi.setRefreshToken(result.body.refresh_token);
             // Calculate date of access token expiry in ms
-            prefsLocal.setPref('spotify-server_token_expiration_date', new Date().getTime() + result.body['expires_in'] * 1000); //Convert seconds to ms
+            prefsLocal.setPref('spotify-server_token_expiration_date', new Date().getTime() + result.body.expires_in * 1000); //Convert seconds to ms
             log.warn('spotify-server.js:  Token expiration date set (ms):  ' + prefsLocal.getPref('spotify-server_token_expiration_date'));
             return spotifyApi.getMe();
+            // TODO - is it necessary to call spotifyApi.getMe() just to log the users details - either it is not, or the users details should be saved to a variable instead
         }).then(function (result) {
             // Success
-            log.warn('spotify-server.js:  Connected successfully.  Retrieved data for ' + result.body['display_name']);
+            log.warn('spotify-server.js:  Connected successfully.  Retrieved data for ' + result.body.display_name);
             log.warn('spotify-server.js:    Email: ' + result.body.email);
             log.warn('spotify-server.js:    Account type: ' + result.body.product);
             log.warn('spotify-server.js:    Image URL: ' + result.body.images[0].url);
-        // TODO - THIS PROMISE HAS NO ERROR HANDLING, ONLY CATCH, BUT DOES IT NEED A CATCH HERE?
+            Promise.resolve(result) // TODO - Should this return a custom message, e.g. 'authorisation_granted'?
         }).catch(function (err) {
             log.warn('spotify-server.js:  [ERROR] Exception after authorision was not successfully granted.  Try revoking access to the application in the Apps section of your Spotify account, and re-authenticating.  Error ', err.message);
+            // Handle spotifyApi.authorizationCodeGrant() and spotifyApi.getMe() promise errors gracefully
+            handledErr = new Error("error_authorising")
+            handledErr.error = err;
+            return Promise.reject(handledErr);
         });
 }
 
@@ -221,15 +226,16 @@ function authCodeGrant() {
 function refreshAccessToken() {
     return spotifyApi.refreshAccessToken()
         .then(function (result) {
-            log.warn('spotify-server.js:  The access token has been refreshed: ' + result.body['access_token']);
+            log.warn('spotify-server.js:  The access token has been refreshed: ' + result.body.access_token);
             // Save the access token so that it's used in future calls (setAccessToken does not return a Promise)
-            spotifyApi.setAccessToken(result.body['access_token']);
-            prefsLocal.setPref('spotify-server_access_token', result.body['access_token']);
+            spotifyApi.setAccessToken(result.body.access_token);
+            prefsLocal.setPref('spotify-server_access_token', result.body.access_token);
             // Calculate date of access token expiry in ms
-            prefsLocal.setPref('spotify-server_token_expiration_date', new Date().getTime() + (result.body['expires_in'] * 1000)); //Convert seconds to ms
+            prefsLocal.setPref('spotify-server_token_expiration_date', new Date().getTime() + (result.body.expires_in * 1000)); //Convert seconds to ms
             log.warn('spotify-server.js:  The access token expiration date refreshed (ms):  ' + new Date().getTime() + " / " + prefsLocal.getPref('spotify-server_token_expiration_date'));
             return Promise.resolve('access_token_refreshed')
         }, function (err) {
+            // TODO - replace with catch
             log.warn('spotify-server.js:  [ERROR] Could not refresh access token.  It is possible the user revoked access to dayjob.  Clearing auth data and re-launching auth URL.  Error ' + err.message);
             // Handle spotifyApi.refreshAccessToken promise error gracefully
             handledErr = new Error("cannot_refresh_access_token")
@@ -252,6 +258,7 @@ function getMyCurrentPlayingTrack() {
         .then(function (result){
             return Promise.resolve(result);
         },function (err){
+            // TODO - replace with Catch?
             // Handle external promise error gracefully
             handledErr = new Error("cannot_get_playing_track_info")
             handledErr.error = err;
@@ -267,12 +274,13 @@ module.exports.addTracksToPlaylist = function (playlistId, tracks) {
 }
 
 function addTracksToPlaylist(playlistId, tracks){
-    // Needs playlistId, tracks, options, callback
+    // Needs playlistId, tracks
     // Example '3EsfV6XzCHU8SPNdbnFogK','["spotify:track:4iV5W9uYEdYUVa79Axb7Rh", "spotify:track:1301WleyT98MSxVHPZCA6M"]'
     return spotifyApi.addTracksToPlaylist(playlistId, tracks)
         .then(function (result){
             return Promise.resolve(result);
         },function (err){
+            //TODO - Replace with catch?
             // Handle external promise error gracefully
             handledErr = new Error("cannot_add_track_to_playlist")
             handledErr.error = err;
@@ -293,6 +301,7 @@ function removeTracksFromPlaylist (playlistId, tracks) {
         .then(function (result){
             return Promise.resolve(result);
         },function (err){
+            // TODO - Replace with catch?
             // Handle external promise error gracefully
             handledErr = new Error("cannot_remove_track_from_playlist")
             handledErr.error = err;
@@ -311,6 +320,7 @@ function getPlaylist(playlistId) {
             //log.warn('spotify-server.js:  Retrieved playlist \'' + playlistId + ', JSON: ' + JSON.stringify(result));
             return Promise.resolve(result);
         },function (err){
+            // TODO - Replace with catch?
             // Handle external promise error gracefully
             handledErr = new Error("cannot_get_playlist_info")
             handledErr.error = err;
@@ -345,7 +355,7 @@ function skipToNext(){
             log.warn('spotify-server.js: Skipping track using Spotify API successful: ' + result);
             return Promise.resolve(result);
         },function (err){
-            log.warn('spotify-server.js: Skipping track using Spotify APU failed: ' + err);
+            log.warn('spotify-server.js: Skipping track using Spotify API failed but error is ignored: ' + err);
             // Always returns a resolved promise even on failure, just logs failure silently
             return Promise.resolve(null);
         })
@@ -363,8 +373,9 @@ module.exports.getPlayingTrackInfo = function() {
 }
 
 function getPlayingTrackInfo(){
-    trackInfo = new Object(); 
-    trackInfo.context = new Object();
+    trackInfo = {
+        context:{}
+    }
     return checkApiConnection()
         .then(function (result) {
             log.warn('spotify-server.js:  Check API connection succeeded, now getting currently playing track info...');
@@ -386,7 +397,7 @@ function getPlayingTrackInfo(){
             trackInfo.context.sourcePlaylistId = null;
             trackInfo.context.sourcePlaylistName = null;
             // Determine context
-            if (result.body.item.is_local)                    {trackInfo.context.name = "Local file" }  
+            if      (result.body.item.is_local)               {trackInfo.context.name = "Local file" }  
             else if (result.body.context == null)             {trackInfo.context.name = "Liked or Recommended" }         
             else if (result.body.context.type == "artist")    {trackInfo.context.name = "Artist"}                       
             else if (result.body.context.type == "album")     {trackInfo.context.name = "Album"}             
@@ -411,6 +422,7 @@ function getPlayingTrackInfo(){
             }
             return Promise.resolve(trackInfo)
         },function (err){
+            // TODO - Should be catch?
             // Catch any errors we might have parsing the JSON
             handledErr = new Error("error_parsing_playing_track_json")
             handledErr.error = err;
@@ -426,13 +438,13 @@ module.exports.removePlayingTrackFromPlaylist = function() {
 }
 
 function removePlayingTrackFromPlaylist(){
-    trackInfo = new Object();
+    trackInfo = {};
     return getPlayingTrackInfo()
         .then(function (result) {
             trackInfo = result;
             if (trackInfo.context.readOnly == true){
                 // Can't modify the playlist so throw an error
-                return Promise.reject(new Error("playlist_is_read_only")) //Does not communicate playlist name, may need to improve this
+                return Promise.reject(new Error("playlist_is_read_only")) //TODO - Does not communicate playlist name, may need to improve this, maybe don't throw an error
             }
             log.warn('spotify-server.js:  Removing track ' + trackInfo.name + ', ' + trackInfo.albumName + ', ' + trackInfo.artistName + ', ' + trackInfo.uri + ' from ' + trackInfo.context.sourcePlaylistName + " , " + trackInfo.context.sourcePlaylistId);
             return removeTracksFromPlaylist(trackInfo.context.sourcePlaylistId, [{ uri: trackInfo.uri }])  
@@ -451,7 +463,7 @@ module.exports.copyPlayingTrackToPlaylist = function(destPlaylistId, destPlaylis
 }
 
 function copyPlayingTrackToPlaylist(destPlaylistId, destPlaylistName){
-    trackInfo = new Object();
+    trackInfo = {};
     return getPlayingTrackInfo()
         .then(function (result) {
             trackInfo = result;
@@ -474,7 +486,7 @@ module.exports.movePlayingTrackToPlaylist = function(destPlaylistId, destPlaylis
 }
 
 function movePlayingTrackToPlaylist(destPlaylistId, destPlaylistName){
-    trackInfo = new Object();
+    trackInfo = {};
     return getPlayingTrackInfo()
         .then(function (result) {
             trackInfo = result;
@@ -495,11 +507,7 @@ function movePlayingTrackToPlaylist(destPlaylistId, destPlaylistName){
 }
 
 
-///////////////////////////////////////////////////////////////////
-//// Playlist settings
-///////////////////////////////////////////////////////////////////
 
-// function addPlaylist??
 
 ///////////////////////////////////////////////////////////////////
 //// Helper functions

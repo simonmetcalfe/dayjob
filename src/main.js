@@ -184,6 +184,7 @@ function connectApi(){
             log.warn('main.js:  Requested user auth dayjob with Spotify using URL: ' + result);
             showNotification('dayjob needs authorising with Spotify', result, '', '');
           }, function (err) {
+            // TODO - review these because getAuthUrl Promise will never return a failure
             log.warn('main.js:  Error getting authorisation URL');
             showNotification('Error getting authorisation URL: ' + err, '', '', '');
           }).catch(function (err) {
