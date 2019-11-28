@@ -361,6 +361,64 @@ function skipToNext(){
         })
 }
 
+//// Parse playing track info
+///////////////////////////////////////////////////////////////////
+// This is in a separate function so that we can capture any errors that occur
+// Returns a JSON object 'trackinfo'
+
+function parsePlayingTrackInfo(playingTrackJson){
+    trackInfo = {
+        context:{}
+    }
+    return Promise.resolve().then(function () {
+
+        // Detect unsupported responses and reject
+        if (playingTrackJson.statusCode == 204){return Promise.reject(new Error("track_not_playing"))}  // No music is playing
+        if (playingTrackJson.body.currently_playing_type == "episode"){return Promise.reject(new Error("track_is_podcast"))}  // We can't process podcasts at all so just abort 
+        //Write basic track info
+        trackInfo.uri = playingTrackJson.body.item.uri;
+        trackInfo.name = playingTrackJson.body.item.name;
+        trackInfo.artistName = playingTrackJson.body.item.artists[0].name;
+        trackInfo.albumName = playingTrackJson.body.item.album.name;
+        trackInfo.fullJson = playingTrackJson
+        // Set context defaults
+        trackInfo.context.name = null;
+        trackInfo.context.readOnly = true;
+        trackInfo.context.sourcePlaylistId = null;
+        trackInfo.context.sourcePlaylistName = null;
+        // Determine context
+        if      (playingTrackJson.body.item.is_local)               {trackInfo.context.name = "Local file" }  
+        else if (playingTrackJson.body.context == null)             {trackInfo.context.name = "Liked or Recommended" }         
+        else if (playingTrackJson.body.context.type == "artist")    {trackInfo.context.name = "Artist"}                       
+        else if (playingTrackJson.body.context.type == "album")     {trackInfo.context.name = "Album"}             
+        else if (playingTrackJson.body.context.type == "playlist" && playingTrackJson.body.context.uri.split(':').length == 3) {trackInfo.context.name = "Radio"} // When radio songs played from radio thumbnail         
+        else if (playingTrackJson.body.context.type == "playlist" && playingTrackJson.body.context.uri.split(':').length == 5) {
+            if (playingTrackJson.body.context.uri.split(':')[2] == spotifyUserId){
+                trackInfo.context.readOnly=false;
+                trackInfo.context.name = "Playlist"    
+            }    
+            else {trackInfo.context.name = "Shared playlist / Radio";}  // Radio songs indistinguisable from shared playlists if songs are played from the list screen
+            trackInfo.context.sourcePlaylistId = playingTrackJson.body.context.uri.split(':')[4];
+            log.warn('spotify-server.js:  Getting playlist name for playlist ID... ' + trackInfo.context.sourcePlaylistId)
+            return getPlaylistName(trackInfo.context.sourcePlaylistId)
+        }
+        else {trackInfo.context.name = "Unknown source";}
+        return Promise.resolve('ready')
+    }).then(function(result){
+        if (result != 'ready'){
+            // Set the source playlist name
+            trackInfo.context.sourcePlaylistName = result
+        }
+        return Promise.resolve(trackInfo)
+    }, function (err){
+        // TODO - Should be catch?
+        // Catch any errors we might have parsing the JSON
+        handledErr = new Error("error_parsing_playing_track_json")
+        handledErr.error = err;
+        return Promise.reject(handledErr);
+    })
+}
+
 
 //// Get playing track info
 ///////////////////////////////////////////////////////////////////
@@ -382,51 +440,7 @@ function getPlayingTrackInfo(){
             return getMyCurrentPlayingTrack()
         }).then(function (result) {
             log.warn('spotify-server.js:  Got current track JSON: ' + JSON.stringify(result));
-            // Detect unsupported responses and reject
-            if (result.statusCode == 204){return Promise.reject(new Error("track_not_playing"))}  // No music is playing
-            if (result.body.currently_playing_type == "episode"){return Promise.reject(new Error("track_is_podcast"))}  // We can't process podcasts at all so just abort 
-            //Write basic track info
-            trackInfo.uri = result.body.item.uri;
-            trackInfo.name = result.body.item.name;
-            trackInfo.artistName = result.body.item.artists[0].name;
-            trackInfo.albumName = result.body.item.album.name;
-            trackInfo.fullJson = result
-            // Set context defaults
-            trackInfo.context.name = null;
-            trackInfo.context.readOnly = true;
-            trackInfo.context.sourcePlaylistId = null;
-            trackInfo.context.sourcePlaylistName = null;
-            // Determine context
-            if      (result.body.item.is_local)               {trackInfo.context.name = "Local file" }  
-            else if (result.body.context == null)             {trackInfo.context.name = "Liked or Recommended" }         
-            else if (result.body.context.type == "artist")    {trackInfo.context.name = "Artist"}                       
-            else if (result.body.context.type == "album")     {trackInfo.context.name = "Album"}             
-            else if (result.body.context.type == "playlist" && result.body.context.uri.split(':').length == 3) {trackInfo.context.name = "Radio"} // When radio songs played from radio thumbnail         
-            else if (result.body.context.type == "playlist" && result.body.context.uri.split(':').length == 5) {
-                if (result.body.context.uri.split(':')[2] == spotifyUserId){
-                    trackInfo.context.readOnly=false;
-                    trackInfo.context.name = "Playlist"    
-                }    
-                else {trackInfo.context.name = "Shared playlist / Radio";}  // Radio songs indistinguisable from shared playlists if songs are played from the list screen
-                trackInfo.context.sourcePlaylistId = result.body.context.uri.split(':')[4];
-                log.warn('spotify-server.js:  Getting playlist name for playlist ID... ' + trackInfo.context.sourcePlaylistId)
-                return getPlaylistName(trackInfo.context.sourcePlaylistId)
-            }
-            else {trackInfo.context.name = "Unknown source";}
-            return Promise.resolve('ready')
-        }).then(function(result){
-            if (result != 'ready'){
-                // Set the source playlist name
-                log.warn('spotify-server.js:  Setting source playlust name to  ' + result)
-                trackInfo.context.sourcePlaylistName = result
-            }
-            return Promise.resolve(trackInfo)
-        },function (err){
-            // TODO - Should be catch?
-            // Catch any errors we might have parsing the JSON
-            handledErr = new Error("error_parsing_playing_track_json")
-            handledErr.error = err;
-            return Promise.reject(handledErr);
+            return parsePlayingTrackInfo(result)
         })
 }
 

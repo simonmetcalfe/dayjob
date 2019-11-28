@@ -40,7 +40,7 @@ log.warn('main.js:  app.getAppPath path is reported as: ' + app.getAppPath());
 ////  Load error message db
 ///////////////////////////////////////////////////////////////////
 
-let errors = JSON.parse(fs.readFileSync(__dirname + '/err.json'));
+let errors = JSON.parse(fs.readFileSync(__dirname + '/errors.json'));
 console.log('main.js:  Loaded error handling database: ') // + JSON.stringify(errors));
 
 ///////////////////////////////////////////////////////////////////
@@ -50,6 +50,7 @@ console.log('main.js:  Loaded error handling database: ') // + JSON.stringify(er
 // Any variables that should have a default should be specified here
 
 if (prefsLocal.getPref('dayjob_always_move_tracks') == undefined){prefsLocal.setPref('dayjob_always_move_tracks',0)}
+if (prefsLocal.getPref('dayjob_always_skip_tracks') == undefined){prefsLocal.setPref('dayjob_always_skip_tracks',0)}
 
 ///////////////////////////////////////////////////////////////////
 ////  Load saved playlist array
@@ -315,13 +316,18 @@ function keyPressed(key){
   ///////////////////////////////////////////////////////////////////
   
   if (key.modifiers.includes('Control') && key.modifiers.includes('Alt') && key.key == '-'){
+    // Determine if track should be moved
+    var skip = 0;
+    if (prefsLocal.getPref('dayjob_always_skip_tracks') == 0 && key.modifiers.includes('Shift')) {skip = 1} 
+    if (prefsLocal.getPref('dayjob_always_skip_tracks') == 1 && !key.modifiers.includes('Shift')){skip = 1}
     log.warn('main.js:  Remove track keyboard shortcut pressed...');
     spotifyServer.removePlayingTrackFromPlaylist()
       .then(function (result) {
         // We're done, skip song, log and show notification
         log.warn('main.js:  Removed track ' + result.name + ', ' + result.albumName + ', ' + result.artistName + ', ' + result.uri + ' from ' + result.context.sourcePlaylistName + " , " + result.context.sourcePlaylistId + ' : ' + result.result);
         showNotification('Removed track ' + result.name + ' from ' + result.context.sourcePlaylistName, '', '', '');
-        return spotifyServer.skipToNext(); 
+        if (skip == 1) {return spotifyServer.skipToNext()}
+        else {return Promise.resolve('ready')}
       }).then(function (result) {  
         // No action required    
       }, function (err) {
@@ -347,8 +353,8 @@ function keyPressed(key){
   ///////////////////////////////////////////////////////////////////
   
   if (key.modifiers.includes('Control') && key.modifiers.includes('Alt') && ['`','1','2','3','4','5','6','7','8','9','0'].includes(key.key)){
-    var move = 0;
     // Determine if track should be moved
+    var move = 0;
     if (prefsLocal.getPref('dayjob_always_move_tracks') == 0 && key.modifiers.includes('Shift')) {move = 1} 
     if (prefsLocal.getPref('dayjob_always_move_tracks') == 1 && !key.modifiers.includes('Shift')){move = 1}
     log.warn('main.js:  Add/move track to playlist in slot shortcut pressed:  Slot: ' + key.key + ' Move: ' + move);
@@ -360,15 +366,14 @@ function keyPressed(key){
       log.warn('main.js:  Removed track ' + result.name + ', ' + result.albumName + ', ' + result.artistName + ', ' + result.uri + ' from ' + result.context.sourcePlaylistName + " , " + result.context.sourcePlaylistId);
       showNotification('Added track ' + result.name + ' to ' + result.destPlaylistName + ' (removed from ' + result.context.sourcePlaylistName + ')', '', '', '');
     }, function (err) {
-      log.warn('main.js: Error when talking to Spotify API (+).  Error ' + err);
-      showNotification('Error when talking to Spotify API', err.message, '', '');
+      //showNotification('Error when talking to Spotify API', err.message, '', '');
+      showError(err)
     }).catch(function (err) {
       log.warn('main.js:  Exception when talking to Spotify API (+).  Error ' + err);
       showNotification('Exception when talking to Spotify API', err.message, '', '');
     })
     }
 }
-
 
 ///////////////////////////////////////////////////////////////////
 //// Notifications display
@@ -380,6 +385,44 @@ function showNotification(title, line1, line2, line3) {
   mb.window.webContents.send('setTrackName', line1);
   mb.window.webContents.send('setTrackArtist', line2);
   mb.window.webContents.send('setTrackAlbum', line3);
+  //mb.showWindow();
+  mb.window.showInactive();
+  // When a notification occurs, close the window briefly after
+  function doAfterDelay() { mb.hideWindow(); }
+  setTimeout(doAfterDelay, 5000);
+}
+
+///////////////////////////////////////////////////////////////////
+//// Error logging
+///////////////////////////////////////////////////////////////////
+function logError(err){
+  log.warn('main.js:  ERROR has occurred:  ' + err + '\n' + 
+           'Stack:   ' + err.stack)
+  
+  // Check if the error was caused by an external module and log it     
+  if (err.hasOwnProperty("error")){
+    log.warn('main.js:  ERROR in eternal module has occurred:  ' + err.error + '\n' + 
+    'Object:  ' + JSON.stringify(err.error) + '\n' + 
+    'Stack :   ' + err.error.stack)
+  }
+}
+
+///////////////////////////////////////////////////////////////////
+//// Error display
+///////////////////////////////////////////////////////////////////
+
+function showError(err) {
+  // Check if the error was caused by an external module if so show in UI
+  var externalError = ""
+  if (err.hasOwnProperty("error")){externalError = '(' + err.error + ')'} // Show the external error in the UI
+  // Log the error
+  logError(err)
+  // Look up the errors in the DB and show warning
+  mb.window.webContents.send('setNotificationText', errors[err.message].title)
+  mb.window.webContents.send('setTrackName', errors[err.message].description);
+  mb.window.webContents.send('setTrackArtist', externalError);
+  log.warn('main.js:  ERROR reported to the user: ' + errors[err.message].title + ': ' + errors[err.message].description + ' (' + externalError + ')')
+  //mb.window.webContents.send('setTrackAlbum', line3);
   //mb.showWindow();
   mb.window.showInactive();
   // When a notification occurs, close the window briefly after
