@@ -192,32 +192,9 @@ function connectApi(){
   spotifyServer.checkApiConnection()
     .then(function (result) {
       showNotification('Connected to Spotify as ' + spotifyServer.getspotifyDisplayName(), '', '', '');
-    }, function (err) {
-      if (err.message == 'no_client_id') {
-        log.warn('main.js:  Can\'t connect to Spotify without a client ID and Secret!')
-        showNotification('Can\'t connect to Spotify without a client ID and Secret!', '', '', '');
-      }
-      if (err.message == 'no_authorisation_code') {
-        spotifyServer.getAuthUrl()
-          .then(function (result) {
-            log.warn('main.js:  Requested user auth dayjob with Spotify using URL: ' + result);
-            showNotification('dayjob needs authorising with Spotify', result, '', '');
-          }, function (err) {
-            // TODO - review these because getAuthUrl Promise will never return a failure
-            log.warn('main.js:  Error getting authorisation URL');
-            showNotification('Error getting authorisation URL: ' + err, '', '', '');
-          }).catch(function (err) {
-            log.warn('main.js:  Exception getting authorisation URL: ' + err);
-            showNotification('Exception getting authorisation URL: ' + err, '', '', '');
-          })
-      }
-      else {
-        log.warn('main.js:  Unknown error checking API: ' + err);
-        showNotification('Unknown error checking API: ' + err, '', '', '');
-      }
     }).catch(function (err) {
-      showNotification('Exception when connecting to Spotify: ' + err);
-    });
+      logAndDisplayError(err)
+    })
 }
 ///////////////////////////////////////////////////////////////////
 //// Applicacation start
@@ -324,19 +301,11 @@ function keyPressed(key){
     spotifyServer.removePlayingTrackFromPlaylist()
       .then(function (result) {
         // We're done, skip song, log and show notification
-        log.warn('main.js:  Removed track ' + result.name + ', ' + result.albumName + ', ' + result.artistName + ', ' + result.uri + ' from ' + result.context.sourcePlaylistName + " , " + result.context.sourcePlaylistId + ' : ' + result.result);
         showNotification('Removed track ' + result.name + ' from ' + result.context.sourcePlaylistName, '', '', '');
         if (skip == 1) {return spotifyServer.skipToNext()}
-        else {return Promise.resolve('ready')}
-      }).then(function (result) {  
-        // No action required    
-      }, function (err) {
-        log.warn('main.js: Error when talking to Spotify API (-). ' + err.stack);
-        if (err.hasOwnProperty("error")){log.warn('main.js: Original error stack: ' + err.error.stack)}
-        showNotification('Error when talking to Spotify API', err.message, '', '');
+        else {return Promise.resolve('ready')} 
       }).catch(function (err) {
-        log.warn('main.js:  Exception when talking to Spotify API (-).  Error ' + err);
-        showNotification('Exception when talking to Spotify API', err.message, '', '');
+        logAndDisplayError(err)
       })
   }
 
@@ -353,27 +322,43 @@ function keyPressed(key){
   ///////////////////////////////////////////////////////////////////
   
   if (key.modifiers.includes('Control') && key.modifiers.includes('Alt') && ['`','1','2','3','4','5','6','7','8','9','0'].includes(key.key)){
-    // Determine if track should be moved
-    var move = 0;
-    if (prefsLocal.getPref('dayjob_always_move_tracks') == 0 && key.modifiers.includes('Shift')) {move = 1} 
-    if (prefsLocal.getPref('dayjob_always_move_tracks') == 1 && !key.modifiers.includes('Shift')){move = 1}
-    log.warn('main.js:  Add/move track to playlist in slot shortcut pressed:  Slot: ' + key.key + ' Move: ' + move);
-    // Add the current track to DayJobTest and remove it from the source playlist
-    spotifyServer.copyOrMovePlayingTrackToPlaylist(playlists[key.key].playlistID,playlists[key.key].playlistName, move)
-    .then(function (result) {
-      // We're done, skip song, log and show notification
-      log.warn('main.js:  Added track ' + result.name + ', ' + result.albumName + ', ' + result.artistName + ', ' + result.uri + ' to ' + result.destPlaylistName + " , " + result.destPlaylistId + ' : ' + result.result);
-      log.warn('main.js:  Removed track ' + result.name + ', ' + result.albumName + ', ' + result.artistName + ', ' + result.uri + ' from ' + result.context.sourcePlaylistName + " , " + result.context.sourcePlaylistId);
-      showNotification('Added track ' + result.name + ' to ' + result.destPlaylistName + ' (removed from ' + result.context.sourcePlaylistName + ')', '', '', '');
-    }, function (err) {
-      //showNotification('Error when talking to Spotify API', err.message, '', '');
-      showError(err)
-    }).catch(function (err) {
-      log.warn('main.js:  Exception when talking to Spotify API (+).  Error ' + err);
-      showNotification('Exception when talking to Spotify API', err.message, '', '');
-    })
+    if (playlists[key.key].playlistID == ''){
+      // Check if a playlist is assigned to the slot
+      handledErr = new Error("no_playlist_assigned")
+      handledErr.error = 'Shortcut ' + key.key;
+      return Promise.reject(handledErr);
     }
+    else {
+      // Determine if track should be moved
+      var move = 0;
+      if (prefsLocal.getPref('dayjob_always_move_tracks') == 0 && key.modifiers.includes('Shift')) {move = 1} 
+      if (prefsLocal.getPref('dayjob_always_move_tracks') == 1 && !key.modifiers.includes('Shift')){move = 1}
+      log.warn('main.js:  Add/move track to playlist in slot shortcut pressed:  Slot: ' + key.key + ' Move: ' + move);
+      // Add the current track to DayJobTest and remove it from the source playlist
+      spotifyServer.copyOrMovePlayingTrackToPlaylist(playlists[key.key].playlistID,playlists[key.key].playlistName, move)
+        .then(function (result) {
+          // We're done, skip song, log and show notification
+          if (move == 0){
+            // Track copied
+            showNotification('Added track ' + result.name + ' to ' + result.destPlaylistName, '', '', '');
+          }
+          else if (move == 1 && result.result == 'copied_and_not_moved' ) {
+            // Track copied instead of moved (source is read only, we don't have the name) 
+            showNotification('Added track ' + result.name + ' to ' + result.destPlaylistName + ' (NOT removed because source is read only (' + result.context.name + '))', '', '', '');
+          }  
+          else if (move == 1){
+            showNotification('Added track ' + result.name + ' to ' + result.destPlaylistName + ' (removed from ' + result.context.sourcePlaylistName + ')', '', '', '');
+          }    
+          else {
+            Promise.reject(new Error(''))
+          } 
+        }).catch(function (err) {
+          logAndDisplayError(err)
+        })
+    }
+  }
 }
+
 
 ///////////////////////////////////////////////////////////////////
 //// Notifications display
@@ -393,8 +378,12 @@ function showNotification(title, line1, line2, line3) {
 }
 
 ///////////////////////////////////////////////////////////////////
-//// Error logging
+//// Log error
 ///////////////////////////////////////////////////////////////////
+
+// TODO - Error printing is not robust and will cause a Promise Unhandled Rejection if the handling
+// an error object not in the speecified format - it should be revised
+
 function logError(err){
   log.warn('main.js:  ERROR has occurred:  ' + err + '\n' + 
            'Stack:   ' + err.stack)
@@ -408,10 +397,12 @@ function logError(err){
 }
 
 ///////////////////////////////////////////////////////////////////
-//// Error display
+//// Log and display error
 ///////////////////////////////////////////////////////////////////
 
-function showError(err) {
+// TODO - This also has unhandled exception issues, e.g. an unhandled exception occurs if the requested error message is not found in the DB
+
+function logAndDisplayError(err) {
   // Check if the error was caused by an external module if so show in UI
   var externalError = ""
   if (err.hasOwnProperty("error")){externalError = '(' + err.error + ')'} // Show the external error in the UI
