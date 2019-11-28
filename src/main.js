@@ -322,40 +322,41 @@ function keyPressed(key){
   ///////////////////////////////////////////////////////////////////
   
   if (key.modifiers.includes('Control') && key.modifiers.includes('Alt') && ['`','1','2','3','4','5','6','7','8','9','0'].includes(key.key)){
-    if (playlists[key.key].playlistID == ''){
-      // Check if a playlist is assigned to the slot
-      handledErr = new Error("no_playlist_assigned")
-      handledErr.error = 'Shortcut ' + key.key;
-      return Promise.reject(handledErr);
-    }
-    else {
+    var move = 0;
+    return Promise.resolve().then(function () {
+      if (playlists[key.key].playlistID == ''){
+        // Check if a playlist is assigned to the slot
+        handledErr = new Error("no_playlist_assigned")
+        handledErr.error = 'Shortcut ' + key.key;
+        return Promise.reject(handledErr);
+      }
+      return Promise.resolve('ready')
+    }).then(function (result){
       // Determine if track should be moved
-      var move = 0;
       if (prefsLocal.getPref('dayjob_always_move_tracks') == 0 && key.modifiers.includes('Shift')) {move = 1} 
       if (prefsLocal.getPref('dayjob_always_move_tracks') == 1 && !key.modifiers.includes('Shift')){move = 1}
       log.warn('main.js:  Add/move track to playlist in slot shortcut pressed:  Slot: ' + key.key + ' Move: ' + move);
       // Add the current track to DayJobTest and remove it from the source playlist
-      spotifyServer.copyOrMovePlayingTrackToPlaylist(playlists[key.key].playlistID,playlists[key.key].playlistName, move)
-        .then(function (result) {
-          // We're done, skip song, log and show notification
-          if (move == 0){
-            // Track copied
-            showNotification('Added track ' + result.name + ' to ' + result.destPlaylistName, '', '', '');
-          }
-          else if (move == 1 && result.result == 'copied_and_not_moved' ) {
-            // Track copied instead of moved (source is read only, we don't have the name) 
-            showNotification('Added track ' + result.name + ' to ' + result.destPlaylistName + ' (NOT removed because source is read only (' + result.context.name + '))', '', '', '');
-          }  
-          else if (move == 1){
-            showNotification('Added track ' + result.name + ' to ' + result.destPlaylistName + ' (removed from ' + result.context.sourcePlaylistName + ')', '', '', '');
-          }    
-          else {
-            Promise.reject(new Error(''))
-          } 
-        }).catch(function (err) {
-          logAndDisplayError(err)
-        })
-    }
+      return spotifyServer.copyOrMovePlayingTrackToPlaylist(playlists[key.key].playlistID,playlists[key.key].playlistName, move)
+    }).then(function (result) {
+      // We're done, skip song, log and show notification
+      if (move == 0){
+        // Track copied
+        showNotification('Added track ' + result.name + ' to ' + result.destPlaylistName, '', '', '');
+      }
+      else if (move == 1 && result.result == 'copied_and_not_moved' ) {
+        // Track copied instead of moved (source is read only, we don't have the name) 
+        showNotification('Added track ' + result.name + ' to ' + result.destPlaylistName + ' (NOT removed because source is read only (' + result.context.name + '))', '', '', '');
+      }  
+      else if (move == 1){
+        showNotification('Added track ' + result.name + ' to ' + result.destPlaylistName + ' (removed from ' + result.context.sourcePlaylistName + ')', '', '', '');
+      }    
+      else {
+        Promise.reject(new Error('Unknown error adding or moving songs'))
+      } 
+    }).catch(function (err) {
+      logAndDisplayError(err)
+    })
   }
 }
 
