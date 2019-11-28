@@ -4,12 +4,15 @@
         <link rel="stylesheet" type="text/css" href="main.css"></head>
     </head>
     <body>
-        <h3 id='notificationText'>Welcome to dayjob</h3>
-        <div id='trackName'></div>
-        <div id='trackArtist'></div>
-        <div id='trackAlbum'></div>        
-        <a href="#" id="btnOpenNewWindow">Open main window</a>
-        <a href="#" id="btnSkipTrack">Skip track</a>
+        <div id='dayjoblogo'><span id="dayjobcolour">d</span>ay<span id="dayjobcolour">j</span>ob <span id="version"></span></div>
+        <h3 id='title'>Welcome to dayjob</h3>
+        <div id='description'>Default</div>
+        <div id='actionAdd'>Default</div>
+        <div id='actionRemove'>Default</div>
+        <div id='actionWarning'>Default</div>
+        <div id='actionError'>Default</div>      
+        <br/>
+        <button id='buttonCta'>Connect to Spotify</button>
     </body>
     <script>
         require('./notification.js');

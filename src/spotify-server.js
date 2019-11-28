@@ -542,7 +542,7 @@ function movePlayingTrackToPlaylist(destPlaylistId, destPlaylistName){
                 return removeTracksFromPlaylist(trackInfo.context.sourcePlaylistId, [{ uri: trackInfo.uri }])  
             }
         }).then(function (result) {    
-            if (trackInfo.result = 'copied_and_not_moved'){
+            if (trackInfo.result == 'copied_and_not_moved'){
                 return Promise.resolve(trackInfo)
             }
             else {

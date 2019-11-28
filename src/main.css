@@ -1,10 +1,21 @@
+/* TODO - Complete CSS overhaul - single instances of colours, class hierarchy rather than flat use of IDs, etc. */
+
 @font-face {
     font-family: 'Montserrat';
     font-style: normal;
     font-weight: 200;
-    src: local('Montserrat-Regular'), url(../assets/Montserrat.woff2) format('woff2');
+    src: url(../assets/Montserrat.woff2) format('woff2');
     unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2212, U+2215, U+E0FF, U+EFFD, U+F000;
   }
+
+  @font-face {
+    font-family: "FontAwesome";
+    font-weight: normal;
+    font-style : normal;
+    src: url(../node_modules/font-awesome/fonts/fontawesome-webfont.woff2) format('woff2');
+  }
+
+
 body {
     font-family: 'Montserrat', sans-serif;
     background: #272727;
@@ -16,6 +27,7 @@ body {
     font-size: 75%;
     /* -webkit-user-select: none; */
 }
+
 a {
     /*Link appearance*/
     color: #6f6f6f;
@@ -44,3 +56,53 @@ h5 {
     color:#1CD760;
 }
 
+#dayjoblogo {
+    position: absolute;
+    left: 10px;
+    top: 7px;
+    font-size: 135%;
+}
+
+#buttonCta {
+    background-color: #1CD760;
+    border: none;
+    color: white;
+    padding: 5px 20px;
+    font-size: 120%;
+    font-weight: bolder;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    margin: 4px 2px;
+    cursor: pointer;
+    border-radius: 16px;
+}
+
+#actionAdd:before{
+    font-family: 'FontAwesome';
+    font-size: 125%;
+    color: #1CD760;
+    content: "\f055";
+    
+}
+
+#actionRemove:before{
+    font-family: 'FontAwesome';
+    font-size: 125%;
+    color: #1CD760;
+    content: "\f056";
+}
+
+#actionWarning:before{
+    font-family: 'FontAwesome';
+    font-size: 125%;
+    color: rgb(221, 96, 23);
+    content: "\f071";
+}
+
+#actionError:before{
+    font-family: 'FontAwesome';
+    font-size: 125%;
+    color: red;
+    content: "\f06a";
+}

@@ -191,7 +191,8 @@ function connectApi(){
   log.warn('main.js:  Attempting to connect to the Spotify API...');
   spotifyServer.checkApiConnection()
     .then(function (result) {
-      showNotification('Connected to Spotify as ' + spotifyServer.getspotifyDisplayName(), '', '', '');
+      showNotification({title: 'Connected to Spotify as ' + spotifyServer.getspotifyDisplayName(), description: 'Start making awesome playlists!'})
+      // TODO - If the user has no saved playlists, reject with an error asking the user to create some playlists first
     }).catch(function (err) {
       logAndDisplayError(err)
     })
@@ -234,6 +235,8 @@ app.on('ready', () => {
   const ctrlAlt0 = globalShortcut.register('Control+Alt+0', () =>          {keyPressed({modifiers: ["Control","Alt"],key: "0"})});
   const ctrlAltMinus = globalShortcut.register('Control+Alt+-', () =>      {keyPressed({modifiers: ["Control","Alt"],key: "-"})});
   const ctrlAltPlus = globalShortcut.register('Control+Alt+=', () =>       {keyPressed({modifiers: ["Control","Alt"],key: "="})});
+  // TODO - Remove this test code
+  const ctrlAltT = globalShortcut.register('Control+Alt+t', () =>       {keyPressed({modifiers: ["Control","Alt"],key: "t"})});
   // Register CRTL + ALT + SHIFT shortcuts
   const ctrlAltShfApostrophe = globalShortcut.register('Control+Alt+Shift+`', () => {keyPressed({modifiers: ["Control","Alt","Shift"],key: "`"})});
   const ctrlAltShf1 = globalShortcut.register('Control+Alt+Shift+1', () =>          {keyPressed({modifiers: ["Control","Alt","Shift"],key: "1"})});
@@ -301,7 +304,7 @@ function keyPressed(key){
     spotifyServer.removePlayingTrackFromPlaylist()
       .then(function (result) {
         // We're done, skip song, log and show notification
-        showNotification('Removed track ' + result.name + ' from ' + result.context.sourcePlaylistName, '', '', '');
+        showNotification({title: result.artistName + ' - ' + result.name, actionRemove: 'Removed from playlist \'' + result.context.sourcePlaylistName +'\''})
         if (skip == 1) {return spotifyServer.skipToNext()}
         else {return Promise.resolve('ready')} 
       }).catch(function (err) {
@@ -324,10 +327,10 @@ function keyPressed(key){
   if (key.modifiers.includes('Control') && key.modifiers.includes('Alt') && ['`','1','2','3','4','5','6','7','8','9','0'].includes(key.key)){
     var move = 0;
     return Promise.resolve().then(function () {
-      if (playlists[key.key].playlistID == ''){
-        // Check if a playlist is assigned to the slot
+      // Check if a playlist is assigned to the slot
+      if (playlists[key.key].playlistID == ''){        
         handledErr = new Error("no_playlist_assigned")
-        handledErr.error = 'Shortcut ' + key.key;
+        handledErr.error = 'shortcut ' + key.key;
         return Promise.reject(handledErr);
       }
       return Promise.resolve('ready')
@@ -336,20 +339,21 @@ function keyPressed(key){
       if (prefsLocal.getPref('dayjob_always_move_tracks') == 0 && key.modifiers.includes('Shift')) {move = 1} 
       if (prefsLocal.getPref('dayjob_always_move_tracks') == 1 && !key.modifiers.includes('Shift')){move = 1}
       log.warn('main.js:  Add/move track to playlist in slot shortcut pressed:  Slot: ' + key.key + ' Move: ' + move);
-      // Add the current track to DayJobTest and remove it from the source playlist
+      // Add the current track 
       return spotifyServer.copyOrMovePlayingTrackToPlaylist(playlists[key.key].playlistID,playlists[key.key].playlistName, move)
     }).then(function (result) {
       // We're done, skip song, log and show notification
       if (move == 0){
-        // Track copied
-        showNotification('Added track ' + result.name + ' to ' + result.destPlaylistName, '', '', '');
+        // Track copied only
+        showNotification({title: result.artistName + ' - ' + result.name, actionAdd: 'Added to playlist \'' + result.destPlaylistName +'\''})
       }
       else if (move == 1 && result.result == 'copied_and_not_moved' ) {
         // Track copied instead of moved (source is read only, we don't have the name) 
-        showNotification('Added track ' + result.name + ' to ' + result.destPlaylistName + ' (NOT removed because source is read only (' + result.context.name + '))', '', '', '');
+        showNotification({title: result.artistName + ' - ' + result.name, actionAdd: 'Added to playlist \'' + result.destPlaylistName +'\'', actionWarning: 'Not removed because source is read only (' + result.context.name + ')'})
       }  
       else if (move == 1){
-        showNotification('Added track ' + result.name + ' to ' + result.destPlaylistName + ' (removed from ' + result.context.sourcePlaylistName + ')', '', '', '');
+        // Track was moved
+        showNotification({title: result.artistName + ' - ' + result.name, actionAdd: 'Added to playlist \'' + result.destPlaylistName +'\'', actionRemove: 'Removed from source playlist \'' + result.context.sourcePlaylistName + '\''})
       }    
       else {
         Promise.reject(new Error('Unknown error adding or moving songs'))
@@ -358,6 +362,35 @@ function keyPressed(key){
       logAndDisplayError(err)
     })
   }
+
+    //// UI test
+  ///////////////////////////////////////////////////////////////////
+
+  if (key.modifiers.includes('Control') && key.modifiers.includes('Alt') && key.key == 't'){
+    log.warn('main.js:  UI test activated');
+    var uiData = {
+      title: 'The title',
+      description: 'The message esaf asdf sdaf adsf adsf adsf adsf adsf ad',
+      actionAdd:'Adding this track', 
+      actionRemove:'Removing this track', 
+      actionWarning:'This is a warning',
+      actionError:'This is an error',
+      buttonCta: {
+          title: 'The button title',
+          action: 'the_button_action'
+      },
+      status: 'error'
+    } 
+    showNotification(uiData);
+    mb.window.webContents.send('updateUi', uiData)
+    mb.window.showInactive();
+    // When a notification occurs, close the window briefly after
+    function doAfterDelay() { mb.hideWindow(); }
+    setTimeout(doAfterDelay, 5000);
+  }
+
+
+
 }
 
 
@@ -365,12 +398,10 @@ function keyPressed(key){
 //// Notifications display
 ///////////////////////////////////////////////////////////////////
 
-function showNotification(title, line1, line2, line3) {
-  // A generic function to show the notification window...
-  mb.window.webContents.send('setNotificationText', title)
-  mb.window.webContents.send('setTrackName', line1);
-  mb.window.webContents.send('setTrackArtist', line2);
-  mb.window.webContents.send('setTrackAlbum', line3);
+// An example version of the uiData object is defined in notifications.js
+
+function showNotification(uiData) {
+  mb.window.webContents.send('updateUi', uiData)
   //mb.showWindow();
   mb.window.showInactive();
   // When a notification occurs, close the window briefly after
@@ -382,8 +413,8 @@ function showNotification(title, line1, line2, line3) {
 //// Log error
 ///////////////////////////////////////////////////////////////////
 
-// TODO - Error printing is not robust and will cause a Promise Unhandled Rejection if the handling
-// an error object not in the speecified format - it should be revised
+// TODO - Error printing is not robust and will cause a Promise Unhandled Rejection if 
+// an error object is not in the speecified format - it should be revised
 
 function logError(err){
   log.warn('main.js:  ERROR has occurred:  ' + err + '\n' + 
@@ -406,20 +437,12 @@ function logError(err){
 function logAndDisplayError(err) {
   // Check if the error was caused by an external module if so show in UI
   var externalError = ""
-  if (err.hasOwnProperty("error")){externalError = '(' + err.error + ')'} // Show the external error in the UI
+  if (err.hasOwnProperty("error")){externalError = ' (' + err.error + ')'} // Show the external error in the UI
   // Log the error
   logError(err)
   // Look up the errors in the DB and show warning
-  mb.window.webContents.send('setNotificationText', errors[err.message].title)
-  mb.window.webContents.send('setTrackName', errors[err.message].description);
-  mb.window.webContents.send('setTrackArtist', externalError);
-  log.warn('main.js:  ERROR reported to the user: ' + errors[err.message].title + ': ' + errors[err.message].description + ' (' + externalError + ')')
-  //mb.window.webContents.send('setTrackAlbum', line3);
-  //mb.showWindow();
-  mb.window.showInactive();
-  // When a notification occurs, close the window briefly after
-  function doAfterDelay() { mb.hideWindow(); }
-  setTimeout(doAfterDelay, 5000);
+  showNotification({title: errors[err.message].title, description: errors[err.message].description + externalError, buttonCta: {title: errors[err.message].actionTitle, action: errors[err.message].actionId}})
+  log.warn('main.js:  ERROR reported to the user: ' + errors[err.message].title + ': ' + errors[err.message].description + externalError)
 }
 
 // Actions after mb is ready but the window is not
@@ -449,8 +472,29 @@ mb.on('ready', function ready() {
 //// IPC listeners
 ///////////////////////////////////////////////////////////////////
 
-ipcMain.on('btnOpenNewWindow', function (event) {
-  log.warn('main.js:  Event btnOpenNewWindow received by main process.');
+ipcMain.on('check_api_connection', function (event) {
+  log.warn('main.js:  Event check_api_connection received by main process.');
+  openMainWindow('/src/ui-preferences.html');
+});
+
+ipcMain.on('playlist_settings', function (event) {
+  log.warn('main.js:  Event playlist_settings received by main process.');
+  openMainWindow('/src/ui-preferences.html');
+});
+
+ipcMain.on('authorise_dayjob', function (event) {
+  log.warn('main.js:  Event authorise_dayjob received by main process.');
+  spotifyServer.getAuthUrl()
+      .then(function (result) {
+        shell.openExternal(result);
+      }).catch(function (err) {
+        logAndDisplayError(err)
+      })
+});
+
+ipcMain.on('connect_api', function (event) {
+  log.warn('main.js:  Event connect_api received by main process.');
+  connectApi();
 });
 
 ipcMain.on('btnOpenDashboard', function (event) {
@@ -458,9 +502,9 @@ ipcMain.on('btnOpenDashboard', function (event) {
   shell.openExternal('https://developer.spotify.com/dashboard/login');
 });
 
-ipcMain.on('btnConnectToSpotify', function (event) {
-  log.warn('main.js:  Event btnConnectToSpotify received by main process.');
-  connectApi();
+// TODO - Test function, can be deleted
+ipcMain.on('connect_api', function (event) {
+  log.warn('main.js:  Event connect_api received by main process.');
 });
 
 /*
