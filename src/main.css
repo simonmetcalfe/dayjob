@@ -1,4 +1,4 @@
-/* TODO - Complete CSS overhaul - single instances of colours, class hierarchy rather than flat use of IDs, etc. */
+/* TODO - Needs improvement, better class usage, better implementation of FontAwesome icons etc. */
 
 @font-face {
     font-family: 'Montserrat';
@@ -6,15 +6,22 @@
     font-weight: 200;
     src: url(../assets/Montserrat.woff2) format('woff2');
     unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2212, U+2215, U+E0FF, U+EFFD, U+F000;
-  }
+}
 
-  @font-face {
-    font-family: "FontAwesome";
-    font-weight: normal;
-    font-style : normal;
-    src: url(../node_modules/font-awesome/fonts/fontawesome-webfont.woff2) format('woff2');
-  }
+@font-face {
+font-family: "FontAwesome";
+font-weight: normal;
+font-style : normal;
+src: url(../node_modules/font-awesome/fonts/fontawesome-webfont.woff2) format('woff2');
+}
 
+:root{
+    --dayjobGreen: #1CD760;
+    --dayjobWhiteText: #eeeeee;
+    --dayjobGreyText: #8f8f8f;
+    --dayjobWarning:  rgb(221, 96, 23);
+    --dayjobError:  red;
+}
 
 body {
     font-family: 'Montserrat', sans-serif;
@@ -22,20 +29,24 @@ body {
     padding: 32px; /*Border around window*/
     margin: 0;
     text-align: center;
-    color: #fff;
+    color: var(--dayjobWhiteText);
     overflow: hidden;
-    font-size: 75%;
+    font-size: 85%;
     /* -webkit-user-select: none; */
 }
 
 a {
     /*Link appearance*/
-    color: #6f6f6f;
+    color: var(--dayjobGreyText);
 }
 
 h1{
     -webkit-margin-after: 0.0em;
-    color: #cccccc;
+    color: var(--dayjobWhiteText);
+}
+
+h3{
+    -webkit-margin-before: 0.5em;
 }
 
 h4{
@@ -45,15 +56,19 @@ h4{
 h5 {
     -webkit-margin-before: 0.5em;
     -webkit-margin-after: 0.0em;
-    color: #6f6f6f;
+    color: var(--dayjobGreyText);
+}
+
+.statusUpdate{
+    margin-top:  5px
 }
 
 #list {
-    color: #6f6f6f;
+    color: var(--dayjobGreyText);
 }
 
 #dayjobcolour {
-    color:#1CD760;
+    color: var(--dayjobGreen);
 }
 
 #dayjoblogo {
@@ -63,10 +78,27 @@ h5 {
     font-size: 135%;
 }
 
+#warning:before{
+    font-family: 'FontAwesome';
+    font-size: 115%;
+    color: var(--dayjobWarning);
+    content: "\f071";
+    margin-right: 5px;
+}
+
+#error:before{
+    font-family: 'FontAwesome';
+    font-size: 115%;
+    color: var(--dayjobError);
+    content: "\f06a";
+    margin-right: 5px;
+}
+
+
 #buttonCta {
-    background-color: #1CD760;
+    background-color: var(--dayjobGreen);
     border: none;
-    color: white;
+    color: var(--dayjobWhiteText);
     padding: 5px 20px;
     font-size: 120%;
     font-weight: bolder;
@@ -80,29 +112,32 @@ h5 {
 
 #actionAdd:before{
     font-family: 'FontAwesome';
-    font-size: 125%;
-    color: #1CD760;
+    font-size: 115%;
+    color: var(--dayjobGreen);
     content: "\f055";
-    
+    margin-right: 5px;
 }
 
 #actionRemove:before{
     font-family: 'FontAwesome';
-    font-size: 125%;
-    color: #1CD760;
+    font-size: 115%;
+    color: var(--dayjobGreen);
     content: "\f056";
+    margin-right: 5px;
 }
 
 #actionWarning:before{
     font-family: 'FontAwesome';
-    font-size: 125%;
-    color: rgb(221, 96, 23);
+    font-size: 115%;
+    color: var(--dayjobWarning);
     content: "\f071";
+    margin-right: 5px;
 }
 
 #actionError:before{
     font-family: 'FontAwesome';
-    font-size: 125%;
-    color: red;
+    font-size: 115%;
+    color: var(--dayjobError);
     content: "\f06a";
+    margin-right: 5px;
 }

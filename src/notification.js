@@ -22,6 +22,7 @@ var uiData // Data passsed to the notification window to configure its appearanc
 uiData = {
     title: 'The title',
     description: 'The dialog box message',
+    subDescription: 'The small text',
     actionAdd:'Adding this track', 
     actionRemove:'Removing this track', 
     actionWarning:'This is a warning',
@@ -30,7 +31,7 @@ uiData = {
         title: 'The button title',
         action: 'the_button_action'
     },
-    status: 'error'
+    errorType: 'error'
 }
 */ 
 
@@ -39,11 +40,15 @@ uiData = {
 ///////////////////////////////////////////////////////////////////
 
 function resetUi(){
+    document.getElementById('title').style.display = 'none';
     document.getElementById('description').style.display = 'none';
+    document.getElementById('warning').style.display = 'none';
+    document.getElementById('error').style.display = 'none';
     document.getElementById('actionAdd').style.display = 'none';
     document.getElementById('actionRemove').style.display = 'none';
     document.getElementById('actionWarning').style.display = 'none';
     document.getElementById('actionError').style.display = 'none';
+    document.getElementById('subDescription').style.display = 'none';
     document.getElementById('buttonCta').style.display = 'none';
 }
 
@@ -56,14 +61,24 @@ resetUi(); // Reset the UI on startup (saves hiding everything in CSS)
 ipcRenderer.on('updateUi', (event, arg) =>  {
     resetUi();
     uiData = arg;
-    if (uiData.hasOwnProperty('title')){
+    log.warn('Notification.js:  updateUI has received the following uiData JSON: ' + JSON.stringify(uiData))
+    if (uiData.hasOwnProperty('title') && !uiData.hasOwnProperty('errorType')){
         document.getElementById('title').innerHTML = uiData.title;
+        document.getElementById('title').style.display = 'block';
         // Title is never hidden, so calling .style.display is not required
+    }
+    if (uiData.hasOwnProperty('title') && uiData.hasOwnProperty('errorType') && uiData.errorType == 'warning' ){
+        document.getElementById('warning').innerHTML = uiData.title;
+        document.getElementById('warning').style.display = 'block';
+    }
+    if (uiData.hasOwnProperty('title') && uiData.hasOwnProperty('errorType') && uiData.errorType == 'error' ){
+        document.getElementById('error').innerHTML = uiData.title;
+        document.getElementById('error').style.display = 'block';
     }
     if (uiData.hasOwnProperty('description')){
         document.getElementById('description').innerHTML = uiData.description;
         document.getElementById('description').style.display = 'block';
-    }
+    }    
     if (uiData.hasOwnProperty('actionAdd')){
         document.getElementById('actionAdd').innerHTML = uiData.actionAdd;
         document.getElementById('actionAdd').style.display = 'block';
@@ -80,6 +95,10 @@ ipcRenderer.on('updateUi', (event, arg) =>  {
         document.getElementById('actionError').innerHTML = uiData.actionError;
         document.getElementById('actionError').style.display = 'block';
     }
+    if (uiData.hasOwnProperty('subDescription')){
+        document.getElementById('subDescription').innerHTML = uiData.subDescription;
+        document.getElementById('subDescription').style.display = 'block';
+    }   
     if (uiData.hasOwnProperty('buttonCta') && !uiData.buttonCta.action == ''){
         document.getElementById('buttonCta').innerHTML = uiData.buttonCta.title;
         document.getElementById('buttonCta').style.display = 'inline-block';

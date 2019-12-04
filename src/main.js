@@ -191,6 +191,7 @@ function connectApi(){
   log.warn('main.js:  Attempting to connect to the Spotify API...');
   spotifyServer.checkApiConnection()
     .then(function (result) {
+
       showNotification({title: 'Connected to Spotify as ' + spotifyServer.getspotifyDisplayName(), description: 'Start making awesome playlists!'})
       // TODO - If the user has no saved playlists, reject with an error asking the user to create some playlists first
     }).catch(function (err) {
@@ -235,8 +236,6 @@ app.on('ready', () => {
   const ctrlAlt0 = globalShortcut.register('Control+Alt+0', () =>          {keyPressed({modifiers: ["Control","Alt"],key: "0"})});
   const ctrlAltMinus = globalShortcut.register('Control+Alt+-', () =>      {keyPressed({modifiers: ["Control","Alt"],key: "-"})});
   const ctrlAltPlus = globalShortcut.register('Control+Alt+=', () =>       {keyPressed({modifiers: ["Control","Alt"],key: "="})});
-  // TODO - Remove this test code
-  const ctrlAltT = globalShortcut.register('Control+Alt+t', () =>       {keyPressed({modifiers: ["Control","Alt"],key: "t"})});
   // Register CRTL + ALT + SHIFT shortcuts
   const ctrlAltShfApostrophe = globalShortcut.register('Control+Alt+Shift+`', () => {keyPressed({modifiers: ["Control","Alt","Shift"],key: "`"})});
   const ctrlAltShf1 = globalShortcut.register('Control+Alt+Shift+1', () =>          {keyPressed({modifiers: ["Control","Alt","Shift"],key: "1"})});
@@ -252,6 +251,7 @@ app.on('ready', () => {
   const ctrlAltShfMinus = globalShortcut.register('Control+Alt+Shift+-', () =>      {keyPressed({modifiers: ["Control","Alt","Shift"],key: "-"})});
   const ctrlAltShfPlus = globalShortcut.register('Control+Alt+Shift+=', () =>       {keyPressed({modifiers: ["Control","Alt","Shift"],key: "="})});
   // Warn if registration of CRTL + ALT shortcuts fail
+  // TODO - Should alert  the user if a keuyboard shortcut fails
   if (!ctrlAltApostrophe) {log.warn('main.js:  registration failed of: ctrlAltApostrophe (Control+Alt+`)')};
   if (!ctrlAlt1) {log.warn('main.js:  registration failed of: ctrlAlt1 (Control+Alt+1)')};
   if (!ctrlAlt2) {log.warn('main.js:  registration failed of: ctrlAlt2 (Control+Alt+2)')};
@@ -266,6 +266,7 @@ app.on('ready', () => {
   if (!ctrlAltMinus) {log.warn('main.js:  registration failed of: ctrlAltMinus (Control+Alt+-)')};
   if (!ctrlAltPlus) {log.warn('main.js:  registration failed of: ctrlAltPlus (Control+Alt+=)')};
   // Warn if registration of CRTL + ALT + SHIFT shortcuts fail
+  // TODO - Should alert  the user if a keuyboard shortcut fails
   if (!ctrlAltShfApostrophe) {log.warn('main.js:  registration failed of: ctrlAltApostrophe (Control+Alt+Shift+`)')};
   if (!ctrlAltShf1) {log.warn('main.js:  registration failed of: ctrlAlt1 (Control+Alt+Shift+1)')};
   if (!ctrlAltShf2) {log.warn('main.js:  registration failed of: ctrlAlt2 (Control+Alt+Shift+2)')};
@@ -349,7 +350,7 @@ function keyPressed(key){
       }
       else if (move == 1 && result.result == 'copied_and_not_moved' ) {
         // Track copied instead of moved (source is read only, we don't have the name) 
-        showNotification({title: result.artistName + ' - ' + result.name, actionAdd: 'Added to playlist \'' + result.destPlaylistName +'\'', actionWarning: 'Not removed because source is read only (' + result.context.name + ')'})
+        showNotification({title: result.artistName + ' - ' + result.name, actionAdd: 'Added to playlist \'' + result.destPlaylistName +'\'', actionWarning: 'Not removed because the current source is read only', subDescription: '(' + result.context.name + ')'})
       }  
       else if (move == 1){
         // Track was moved
@@ -366,11 +367,14 @@ function keyPressed(key){
     //// UI test
   ///////////////////////////////////////////////////////////////////
 
+  /* 
+
   if (key.modifiers.includes('Control') && key.modifiers.includes('Alt') && key.key == 't'){
     log.warn('main.js:  UI test activated');
     var uiData = {
       title: 'The title',
       description: 'The message esaf asdf sdaf adsf adsf adsf adsf adsf ad',
+      subDescription: 'The small text',
       actionAdd:'Adding this track', 
       actionRemove:'Removing this track', 
       actionWarning:'This is a warning',
@@ -379,7 +383,7 @@ function keyPressed(key){
           title: 'The button title',
           action: 'the_button_action'
       },
-      status: 'error'
+      errorType: 'error'
     } 
     showNotification(uiData);
     mb.window.webContents.send('updateUi', uiData)
@@ -388,6 +392,7 @@ function keyPressed(key){
     function doAfterDelay() { mb.hideWindow(); }
     setTimeout(doAfterDelay, 5000);
   }
+  */
 
 
 
@@ -437,12 +442,17 @@ function logError(err){
 function logAndDisplayError(err) {
   // Check if the error was caused by an external module if so show in UI
   var externalError = ""
-  if (err.hasOwnProperty("error")){externalError = ' (' + err.error + ')'} // Show the external error in the UI
+  if (err.hasOwnProperty("error")){externalError = '(' + err.error + ')'} // Show the external error in the UI
   // Log the error
   logError(err)
   // Look up the errors in the DB and show warning
-  showNotification({title: errors[err.message].title, description: errors[err.message].description + externalError, buttonCta: {title: errors[err.message].actionTitle, action: errors[err.message].actionId}})
-  log.warn('main.js:  ERROR reported to the user: ' + errors[err.message].title + ': ' + errors[err.message].description + externalError)
+  showNotification({title: errors[err.message].title, 
+                    description: errors[err.message].description, 
+                    subDescription: externalError,
+                    buttonCta: {title: errors[err.message].actionTitle, 
+                                action: errors[err.message].actionId},
+                    errorType: errors[err.message].errorType})
+  log.warn('main.js:  ERROR reported to the user: (' + errors[err.message].errorType + ') ' + errors[err.message].title + ': ' + errors[err.message].description + externalError)
 }
 
 // Actions after mb is ready but the window is not
