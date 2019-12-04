@@ -79,7 +79,7 @@
           <div class="tab-pane fade" id="playlists" role="tabpanel" aria-labelledby="playlists-tab">
             <div class="container m-3">
               <p class="mb-3">
-                List the playlists you want to be able to add songs to using dayjob's keyboard shortcuts.  dayjob currently supports 11 playlists. 
+                List the playlists you want to be able to add tracks to using dayjob's keyboard shortcuts.  dayjob currently supports 11 playlists. 
                 </br></br>
                 To add a playlist, in Spotify right-click the playlist and choose Share > Copy Spotify URI.  Paste the URI into a slot below.
               </p>
@@ -110,8 +110,40 @@
             </div>
           </div>
           <div class="tab-pane fade" id="general" role="tabpanel" aria-labelledby="general-tab">
-            <div class="container">
-                ...
+            <div class="container m-3">
+                <div class="row mb-3">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" value="" id="always_skip_tracks">
+                    <label class="form-check-label" for="always_skip_tracks">
+                      Always skip to the next track when removing a track from a playlist 
+                    </label>
+                    <small id="passwordHelpInline" class="form-text text-muted">
+                        When enabled, the track will be skipped by default (instead of having to hold the SHIFT key).  Holding SHIFT will then have the reverse effect and prevent the track from being skipped.  
+                    </small>
+                  </div>
+                </div>
+                <div class="row mb-3">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" value="" id="always_move_tracks">
+                    <label class="form-check-label" for="always_skip_tracks">
+                      Always move the track to the playlist instead of copying it
+                    </label>
+                    <small id="passwordHelpInline" class="form-text text-muted">
+                        When enabled, the track will be moved by default (instead of having to hold the SHIFT key).  Holding SHIFT will then have the reverse effect and copy the track (instead of moving it).
+                    </small>
+                  </div>
+                </div>
+                <div class="row mb-3">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" value="" id="always__tracks">
+                    <label class="form-check-label" for="always_skip_tracks">
+                      Start dayjob when the computer starts
+                    </label>
+                    <small id="passwordHelpInline" class="form-text text-muted">
+                        dayjob will be with you always!
+                    </small>
+                  </div>
+                </div>
             </div>
           </div>
         </div>
@@ -119,13 +151,7 @@
 
       
 
-        <!--
-        <h3 id='notificationText'>Preferences</h3>
-        <div id='trackName'></div>
-        <div id='trackArtist'></div>
-        <div id='trackAlbum'></div>        
-        <a href="#" id="btnOpenNewWindow">Open main window</a>
-        -->
+
     </body>
     <!-- Unsure if needed 
  

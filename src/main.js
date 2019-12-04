@@ -304,7 +304,7 @@ function keyPressed(key){
     log.warn('main.js:  Remove track keyboard shortcut pressed...');
     spotifyServer.removePlayingTrackFromPlaylist()
       .then(function (result) {
-        // We're done, skip song, log and show notification
+        // We're done, skip track, log and show notification
         showNotification({title: result.artistName + ' - ' + result.name, actionRemove: 'Removed from playlist \'' + result.context.sourcePlaylistName +'\''})
         if (skip == 1) {return spotifyServer.skipToNext()}
         else {return Promise.resolve('ready')} 
@@ -343,7 +343,7 @@ function keyPressed(key){
       // Add the current track 
       return spotifyServer.copyOrMovePlayingTrackToPlaylist(playlists[key.key].playlistID,playlists[key.key].playlistName, move)
     }).then(function (result) {
-      // We're done, skip song, log and show notification
+      // We're done, skip track, log and show notification
       if (move == 0){
         // Track copied only
         showNotification({title: result.artistName + ' - ' + result.name, actionAdd: 'Added to playlist \'' + result.destPlaylistName +'\''})
@@ -357,7 +357,7 @@ function keyPressed(key){
         showNotification({title: result.artistName + ' - ' + result.name, actionAdd: 'Added to playlist \'' + result.destPlaylistName +'\'', actionRemove: 'Removed from source playlist \'' + result.context.sourcePlaylistName + '\''})
       }    
       else {
-        Promise.reject(new Error('Unknown error adding or moving songs'))
+        Promise.reject(new Error('Unknown error adding or moving track'))
       } 
     }).catch(function (err) {
       logAndDisplayError(err)

@@ -393,13 +393,13 @@ function parsePlayingTrackInfo(playingTrackJson){
             else if (playingTrackJson.body.context == null)             {trackInfo.context.name = "Liked or Recommended" }         
             else if (playingTrackJson.body.context.type == "artist")    {trackInfo.context.name = "Artist"}                       
             else if (playingTrackJson.body.context.type == "album")     {trackInfo.context.name = "Album"}             
-            else if (playingTrackJson.body.context.type == "playlist" && playingTrackJson.body.context.uri.split(':').length == 3) {trackInfo.context.name = "Radio"} // When radio songs played from radio thumbnail         
+            else if (playingTrackJson.body.context.type == "playlist" && playingTrackJson.body.context.uri.split(':').length == 3) {trackInfo.context.name = "Radio"} // When radio tracks played from radio thumbnail         
             else if (playingTrackJson.body.context.type == "playlist" && playingTrackJson.body.context.uri.split(':').length == 5) {
                 if (playingTrackJson.body.context.uri.split(':')[2] == spotifyUserId){
                     trackInfo.context.readOnly=false;
                     trackInfo.context.name = "Playlist"    
                 }    
-                else {trackInfo.context.name = "Shared playlist / Radio";}  // Radio songs indistinguisable from shared playlists if songs are played from the list screen
+                else {trackInfo.context.name = "Shared playlist / Radio";}  // Radio tracks are indistinguisable from shared playlists if tracks are played from the list screen
                 trackInfo.context.sourcePlaylistId = playingTrackJson.body.context.uri.split(':')[4];
                 log.warn('spotify-server.js:  Getting playlist name for playlist ID... ' + trackInfo.context.sourcePlaylistId)
                 return getPlaylistName(trackInfo.context.sourcePlaylistId)
