@@ -47,6 +47,7 @@ h1{
 
 h3{
     -webkit-margin-before: 0.5em;
+    -webkit-margin-after: 0.3em;
 }
 
 h4{
@@ -60,7 +61,7 @@ h5 {
 }
 
 .statusUpdate{
-    margin-top:  5px
+    margin-top:  3px
 }
 
 #list {

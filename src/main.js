@@ -66,7 +66,6 @@ if (prefsLocal.getPref('dayjob_playlists_v1') == undefined){
   // No playlists stored, create a blank array
   playlists = 
     {
-      "`" : {playlistID: "", playlistName:""},
       "1" : {playlistID: "", playlistName:""},
       "2" : {playlistID: "", playlistName:""},
       "3" : {playlistID: "", playlistName:""},
@@ -129,7 +128,7 @@ let mainWindow;  // Prevent window closure on garbage collection
 
 function openMainWindow(urlToOpen) {
   // To get a frameless window, add 'frame:false'
-  mainWindow = new BrowserWindow({ maxWidth: 400, maxHeight: 200, show: false });
+  mainWindow = new BrowserWindow({ maxWidth: 1024, maxHeight: 768, show: false });
 
   mainWindow.loadURL(url.format({
     pathname: path.join(app.getAppPath(), urlToOpen),
@@ -223,7 +222,6 @@ app.on('ready', () => {
   // There appears to be a bug with globalShortcut.registerAll so every key / modifier combination must be assigned separately
   // All shortcuts call keyPressed() and pass a JSON object with keys: "modifiers" and "key" 
   // Register CRTL + ALT shortcuts
-  const ctrlAltApostrophe = globalShortcut.register('Control+Alt+`', () => {keyPressed({modifiers: ["Control","Alt"],key: "`"})});
   const ctrlAlt1 = globalShortcut.register('Control+Alt+1', () =>          {keyPressed({modifiers: ["Control","Alt"],key: "1"})});
   const ctrlAlt2 = globalShortcut.register('Control+Alt+2', () =>          {keyPressed({modifiers: ["Control","Alt"],key: "2"})});
   const ctrlAlt3 = globalShortcut.register('Control+Alt+3', () =>          {keyPressed({modifiers: ["Control","Alt"],key: "3"})});
@@ -237,7 +235,6 @@ app.on('ready', () => {
   const ctrlAltMinus = globalShortcut.register('Control+Alt+-', () =>      {keyPressed({modifiers: ["Control","Alt"],key: "-"})});
   const ctrlAltPlus = globalShortcut.register('Control+Alt+=', () =>       {keyPressed({modifiers: ["Control","Alt"],key: "="})});
   // Register CRTL + ALT + SHIFT shortcuts
-  const ctrlAltShfApostrophe = globalShortcut.register('Control+Alt+Shift+`', () => {keyPressed({modifiers: ["Control","Alt","Shift"],key: "`"})});
   const ctrlAltShf1 = globalShortcut.register('Control+Alt+Shift+1', () =>          {keyPressed({modifiers: ["Control","Alt","Shift"],key: "1"})});
   const ctrlAltShf2 = globalShortcut.register('Control+Alt+Shift+2', () =>          {keyPressed({modifiers: ["Control","Alt","Shift"],key: "2"})});
   const ctrlAltShf3 = globalShortcut.register('Control+Alt+Shift+3', () =>          {keyPressed({modifiers: ["Control","Alt","Shift"],key: "3"})});
@@ -252,7 +249,6 @@ app.on('ready', () => {
   const ctrlAltShfPlus = globalShortcut.register('Control+Alt+Shift+=', () =>       {keyPressed({modifiers: ["Control","Alt","Shift"],key: "="})});
   // Warn if registration of CRTL + ALT shortcuts fail
   // TODO - Should alert  the user if a keuyboard shortcut fails
-  if (!ctrlAltApostrophe) {log.warn('main.js:  registration failed of: ctrlAltApostrophe (Control+Alt+`)')};
   if (!ctrlAlt1) {log.warn('main.js:  registration failed of: ctrlAlt1 (Control+Alt+1)')};
   if (!ctrlAlt2) {log.warn('main.js:  registration failed of: ctrlAlt2 (Control+Alt+2)')};
   if (!ctrlAlt3) {log.warn('main.js:  registration failed of: ctrlAlt3 (Control+Alt+3)')};
@@ -267,7 +263,6 @@ app.on('ready', () => {
   if (!ctrlAltPlus) {log.warn('main.js:  registration failed of: ctrlAltPlus (Control+Alt+=)')};
   // Warn if registration of CRTL + ALT + SHIFT shortcuts fail
   // TODO - Should alert  the user if a keuyboard shortcut fails
-  if (!ctrlAltShfApostrophe) {log.warn('main.js:  registration failed of: ctrlAltApostrophe (Control+Alt+Shift+`)')};
   if (!ctrlAltShf1) {log.warn('main.js:  registration failed of: ctrlAlt1 (Control+Alt+Shift+1)')};
   if (!ctrlAltShf2) {log.warn('main.js:  registration failed of: ctrlAlt2 (Control+Alt+Shift+2)')};
   if (!ctrlAltShf3) {log.warn('main.js:  registration failed of: ctrlAlt3 (Control+Alt+Shift+3)')};
@@ -325,7 +320,7 @@ function keyPressed(key){
   //// Add or more track to playlist in slot #
   ///////////////////////////////////////////////////////////////////
   
-  if (key.modifiers.includes('Control') && key.modifiers.includes('Alt') && ['`','1','2','3','4','5','6','7','8','9','0'].includes(key.key)){
+  if (key.modifiers.includes('Control') && key.modifiers.includes('Alt') && ['1','2','3','4','5','6','7','8','9','0'].includes(key.key)){
     var move = 0;
     return Promise.resolve().then(function () {
       // Check if a playlist is assigned to the slot
@@ -515,6 +510,37 @@ ipcMain.on('btnOpenDashboard', function (event) {
 // TODO - Test function, can be deleted
 ipcMain.on('connect_api', function (event) {
   log.warn('main.js:  Event connect_api received by main process.');
+});
+
+
+/*
+
+ipcMain.handle('my-invokable-ipc', async (event, ...args) => {
+  log.warn('IPC main handler received args ' + args)
+  const result = await Promise.resolve("invokable response") //somePromise(...args)
+  return result
+})
+
+*/
+
+
+// return spotifyServer.copyOrMovePlayingTrackToPlaylist(playlists[key.key].playlistID,playlists[key.key].playlistName, move)
+
+ipcMain.on('asynchronous-message', function (event, arg) {
+  log.warn('main.js:  ipc received \'asynchronous-message\' with args: ' + arg);
+  //event.reply('getSavedPlaylistResponse', 'pong back')
+  if (arg == 'passing in 2'){
+    log.warn('Delaying it')
+    function doAfterDelay() { 
+      log.warn('Doing it now')
+      //event.sender.send('asynchronous-reply2', 'message back');
+      event.reply('asynchronous-reply2', 'message back');
+    }
+    setTimeout(doAfterDelay, 5000);
+  }
+  else {
+    event.sender.send('asynchronous-reply', 'pong back');
+  }
 });
 
 /*
