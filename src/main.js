@@ -33,8 +33,8 @@ const url = require('url')
 var log = require('electron-log');
 
 log.warn('main.js:  dayjob started...');
-log.warn('main.js:  __dirname path is reported as: ' + __dirname);
-log.warn('main.js:  app.getAppPath path is reported as: ' + app.getAppPath());
+log.warn('main.js:  \'__dirname\' path is reported as: ' + __dirname);
+log.warn('main.js:  \'app.getAppPath\' path is reported as: ' + app.getAppPath());
 
 ///////////////////////////////////////////////////////////////////
 ////  Load error message db
@@ -89,7 +89,7 @@ else {
 ////  Menu bar module
 ///////////////////////////////////////////////////////////////////
 
-const mb = menubar();
+const mb = menubar({webPreferences: {nodeIntegration: true}});
 
 mb.setOption('preload-window', true);
 mb.setOption('height', 200);
@@ -128,7 +128,7 @@ let mainWindow;  // Prevent window closure on garbage collection
 
 function openMainWindow(urlToOpen) {
   // To get a frameless window, add 'frame:false'
-  mainWindow = new BrowserWindow({ maxWidth: 1024, maxHeight: 768, show: false });
+  mainWindow = new BrowserWindow({ maxWidth: 1024, maxHeight: 768, show: false, webPreferences: {nodeIntegration: true}});
 
   mainWindow.loadURL(url.format({
     pathname: path.join(app.getAppPath(), urlToOpen),
@@ -156,7 +156,7 @@ function openMainWindow(urlToOpen) {
 let aboutWindow;  // Prevent window closure on garbage collection
 
 function openAbout() {
-  aboutWindow = new BrowserWindow({ width: 400, height: 350, maxWidth: 400, maxHeight: 350, show: false });
+  aboutWindow = new BrowserWindow({ width: 400, height: 350, maxWidth: 400, maxHeight: 350, show: false, webPreferences: {nodeIntegration: true}});
 
   aboutWindow.loadURL(url.format({
     pathname: path.join(app.getAppPath(), '/src/about.html'),
