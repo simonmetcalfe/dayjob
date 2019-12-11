@@ -70,10 +70,16 @@ webServer = http.createServer(function (request, response) {
     // Get object with all the parameters
     var parsedUrl = url.parse(request.url, true); // true to get query as object
     var queryAsObject = parsedUrl.query;
-    log.warn('spotify-server.js:  Web server has been accessed and passed parameters:' + JSON.stringify(queryAsObject));
-    log.warn('Comparing state ' + state + ' with ' + queryAsObject.state)
+    log.warn('spotify-server.js:  Web server has been accessed:')
+    log.warn('                    - URL        : ' + request.url);
+    log.warn('                    - Parameters : ' + JSON.stringify(queryAsObject));
+    
+    if (request.url == '/favicon.ico'){
+        // Browser will always check for favicon which we want to ignore
+        response.statusCode = 404;
+    }
     // Verify state and auth code
-    if (queryAsObject.code == undefined) {
+    else if (queryAsObject.code == undefined) {
         response.writeHead(200, { "Content-Type": "text/plain" });
         response.write("Problem with redirect URL when authorising dayjob with Spotify.  No authorisation code was received in the URL.  Please try again.");
         log.warn('spotify-server.js: [ERROR] Problem with authorisation code received in the URL, code is ' + queryAsObject.code);
@@ -245,7 +251,7 @@ function authCodeGrant() {
             log.warn('spotify-server.js:  Connected successfully.  Retrieved data for ' + result.body.display_name);
             log.warn('spotify-server.js:    Email: ' + result.body.email);
             log.warn('spotify-server.js:    Account type: ' + result.body.product);
-            log.warn('spotify-server.js:    Image URL: ' + result.body.images[0].url);
+            //log.warn('spotify-server.js:    Image URL: ' + result.body.images[0].url);
             return Promise.resolve(result) // TODO - Should this return a custom message, e.g. 'authorisation_granted'?
         }).catch(function (err) {
             log.warn('spotify-server.js:  [ERROR] Exception after authorision was not successfully granted.  Try revoking access to the application in the Apps section of your Spotify account, and re-authenticating.  Error ', err.message);
@@ -509,9 +515,9 @@ function removePlayingTrackFromPlaylist(){
             }
         }).then(function (result) {    
             log.warn('spotify-server.js:  Removed track from ' + trackInfo.context.sourcePlaylistName + ' (' + trackInfo.context.sourcePlaylistId + ')\n' +
-                                            'Name:   ' + trackInfo.name + ' (' + trackInfo.uri + ')\n' + 
-                                            'Artist: ' + trackInfo.artistName + '\n' + 
-                                            'Album:  ' + trackInfo.albumName + '\n')
+                                            'Name   : ' + trackInfo.name + ' (' + trackInfo.uri + ')\n' + 
+                                            'Artist : ' + trackInfo.artistName + '\n' + 
+                                            'Album  : ' + trackInfo.albumName + '\n')
             trackInfo.result = result
             return Promise.resolve(trackInfo)
         });
@@ -544,9 +550,9 @@ function copyPlayingTrackToPlaylist(destPlaylistId, destPlaylistName){
             return addTracksToPlaylist(trackInfo.destPlaylistId, [trackInfo.uri])
         }).then(function (result) {    
             log.warn('spotify-server.js:  Added track to ' + trackInfo.destPlaylistName + ' (' + trackInfo.destPlaylistId + ')\n' +
-                                            'Name:   ' + trackInfo.name + ' (' + trackInfo.uri + ')\n' + 
-                                            'Artist: ' + trackInfo.artistName + '\n' + 
-                                            'Album:  ' + trackInfo.albumName + '\n')
+                                            'Name   : ' + trackInfo.name + ' (' + trackInfo.uri + ')\n' + 
+                                            'Artist : ' + trackInfo.artistName + '\n' + 
+                                            'Album  : ' + trackInfo.albumName + '\n')
             trackInfo.result = result
             return Promise.resolve(trackInfo)
         });
@@ -570,9 +576,9 @@ function movePlayingTrackToPlaylist(destPlaylistId, destPlaylistName){
             return addTracksToPlaylist(trackInfo.destPlaylistId, [trackInfo.uri])
         }).then(function (result) {    
             log.warn('spotify-server.js:  Added track to ' + trackInfo.destPlaylistName + ' (' + trackInfo.destPlaylistId + ')\n' +
-                                            'Name:   ' + trackInfo.name + ' (' + trackInfo.uri + ')\n' + 
-                                            'Artist: ' + trackInfo.artistName + '\n' + 
-                                            'Album:  ' + trackInfo.albumName + '\n')
+                                            'Name   : ' + trackInfo.name + ' (' + trackInfo.uri + ')\n' + 
+                                            'Artist : ' + trackInfo.artistName + '\n' + 
+                                            'Album  : ' + trackInfo.albumName + '\n')
             if (trackInfo.context.readOnly == true){
                 trackInfo.result = 'copied_and_not_moved'
                 return Promise.resolve(trackInfo)
@@ -586,9 +592,9 @@ function movePlayingTrackToPlaylist(destPlaylistId, destPlaylistName){
             }
             else {
                 log.warn('spotify-server.js:  Removed track from ' + trackInfo.context.sourcePlaylistName + ' (' + trackInfo.context.sourcePlaylistId + ')\n' +
-                'Name:   ' + trackInfo.name + ' (' + trackInfo.uri + ')\n' + 
-                'Artist: ' + trackInfo.artistName + '\n' + 
-                'Album:  ' + trackInfo.albumName + '\n')
+                'Name   : ' + trackInfo.name + ' (' + trackInfo.uri + ')\n' + 
+                'Artist : ' + trackInfo.artistName + '\n' + 
+                'Album  : ' + trackInfo.albumName + '\n')
                 trackInfo.result = result
                 return Promise.resolve(trackInfo)
             }
