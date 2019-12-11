@@ -24,6 +24,8 @@ var log = require('electron-log');
 //// Variables
 ///////////////////////////////////////////////////////////////////
 
+var spotifyApi; // Where we store the instance of spotifyApi
+var webServer;
 var scopes = ['user-read-private', 'user-read-email', 'playlist-read-private', 'playlist-modify-private', 'playlist-read-collaborative', 'playlist-modify-public', 'user-read-recently-played', 'user-read-currently-playing','user-modify-playback-state'];
 var redirectUri = 'http://localhost:8888/callback';
 var state; //For dayjob to verify requests to the redirect URI
@@ -36,23 +38,48 @@ var spotifyDisplayName;
 
 module.exports.getSpotifyUserId = function(){return spotifyUserId;}
 module.exports.getspotifyDisplayName = function(){return spotifyDisplayName;}
+module.exports.getWebServer = function(){return webServer();}
+
+///////////////////////////////////////////////////////////////////
+//// Helper functions
+///////////////////////////////////////////////////////////////////
+
+/**
+ * Generates a random string containing numbers and letters
+ * @param  {number} length The length of the string
+ * @return {string} The generated string
+ */
+var generateRandomString = function (length) {
+    var text = '';
+    var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+    for (var i = 0; i < length; i++) {
+        text += possible.charAt(Math.floor(Math.random() * possible.length));
+    }
+    return text;
+};
 
 ///////////////////////////////////////////////////////////////////
 //// Initialise web server (for receiving auth code in redirectURI)
 ///////////////////////////////////////////////////////////////////
 
-http.createServer(function (request, response) {
+// Set a random state so webserver ignores all that are missing the 'state' query parameter 
+state = generateRandomString(16);
+
+webServer = http.createServer(function (request, response) {
     // Get object with all the parameters
     var parsedUrl = url.parse(request.url, true); // true to get query as object
     var queryAsObject = parsedUrl.query;
     log.warn('spotify-server.js:  Web server has been accessed and passed parameters:' + JSON.stringify(queryAsObject));
+    log.warn('Comparing state ' + state + ' with ' + queryAsObject.state)
     // Verify state and auth code
     if (queryAsObject.code == undefined) {
         response.writeHead(200, { "Content-Type": "text/plain" });
         response.write("Problem with redirect URL when authorising dayjob with Spotify.  No authorisation code was received in the URL.  Please try again.");
         log.warn('spotify-server.js: [ERROR] Problem with authorisation code received in the URL, code is ' + queryAsObject.code);
     }
-    else if (queryAsObject.state = !state) {
+    else if (queryAsObject.state != state) {
+        
         response.writeHead(200, { "Content-Type": "text/plain" });
         response.write("Problem with redirect URL when authorising dayjob with Spotify.  State code missing or invalid.  Dayjob has ignored the authorisation request.  Please try again.");
         log.warn('spotify-server.js: [ERROR] Problem/mismatched state received in the URL, state is ' + queryAsObject.state);
@@ -75,39 +102,48 @@ http.createServer(function (request, response) {
 ///////////////////////////////////////////////////////////////////
 //_this = this; 
 
-var spotifyApi = new SpotifyWebApi({
-    // Set all these on var creation because setting after isn't working (async issue?)
-    clientId: prefsLocal.getPref('spotify-server_clientId'),
-    clientSecret: prefsLocal.getPref('spotify-server_clientSecret'),
-    redirectUri: redirectUri,
-    accessToken: prefsLocal.getPref('spotify-server_access_token'),
-    refreshToken: prefsLocal.getPref('spotify-server_refresh_token')
-});
+function initialiseSpotifyApiInstance(){
+    // The instance must be recreated to set clientId and other parameters because 'spotifyApi.setClientId' does not seem to work work
+    // Might be a bug in spotifyWebApi
+    spotifyApi = new SpotifyWebApi({
+        clientId: prefsLocal.getPref('spotify-server_clientId'),
+        clientSecret: prefsLocal.getPref('spotify-server_clientSecret'),
+        redirectUri: redirectUri,
+        accessToken: prefsLocal.getPref('spotify-server_access_token'),
+        refreshToken: prefsLocal.getPref('spotify-server_refresh_token')
+    });
+}
 
+initialiseSpotifyApiInstance() // Must be done on startup
 
 
 ///////////////////////////////////////////////////////////////////
 //// Check API connection
 ///////////////////////////////////////////////////////////////////
-// Check the API connection each time before using it.  Will reject promise if there is an error condition or accepts if API 'appears' to be ready for use.
-// The application using the API must handle the following rejections:  no_client_id, no_authorisation_code
+// Check the API connection each time before using it.  Will reject promise if there is an error condition or accept if API 'appears' to be ready for use.
 
 module.exports.checkApiConnection = function () {
     return checkApiConnection();
 };
 
 function checkApiConnection() {
-    log.warn('spotify-server:  Checking the state of the API connection...')
+    log.warn('spotify-server.js:  Checking the state of the API connection...')
     return Promise.resolve().then(function(){
-        if (prefsLocal.getPref('spotify-server_clientId') == undefined || prefsLocal.getPref('spotify-server_clientSecret') == undefined) {
+        // User-editable proeprties must be checked for being an empty string as well as undefined
+        if (prefsLocal.getPref('spotify-server_clientId') == undefined || prefsLocal.getPref('spotify-server_clientId') == "") {
             // Spotify-client hasn't been provided ap ID/secret parameters 
-            log.warn('spotify-server:  [ERROR] Cannot authenticate without a client ID and secret.  Get user to create an register an application for API usage with Spotify, and provide the parameters.')
-            Promise.reject(new Error('no_client_id'));
+            log.warn('spotify-server.js:  [ERROR] Cannot authenticate without a client ID.  Get user to create an register an application for API usage with Spotify, and provide the parameters.')
+            return Promise.reject(new Error('no_client_id'));
+        }
+        else if (prefsLocal.getPref('spotify-server_clientSecret') == undefined || prefsLocal.getPref('spotify-server_clientSecret') == ""){
+            // Spotify-client hasn't been provided ap ID/secret parameters 
+            log.warn('spotify-server.js:  [ERROR] Cannot authenticate without a client secret.  Get user to create an register an application for API usage with Spotify, and provide the parameters.')
+            return Promise.reject(new Error('no_client_secret'));
         }
         else if (prefsLocal.getPref('spotify-server_authorizationCode') == undefined || prefsLocal.getPref('spotify-server_access_token') == undefined) {
             // Not authorised in the past, authorise app and clear access tokens if any
             log.warn('spotify-server.js:  No authorisation code or access token, Spotify not authorised with API before, need to launch auth URL.')
-            Promise.reject(new Error('no_authorisation_code'));
+            return Promise.reject(new Error('no_authorisation_code'));
         }
         else if (new Date().getTime() >= prefsLocal.getPref('spotify-server_token_expiration_date') - 10000) {
             // Token has expired, refresh it
@@ -116,33 +152,34 @@ function checkApiConnection() {
         } 
         else {
             log.warn('spotify-server.js:  Access token appears to be valid.');
-            Promise.resolve('ready');
+            return Promise.resolve('ready');
         }
     }).then(function (result) {
         if (spotifyDisplayName == undefined || spotifyUserId == undefined) {
             // No Spotify user has been retrieved yet, get the user
             log.warn('spotify-server.js:  User ID and display name are not saved, retrieving them now...');
+            // Nested Promise to isolate errors from Spotify API and handle them
             return spotifyApi.getMe()
+            .then(function(result){
+                // Log the result of .getMe and store the users name and ID 
+                log.warn('spotify-server.js:  Retrieved user data JSON: ' + JSON.stringify(result.body));
+                spotifyDisplayName = result.body.display_name;
+                spotifyUserId = result.body.id;
+                Promise.resolve('ready');
+            }).catch(function(err){
+                // Handle spotifyApi.getMe promise error gracefully
+                handledErr = new Error("cannot_get_users_details")
+                handledErr.error = err;
+                return Promise.reject(handledErr);
+            })
         } 
         else {
             log.warn('spotify-server.js:  Already have user ID and display name; no need to query API.');
             return Promise.resolve('ready');
         } 
     }).then(function (result){   
-        if (result != 'ready'){
-            // Log the result of .getMe and store the users name and ID 
-            log.warn('spotify-server.js:  Retrieved user data JSON: ' + JSON.stringify(result.body));
-            spotifyDisplayName = result.body.display_name;
-            spotifyUserId = result.body.id;
-        }
         log.warn('spotify-server.js:  Spotify connected for user ' + spotifyDisplayName + ' (' + spotifyUserId + ')');    
         return Promise.resolve('ready');
-    },function (err){
-        /* TODO - It migh be worth changing this to a .catch handler just in case the returned JSON is garbage and an error occurs in the result() statement above */
-        // Handle spotifyApi.getMe promise error gracefully
-        handledErr = new Error("cannot_get_users_details")
-        handledErr.error = err;
-        return Promise.reject(handledErr);
     })
 }
 
@@ -153,6 +190,7 @@ function checkApiConnection() {
 module.exports.getAuthUrl = function () {
     // spotifyApi.createAuthorizeURL does not return a promise, so we resolve one manually
     return Promise.resolve().then(function () {
+        initialiseSpotifyApiInstance(); // Instance must be re-created to set the clientId
         spotifyApi.resetAccessToken();
         spotifyApi.resetRefreshToken();
         prefsLocal.deletePref('spotify-server_access_token');
@@ -166,9 +204,9 @@ module.exports.getAuthUrl = function () {
         log.warn('spotify-server.js:  Generated random state ID for verifying requests to redirect URI: ' + state);
         // Create URL for authorising app and launch in user's browser
         var authorizeURL = spotifyApi.createAuthorizeURL(scopes, state)
-        log.warn('spotify-server:  Genearated Auth URL: ' + authorizeURL);
+        log.warn('spotify-server.js:  Generated Auth URL: ' + authorizeURL);
         //Could open the shell here if needed:  shell.openExternal(authorizeURL);
-        return authorizeURL;
+        return Promise.resolve(authorizeURL);
     })
 }
 
@@ -189,9 +227,9 @@ function authCodeGrant() {
     spotifyApi.authorizationCodeGrant(prefsLocal.getPref('spotify-server_authorizationCode'))
         .then(function (result) {
             log.warn('spotify-server.js:  Authorisation granted.');
-            log.warn('spotify-server.js:    Access token: ', result.body.access_token);
-            log.warn('spotify-server.js:    Access token expiry: ' + result.body.expires_in);
-            log.warn('spotify-server.js:    Refresh token: ' + result.body.refresh_token);
+            log.warn('spotify-server.js:  - Access token: ', result.body.access_token);
+            log.warn('spotify-server.js:  - Access token expiry: ' + result.body.expires_in);
+            log.warn('spotify-server.js:  - Refresh token: ' + result.body.refresh_token);
             // Save and set the access and refresh tokens
             prefsLocal.setPref('spotify-server_access_token', result.body.access_token);
             prefsLocal.setPref('spotify-server_refresh_token', result.body.refresh_token);
@@ -208,7 +246,7 @@ function authCodeGrant() {
             log.warn('spotify-server.js:    Email: ' + result.body.email);
             log.warn('spotify-server.js:    Account type: ' + result.body.product);
             log.warn('spotify-server.js:    Image URL: ' + result.body.images[0].url);
-            Promise.resolve(result) // TODO - Should this return a custom message, e.g. 'authorisation_granted'?
+            return Promise.resolve(result) // TODO - Should this return a custom message, e.g. 'authorisation_granted'?
         }).catch(function (err) {
             log.warn('spotify-server.js:  [ERROR] Exception after authorision was not successfully granted.  Try revoking access to the application in the Apps section of your Spotify account, and re-authenticating.  Error ', err.message);
             // Handle spotifyApi.authorizationCodeGrant() and spotifyApi.getMe() promise errors gracefully
@@ -373,7 +411,8 @@ function parsePlayingTrackInfo(playingTrackJson){
     return Promise.resolve().then(function () {
         // Detect unsupported responses and reject
         if (playingTrackJson.statusCode == 204){return Promise.reject(new Error("track_not_playing"))}  // No music is playing
-        if (playingTrackJson.body.currently_playing_type == "episode"){return Promise.reject(new Error("track_is_podcast"))}  // We can't process podcasts at all so just abort 
+        else if (playingTrackJson.body.currently_playing_type == "episode"){return Promise.reject(new Error("track_is_podcast"))}  // We can't process podcasts at all so just abort 
+        else {return Promise.resolve('ready')};
     }).then(function(result){ 
         // This Promise is nested so we can catch its own error
         return Promise.resolve().then(function () {
@@ -568,23 +607,3 @@ function getPlaylistIdFromUri(uri){
     // Playlist URI format is spotify:playlist:7wc5E787OhRM7eYwPQ1jia
     return uri.split(':')[2];
 }
-
-
-///////////////////////////////////////////////////////////////////
-//// Helper functions
-///////////////////////////////////////////////////////////////////
-
-/**
- * Generates a random string containing numbers and letters
- * @param  {number} length The length of the string
- * @return {string} The generated string
- */
-var generateRandomString = function (length) {
-    var text = '';
-    var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-
-    for (var i = 0; i < length; i++) {
-        text += possible.charAt(Math.floor(Math.random() * possible.length));
-    }
-    return text;
-};

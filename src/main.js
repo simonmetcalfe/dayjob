@@ -6,7 +6,7 @@
 // require('log-timestamp');
 const electron = require('electron');
 var shell = require('electron').shell;
-const {app, globalShortcut, ipcMain} = require('electron');  //globalShortcut must be defined with app or it does not work
+const {app, globalShortcut, ipcMain, dialog} = require('electron');  //globalShortcut must be defined with app or it does not work
 const menubar = require('menubar');
 const spotifyServer = require('./spotify-server.js');
 const prefsLocal = require('./prefs.js');
@@ -36,12 +36,24 @@ log.warn('main.js:  dayjob started...');
 log.warn('main.js:  \'__dirname\' path is reported as: ' + __dirname);
 log.warn('main.js:  \'app.getAppPath\' path is reported as: ' + app.getAppPath());
 
+
+///////////////////////////////////////////////////////////////////
+////  Unhandled Promise rejection handling
+///////////////////////////////////////////////////////////////////
+
+// In case of a programming error resulting in an unhandled rejection, the user will receive a message
+process.on('unhandledRejection', error => {
+  // Will print "unhandledRejection err is not defined"
+  log.warn('main.js:  ERROR - UNHANDLED PROMISE REJECTION: ', error.message);
+  const response = dialog.showMessageBox(null, {message: 'dayjob ERROR!  Unhandled promise rejection.  This should be logged as a bug on the dayjob GitHub page. \n\n' + error.message});
+});
+
 ///////////////////////////////////////////////////////////////////
 ////  Load error message db
 ///////////////////////////////////////////////////////////////////
 
-let errors = JSON.parse(fs.readFileSync(__dirname + '/errors.json'));
-console.log('main.js:  Loaded error handling database: ') // + JSON.stringify(errors));
+let notifications = JSON.parse(fs.readFileSync(__dirname + '/notification.json'));
+log.warn('main.js:  Loaded notification/error handling database') 
 
 ///////////////////////////////////////////////////////////////////
 ////  Load application defaults
@@ -352,7 +364,7 @@ function keyPressed(key){
         showNotification({title: result.artistName + ' - ' + result.name, actionAdd: 'Added to playlist \'' + result.destPlaylistName +'\'', actionRemove: 'Removed from source playlist \'' + result.context.sourcePlaylistName + '\''})
       }    
       else {
-        Promise.reject(new Error('Unknown error adding or moving track'))
+        return Promise.reject(new Error('Unknown error adding or moving track'))
       } 
     }).catch(function (err) {
       logAndDisplayError(err)
@@ -413,14 +425,14 @@ function logAndDisplayError(err) {
   if (err.hasOwnProperty("error")){externalError = '(' + err.error + ')'} // Show the external error in the UI
   // Log the error
   logError(err)
-  // Look up the errors in the DB and show warning
-  showNotification({title: errors[err.message].title, 
-                    description: errors[err.message].description, 
+  // Look up the notifications/errors in the DB and show warning
+  showNotification({title: notifications[err.message].title, 
+                    description: notifications[err.message].description, 
                     subDescription: externalError,
-                    buttonCta: {title: errors[err.message].actionTitle, 
-                                action: errors[err.message].actionId},
-                    errorType: errors[err.message].errorType})
-  log.warn('main.js:  ERROR reported to the user: (' + errors[err.message].errorType + ') ' + errors[err.message].title + ': ' + errors[err.message].description + externalError);
+                    buttonCta: {title: notifications[err.message].actionTitle, 
+                                action: notifications[err.message].actionId},
+                    errorType: notifications[err.message].errorType})
+  log.warn('main.js:  ERROR reported to the user: (' + notifications[err.message].errorType + ') ' + notifications[err.message].title + ': ' + notifications[err.message].description + externalError);
   }
   catch {
     showNotification({title: 'Cannot display error', 

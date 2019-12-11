@@ -33,51 +33,54 @@ async () => {
 (async () => {
     try {
         await ipcRenderer.invoke('getPref','spotify-server_clientId').then((result) => {
-            document.getElementById('fldClientId').value = result;
+            if(result != undefined){document.getElementById('fldClientId').value = result;}
         })
     
         await ipcRenderer.invoke('getPref','spotify-server_clientSecret').then((result) => {
-            document.getElementById('fldClientSecret').value = result;
+            if(result != undefined){document.getElementById('fldClientSecret').value = result;}
         })
 
         await ipcRenderer.invoke('getPref','dayjob_playlists_v1').then((result) => {
-            playlists = result;
-            document.getElementById('fldPlaylistId1').value = playlists[1].playlistUri;
-            document.getElementById('fldPlaylistName1').value = playlists[1].playlistName;
-            document.getElementById('fldPlaylistId2').value = playlists[2].playlistUri;
-            document.getElementById('fldPlaylistName2').value = playlists[2].playlistName;
-            document.getElementById('fldPlaylistId3').value = playlists[3].playlistUri;
-            document.getElementById('fldPlaylistName3').value = playlists[3].playlistName;
-            document.getElementById('fldPlaylistId4').value = playlists[4].playlistUri;
-            document.getElementById('fldPlaylistName4').value = playlists[4].playlistName;
-            document.getElementById('fldPlaylistId5').value = playlists[5].playlistUri;
-            document.getElementById('fldPlaylistName5').value = playlists[5].playlistName;
-            document.getElementById('fldPlaylistId6').value = playlists[6].playlistUri;
-            document.getElementById('fldPlaylistName6').value = playlists[6].playlistName;
-            document.getElementById('fldPlaylistId7').value = playlists[7].playlistUri;
-            document.getElementById('fldPlaylistName7').value = playlists[7].playlistName;
-            document.getElementById('fldPlaylistId8').value = playlists[8].playlistUri;
-            document.getElementById('fldPlaylistName8').value = playlists[8].playlistName;
-            document.getElementById('fldPlaylistId9').value = playlists[9].playlistUri;
-            document.getElementById('fldPlaylistName9').value = playlists[9].playlistName;
-            document.getElementById('fldPlaylistId10').value = playlists[0].playlistUri;
-            document.getElementById('fldPlaylistName10').value = playlists[0].playlistName;
+            if(result != undefined){
+                playlists = result;
+                document.getElementById('fldPlaylistId1').value = playlists[1].playlistUri;
+                document.getElementById('fldPlaylistName1').value = playlists[1].playlistName;
+                document.getElementById('fldPlaylistId2').value = playlists[2].playlistUri;
+                document.getElementById('fldPlaylistName2').value = playlists[2].playlistName;
+                document.getElementById('fldPlaylistId3').value = playlists[3].playlistUri;
+                document.getElementById('fldPlaylistName3').value = playlists[3].playlistName;
+                document.getElementById('fldPlaylistId4').value = playlists[4].playlistUri;
+                document.getElementById('fldPlaylistName4').value = playlists[4].playlistName;
+                document.getElementById('fldPlaylistId5').value = playlists[5].playlistUri;
+                document.getElementById('fldPlaylistName5').value = playlists[5].playlistName;
+                document.getElementById('fldPlaylistId6').value = playlists[6].playlistUri;
+                document.getElementById('fldPlaylistName6').value = playlists[6].playlistName;
+                document.getElementById('fldPlaylistId7').value = playlists[7].playlistUri;
+                document.getElementById('fldPlaylistName7').value = playlists[7].playlistName;
+                document.getElementById('fldPlaylistId8').value = playlists[8].playlistUri;
+                document.getElementById('fldPlaylistName8').value = playlists[8].playlistName;
+                document.getElementById('fldPlaylistId9').value = playlists[9].playlistUri;
+                document.getElementById('fldPlaylistName9').value = playlists[9].playlistName;
+                document.getElementById('fldPlaylistId10').value = playlists[0].playlistUri;
+                document.getElementById('fldPlaylistName10').value = playlists[0].playlistName;
+            }
         })
 
         await ipcRenderer.invoke('getPref','dayjob_always_skip_tracks').then((result) => {
-            document.getElementById('always_skip_tracks').checked = result;
+            if(result != undefined){document.getElementById('always_skip_tracks').checked = result;}
         })
 
         await ipcRenderer.invoke('getPref','dayjob_always_move_tracks').then((result) => {
-            document.getElementById('always_move_tracks').checked = result;
+            if(result != undefined){document.getElementById('always_move_tracks').checked = result;}
         })
 
         /* NOT IMPLEMENTED YET
         await ipcRenderer.invoke('getPref','dayjob_launch_at_startup',).then((result) => {
-            document.getElementById('launch_at_startup').checked = result;
+            if(result != undefined){document.getElementById('launch_at_startup').checked = result;}
         })
         */
         
+    } 
     catch (e) {
         // Deal with the fact the chain failed
         ipcRenderer.invoke('logAndDisplayError','error_reading_preferences');
