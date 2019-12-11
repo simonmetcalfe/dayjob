@@ -556,6 +556,19 @@ function movePlayingTrackToPlaylist(destPlaylistId, destPlaylistName){
         });
 }
 
+///////////////////////////////////////////////////////////////////
+//// Spotify helper functions
+///////////////////////////////////////////////////////////////////
+
+module.exports.getPlaylistIdFromUri = function(uri){
+    return getPlaylistIdFromUri(uri);
+}
+
+function getPlaylistIdFromUri(uri){
+    // Playlist URI format is spotify:playlist:7wc5E787OhRM7eYwPQ1jia
+    return uri.split(':')[2];
+}
+
 
 ///////////////////////////////////////////////////////////////////
 //// Helper functions

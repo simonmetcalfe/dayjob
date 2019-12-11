@@ -48,9 +48,8 @@ console.log('main.js:  Loaded error handling database: ') // + JSON.stringify(er
 ///////////////////////////////////////////////////////////////////
 
 // Any variables that should have a default should be specified here
-
-if (prefsLocal.getPref('dayjob_always_move_tracks') == undefined){prefsLocal.setPref('dayjob_always_move_tracks',0)}
-if (prefsLocal.getPref('dayjob_always_skip_tracks') == undefined){prefsLocal.setPref('dayjob_always_skip_tracks',0)}
+if (prefsLocal.getPref('dayjob_always_move_tracks') == undefined){prefsLocal.setPref('dayjob_always_move_tracks',false)}
+if (prefsLocal.getPref('dayjob_always_skip_tracks') == undefined){prefsLocal.setPref('dayjob_always_skip_tracks',false)}
 
 ///////////////////////////////////////////////////////////////////
 ////  Load saved playlist array
@@ -66,16 +65,16 @@ if (prefsLocal.getPref('dayjob_playlists_v1') == undefined){
   // No playlists stored, create a blank array
   playlists = 
     {
-      "1" : {playlistID: "", playlistName:""},
-      "2" : {playlistID: "", playlistName:""},
-      "3" : {playlistID: "", playlistName:""},
-      "4" : {playlistID: "", playlistName:""},
-      "5" : {playlistID: "", playlistName:""},
-      "6" : {playlistID: "", playlistName:""},
-      "7" : {playlistID: "", playlistName:""},
-      "8" : {playlistID: "", playlistName:""},
-      "9" : {playlistID: "", playlistName:""},
-      "0" : {playlistID: "", playlistName:""},
+      "1" : {playlistUri: "", playlistName:""},
+      "2" : {playlistUri: "", playlistName:""},
+      "3" : {playlistUri: "", playlistName:""},
+      "4" : {playlistUri: "", playlistName:""},
+      "5" : {playlistUri: "", playlistName:""},
+      "6" : {playlistUri: "", playlistName:""},
+      "7" : {playlistUri: "", playlistName:""},
+      "8" : {playlistUri: "", playlistName:""},
+      "9" : {playlistUri: "", playlistName:""},
+      "0" : {playlistUri: "", playlistName:""},
     }
   prefsLocal.setPref('dayjob_playlists_v1',playlists);
 }
@@ -84,6 +83,7 @@ else {
   // Load stored playlists
   playlists = prefsLocal.getPref('dayjob_playlists_v1');
 }
+
 
 ///////////////////////////////////////////////////////////////////
 ////  Menu bar module
@@ -144,7 +144,7 @@ function openMainWindow(urlToOpen) {
     mainWindow = null;
   });
 
-  log.warn('main.js:  Main window opened (set to open index.html');
+  log.warn('main.js:  Main window opened with url: ' + urlToOpen);
   //await sleep(1000);
 
 }
@@ -190,8 +190,8 @@ function connectApi(){
   log.warn('main.js:  Attempting to connect to the Spotify API...');
   spotifyServer.checkApiConnection()
     .then(function (result) {
-
       showNotification({title: 'Connected to Spotify as ' + spotifyServer.getspotifyDisplayName(), description: 'Start making awesome playlists!'})
+
       // TODO - If the user has no saved playlists, reject with an error asking the user to create some playlists first
     }).catch(function (err) {
       logAndDisplayError(err)
@@ -286,7 +286,7 @@ app.on('ready', () => {
 ///////////////////////////////////////////////////////////////////
 
 function keyPressed(key){
-  log.warn('main.js:  Keyboard shortcut pressed: Modifiers: ' + JSON.stringify(key.modifiers) + ', Key: ' + key.key);
+  log.warn('main.js:  Keyboard shortcut pressed: ' + JSON.stringify(key.modifiers) + ' AND ' + key.key);
 
   //// Remove track
   ///////////////////////////////////////////////////////////////////
@@ -324,7 +324,7 @@ function keyPressed(key){
     var move = 0;
     return Promise.resolve().then(function () {
       // Check if a playlist is assigned to the slot
-      if (playlists[key.key].playlistID == ''){        
+      if (playlists[key.key].playlistUri == ''){        
         handledErr = new Error("no_playlist_assigned")
         handledErr.error = 'shortcut ' + key.key;
         return Promise.reject(handledErr);
@@ -336,7 +336,7 @@ function keyPressed(key){
       if (prefsLocal.getPref('dayjob_always_move_tracks') == 1 && !key.modifiers.includes('Shift')){move = 1}
       log.warn('main.js:  Add/move track to playlist in slot shortcut pressed:  Slot: ' + key.key + ' Move: ' + move);
       // Add the current track 
-      return spotifyServer.copyOrMovePlayingTrackToPlaylist(playlists[key.key].playlistID,playlists[key.key].playlistName, move)
+      return spotifyServer.copyOrMovePlayingTrackToPlaylist(spotifyServer.getPlaylistIdFromUri(playlists[key.key].playlistUri),playlists[key.key].playlistName, move)
     }).then(function (result) {
       // We're done, skip track, log and show notification
       if (move == 0){
@@ -358,39 +358,6 @@ function keyPressed(key){
       logAndDisplayError(err)
     })
   }
-
-    //// UI test
-  ///////////////////////////////////////////////////////////////////
-
-  /* 
-
-  if (key.modifiers.includes('Control') && key.modifiers.includes('Alt') && key.key == 't'){
-    log.warn('main.js:  UI test activated');
-    var uiData = {
-      title: 'The title',
-      description: 'The message esaf asdf sdaf adsf adsf adsf adsf adsf ad',
-      subDescription: 'The small text',
-      actionAdd:'Adding this track', 
-      actionRemove:'Removing this track', 
-      actionWarning:'This is a warning',
-      actionError:'This is an error',
-      buttonCta: {
-          title: 'The button title',
-          action: 'the_button_action'
-      },
-      errorType: 'error'
-    } 
-    showNotification(uiData);
-    mb.window.webContents.send('updateUi', uiData)
-    mb.window.showInactive();
-    // When a notification occurs, close the window briefly after
-    function doAfterDelay() { mb.hideWindow(); }
-    setTimeout(doAfterDelay, 5000);
-  }
-  */
-
-
-
 }
 
 
@@ -417,15 +384,20 @@ function showNotification(uiData) {
 // an error object is not in the speecified format - it should be revised
 
 function logError(err){
-  log.warn('main.js:  ERROR has occurred:  ' + err + '\n' + 
-           'Stack:   ' + err.stack)
-  
-  // Check if the error was caused by an external module and log it     
-  if (err.hasOwnProperty("error")){
-    log.warn('main.js:  ERROR in eternal module has occurred:  ' + err.error + '\n' + 
-    'Object:  ' + JSON.stringify(err.error) + '\n' + 
-    'Stack :   ' + err.error.stack)
-  }
+  try {
+    log.warn('main.js:  ERROR has occurred:  ' + err + '\n' + 
+            'Stack:   ' + err.stack)
+    
+    // Check if the error was caused by an external module and log it     
+    if (err.hasOwnProperty("error")){
+      log.warn('main.js:  ERROR in eternal module has occurred:  ' + err.error + '\n' + 
+      'Object:  ' + JSON.stringify(err.error) + '\n' + 
+      'Stack :   ' + err.error.stack)
+    }
+  } 
+  catch {
+    log.warn('main.js:  EXCEPTION OCCURRED when processing error:  ' + err)
+  }  
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -435,7 +407,8 @@ function logError(err){
 // TODO - This also has unhandled exception issues, e.g. an unhandled exception occurs if the requested error message is not found in the DB
 
 function logAndDisplayError(err) {
-  // Check if the error was caused by an external module if so show in UI
+  try {
+    // Check if the error was caused by an external module if so show in UI
   var externalError = ""
   if (err.hasOwnProperty("error")){externalError = '(' + err.error + ')'} // Show the external error in the UI
   // Log the error
@@ -447,7 +420,15 @@ function logAndDisplayError(err) {
                     buttonCta: {title: errors[err.message].actionTitle, 
                                 action: errors[err.message].actionId},
                     errorType: errors[err.message].errorType})
-  log.warn('main.js:  ERROR reported to the user: (' + errors[err.message].errorType + ') ' + errors[err.message].title + ': ' + errors[err.message].description + externalError)
+  log.warn('main.js:  ERROR reported to the user: (' + errors[err.message].errorType + ') ' + errors[err.message].title + ': ' + errors[err.message].description + externalError);
+  }
+  catch {
+    showNotification({title: 'Cannot display error', 
+                      description: 'An exception occurred when trying to display an error.  If the problem persists please seek help on the dayjob GitHub page.', 
+                      subDescription: String(err),
+                      errorType: 'error'})
+    log.warn('main.js:  EXCEPTION OCCURRED when processing error:  ' + String(err))
+  }  
 }
 
 // Actions after mb is ready but the window is not
@@ -471,19 +452,19 @@ mb.on('ready', function ready() {
   //mb.showWindow();
 });
 
-
-
 ///////////////////////////////////////////////////////////////////
 //// IPC listeners
 ///////////////////////////////////////////////////////////////////
 
-ipcMain.on('check_api_connection', function (event) {
-  log.warn('main.js:  Event check_api_connection received by main process.');
-  openMainWindow('/src/ui-preferences.html');
+//TODO - For consistency the old ipcMain.on functions could updated to ipcMain.handle 
+
+ipcMain.on('btnOpenDashboard', function (event) {
+  log.warn('main.js:  Event btnOpenDashboard received by main process.');
+  shell.openExternal('https://developer.spotify.com/dashboard/login');
 });
 
-ipcMain.on('playlist_settings', function (event) {
-  log.warn('main.js:  Event playlist_settings received by main process.');
+ipcMain.on('check_api_connection', function (event) {
+  log.warn('main.js:  Event check_api_connection received by main process.');
   openMainWindow('/src/ui-preferences.html');
 });
 
@@ -502,64 +483,33 @@ ipcMain.on('connect_api', function (event) {
   connectApi();
 });
 
-ipcMain.on('btnOpenDashboard', function (event) {
-  log.warn('main.js:  Event btnOpenDashboard received by main process.');
-  shell.openExternal('https://developer.spotify.com/dashboard/login');
+ipcMain.on('playlist_settings', function (event) {
+  log.warn('main.js:  Event playlist_settings received by main process.');
+  openMainWindow('/src/ui-preferences.html');
 });
 
-// TODO - Test function, can be deleted
-ipcMain.on('connect_api', function (event) {
-  log.warn('main.js:  Event connect_api received by main process.');
+ipcMain.handle('getPref', async (event, pref) => {
+  return prefsLocal.getPref(pref);
 });
 
-
-/*
-
-ipcMain.handle('my-invokable-ipc', async (event, ...args) => {
-  log.warn('IPC main handler received args ' + args)
-  const result = await Promise.resolve("invokable response") //somePromise(...args)
-  return result
-})
-
-*/
-
-
-// return spotifyServer.copyOrMovePlayingTrackToPlaylist(playlists[key.key].playlistID,playlists[key.key].playlistName, move)
-
-ipcMain.on('asynchronous-message', function (event, arg) {
-  log.warn('main.js:  ipc received \'asynchronous-message\' with args: ' + arg);
-  //event.reply('getSavedPlaylistResponse', 'pong back')
-  if (arg == 'passing in 2'){
-    log.warn('Delaying it')
-    function doAfterDelay() { 
-      log.warn('Doing it now')
-      //event.sender.send('asynchronous-reply2', 'message back');
-      event.reply('asynchronous-reply2', 'message back');
-    }
-    setTimeout(doAfterDelay, 5000);
-  }
-  else {
-    event.sender.send('asynchronous-reply', 'pong back');
-  }
+ipcMain.handle('setPref', async (event, pref, value) => {
+  // TODO - The implementation in ui-preferences.js means a disk write occurs after every single keystroke - a delay should be imposed to save n seconds after the last change
+  log.warn('main.js:  IPC is setting preference \'' + pref + '\' with value: ' + value)
+  return prefsLocal.setPref(pref, value);
 });
 
-/*
-// Likely to be obsolete
-ipcMain.on('skip', function (event, data) {
-  log.warn('main.js:  Spotify skip request with data ' + data);
-  spotifyAudioControl.skip(data); // replace with spotifyServer.skipToNext()  
+ipcMain.handle('setPlaylists', async (event, value) => {
+  // TODO - The implementation in ui-preferences.js means a disk write occurs after every single keystroke - a delay should be imposed to save n seconds after the last change
+  log.warn('main.js:  IPC has received an updated playlist JSON and is saving it.')
+  playlists = value;
+  return prefsLocal.setPref('dayjob_playlists_v1', value);
 });
-*/
 
-
-/*
-ipcMain.on('btnOpenNewWindow', function(event, arg) {
-  log.warn('ipcMain:  received argument ' + arg);
-  //do child process or other data manipulation and name it manData
-  //event.sender.send(‘manipulatedData’, manData);
+ipcMain.handle('logAndDisplayError', async (event, msg) => {
+  log.warn('main.js:  IPC has received an error from the renderer and it will be reported to the user: ' + msg)
+  logAndDisplayError(new Error(msg))
 });
- 
-*/
+
 ///////////////////////////////////////////////////////////////////
 //// Applicacation end
 ///////////////////////////////////////////////////////////////////
