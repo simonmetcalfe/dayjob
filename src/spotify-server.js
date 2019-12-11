@@ -16,6 +16,7 @@ var http = require("http");
 var url = require("url");
 const prefsLocal = require('./prefs.js');
 var log = require('electron-log');
+var events = require('events');
 
 //let _this; // For calling exported modules within this js file
 
@@ -26,6 +27,7 @@ var log = require('electron-log');
 
 var spotifyApi; // Where we store the instance of spotifyApi
 var webServer;
+var authEvents; // Event emitter to let main process know when auth has taken place
 var scopes = ['user-read-private', 'user-read-email', 'playlist-read-private', 'playlist-modify-private', 'playlist-read-collaborative', 'playlist-modify-public', 'user-read-recently-played', 'user-read-currently-playing','user-modify-playback-state'];
 var redirectUri = 'http://localhost:8888/callback';
 var state; //For dayjob to verify requests to the redirect URI
@@ -38,7 +40,8 @@ var spotifyDisplayName;
 
 module.exports.getSpotifyUserId = function(){return spotifyUserId;}
 module.exports.getspotifyDisplayName = function(){return spotifyDisplayName;}
-module.exports.getWebServer = function(){return webServer();}
+module.exports.getWebServer = function(){return webServer;}
+module.exports.getAuthEvents = function(){return authEvents;}
 
 ///////////////////////////////////////////////////////////////////
 //// Helper functions
@@ -60,48 +63,62 @@ var generateRandomString = function (length) {
 };
 
 ///////////////////////////////////////////////////////////////////
+//// Auth events emitter (let the main process know when auth is complete)
+///////////////////////////////////////////////////////////////////
+
+authEvents = new events.EventEmitter(); 
+
+///////////////////////////////////////////////////////////////////
 //// Initialise web server (for receiving auth code in redirectURI)
 ///////////////////////////////////////////////////////////////////
 
 // Set a random state so webserver ignores all that are missing the 'state' query parameter 
 state = generateRandomString(16);
 
-webServer = http.createServer(function (request, response) {
-    // Get object with all the parameters
-    var parsedUrl = url.parse(request.url, true); // true to get query as object
-    var queryAsObject = parsedUrl.query;
-    log.warn('spotify-server.js:  Web server has been accessed:')
-    log.warn('                    - URL        : ' + request.url);
-    log.warn('                    - Parameters : ' + JSON.stringify(queryAsObject));
-    
-    if (request.url == '/favicon.ico'){
-        // Browser will always check for favicon which we want to ignore
-        response.statusCode = 404;
-    }
-    // Verify state and auth code
-    else if (queryAsObject.code == undefined) {
-        response.writeHead(200, { "Content-Type": "text/plain" });
-        response.write("Problem with redirect URL when authorising dayjob with Spotify.  No authorisation code was received in the URL.  Please try again.");
-        log.warn('spotify-server.js: [ERROR] Problem with authorisation code received in the URL, code is ' + queryAsObject.code);
-    }
-    else if (queryAsObject.state != state) {
-        
-        response.writeHead(200, { "Content-Type": "text/plain" });
-        response.write("Problem with redirect URL when authorising dayjob with Spotify.  State code missing or invalid.  Dayjob has ignored the authorisation request.  Please try again.");
-        log.warn('spotify-server.js: [ERROR] Problem/mismatched state received in the URL, state is ' + queryAsObject.state);
-    }
-    else {
-        response.writeHead(200, { "Content-Type": "text/plain" });
-        response.write("Thanks for authorising dayjob.  You can close this web page.");
-        // Show a notification in the app that auth is complete?
-        log.warn('spotify-server.js:  Successfully received authorization code ' + queryAsObject.code);
-        prefsLocal.setPref('spotify-server_authorizationCode', queryAsObject.code);
-        authCodeGrant();
-        // TODO - if Promise response fails, show a messsage
-    }
-    response.end();
-}).listen(8888);
+module.exports.startWebServer = function(){
+    return startWebServer()
+}
 
+function startWebServer(){
+    webServer = http.createServer(function (request, response) {
+        // Get object with all the parameters
+        var parsedUrl = url.parse(request.url, true); // true to get query as object
+        var queryAsObject = parsedUrl.query;
+        log.warn('spotify-server.js:  Web server has been accessed:')
+        log.warn('                    - URL        : ' + request.url);
+        log.warn('                    - Parameters : ' + JSON.stringify(queryAsObject));
+        
+        if (request.url == '/favicon.ico'){
+            // Browser will always check for favicon which we want to ignore
+            response.statusCode = 404;
+        }
+        // Verify state and auth code
+        else if (queryAsObject.code == undefined) {
+            response.writeHead(200, { "Content-Type": "text/plain" });
+            response.write("Problem with redirect URL when authorising dayjob with Spotify.  No authorisation code was received in the URL.  Please try again.");
+            log.warn('spotify-server.js: [ERROR] Problem with authorisation code received in the URL, code is ' + queryAsObject.code);
+        }
+        else if (queryAsObject.state != state) {
+            
+            response.writeHead(200, { "Content-Type": "text/plain" });
+            response.write("Problem with redirect URL when authorising dayjob with Spotify.  State code missing or invalid.  Dayjob has ignored the authorisation request.  Please try again.");
+            log.warn('spotify-server.js: [ERROR] Problem/mismatched state received in the URL, state is ' + queryAsObject.state);
+        }
+        else {
+            response.writeHead(200, { "Content-Type": "text/plain" });
+            response.write("Thanks for authorising dayjob.  You can close this web page.");
+            log.warn('spotify-server.js:  Successfully received authorization code ' + queryAsObject.code);
+            prefsLocal.setPref('spotify-server_authorizationCode', queryAsObject.code);
+            authCodeGrant()
+                .then(function(result){
+                    authEvents.emit('auth_code_grant_success',result)
+                }).catch(function(err){
+                    authEvents.emit('auth_code_grant_error',err)
+                })
+        }
+        response.end();
+    }).listen(8888);
+}
 
 ///////////////////////////////////////////////////////////////////
 //// Initialise web API instance
@@ -211,9 +228,14 @@ module.exports.getAuthUrl = function () {
         // Create URL for authorising app and launch in user's browser
         var authorizeURL = spotifyApi.createAuthorizeURL(scopes, state)
         log.warn('spotify-server.js:  Generated Auth URL: ' + authorizeURL);
-        //Could open the shell here if needed:  shell.openExternal(authorizeURL);
         return Promise.resolve(authorizeURL);
-    })
+    }).catch(function (err) {
+        log.warn('spotify-server.js:  [ERROR] Error creating auth URL.  Error ', err.message);
+        // Handle spotifyApi.authorizationCodeGrant() and spotifyApi.getMe() promise errors gracefully
+        handledErr = new Error("error_creating_auth_url")
+        handledErr.error = err;
+        return Promise.reject(handledErr);
+    });
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -223,43 +245,44 @@ module.exports.getAuthUrl = function () {
 
 function authCodeGrant() {
     // Clear tokens if retrying auth code grant
-    spotifyApi.resetAccessToken();
-    spotifyApi.resetRefreshToken();
-    prefsLocal.deletePref('spotify-server_access_token');
-    prefsLocal.deletePref('spotify-server_refresh_token');
-    prefsLocal.deletePref('spotify-server_token_expiration_date');
-    spotifyDisplayName = undefined;
-    spotifyUserId = undefined;
-    spotifyApi.authorizationCodeGrant(prefsLocal.getPref('spotify-server_authorizationCode'))
-        .then(function (result) {
-            log.warn('spotify-server.js:  Authorisation granted.');
-            log.warn('spotify-server.js:  - Access token: ', result.body.access_token);
-            log.warn('spotify-server.js:  - Access token expiry: ' + result.body.expires_in);
-            log.warn('spotify-server.js:  - Refresh token: ' + result.body.refresh_token);
-            // Save and set the access and refresh tokens
-            prefsLocal.setPref('spotify-server_access_token', result.body.access_token);
-            prefsLocal.setPref('spotify-server_refresh_token', result.body.refresh_token);
-            spotifyApi.setAccessToken(result.body.access_token);
-            spotifyApi.setRefreshToken(result.body.refresh_token);
-            // Calculate date of access token expiry in ms
-            prefsLocal.setPref('spotify-server_token_expiration_date', new Date().getTime() + result.body.expires_in * 1000); //Convert seconds to ms
-            log.warn('spotify-server.js:  Token expiration date set (ms):  ' + prefsLocal.getPref('spotify-server_token_expiration_date'));
-            return spotifyApi.getMe();
-            // TODO - is it necessary to call spotifyApi.getMe() just to log the users details - either it is not, or the users details should be saved to a variable instead
-        }).then(function (result) {
-            // Success
-            log.warn('spotify-server.js:  Connected successfully.  Retrieved data for ' + result.body.display_name);
-            log.warn('spotify-server.js:    Email: ' + result.body.email);
-            log.warn('spotify-server.js:    Account type: ' + result.body.product);
-            //log.warn('spotify-server.js:    Image URL: ' + result.body.images[0].url);
-            return Promise.resolve(result) // TODO - Should this return a custom message, e.g. 'authorisation_granted'?
-        }).catch(function (err) {
-            log.warn('spotify-server.js:  [ERROR] Exception after authorision was not successfully granted.  Try revoking access to the application in the Apps section of your Spotify account, and re-authenticating.  Error ', err.message);
-            // Handle spotifyApi.authorizationCodeGrant() and spotifyApi.getMe() promise errors gracefully
-            handledErr = new Error("error_authorising")
-            handledErr.error = err;
-            return Promise.reject(handledErr);
-        });
+    return Promise.resolve().then(function(){
+        spotifyApi.resetAccessToken();
+        spotifyApi.resetRefreshToken();
+        prefsLocal.deletePref('spotify-server_access_token');
+        prefsLocal.deletePref('spotify-server_refresh_token');
+        prefsLocal.deletePref('spotify-server_token_expiration_date');
+        spotifyDisplayName = undefined;
+        spotifyUserId = undefined;
+        return spotifyApi.authorizationCodeGrant(prefsLocal.getPref('spotify-server_authorizationCode'))
+    }).then(function (result) {
+        log.warn('spotify-server.js:  Authorisation granted.');
+        log.warn('spotify-server.js:  - Access token: ', result.body.access_token);
+        log.warn('spotify-server.js:  - Access token expiry: ' + result.body.expires_in);
+        log.warn('spotify-server.js:  - Refresh token: ' + result.body.refresh_token);
+        // Save and set the access and refresh tokens
+        prefsLocal.setPref('spotify-server_access_token', result.body.access_token);
+        prefsLocal.setPref('spotify-server_refresh_token', result.body.refresh_token);
+        spotifyApi.setAccessToken(result.body.access_token);
+        spotifyApi.setRefreshToken(result.body.refresh_token);
+        // Calculate date of access token expiry in ms
+        prefsLocal.setPref('spotify-server_token_expiration_date', new Date().getTime() + result.body.expires_in * 1000); //Convert seconds to ms
+        log.warn('spotify-server.js:  Token expiration date set (ms):  ' + prefsLocal.getPref('spotify-server_token_expiration_date'));
+        return spotifyApi.getMe();
+        // TODO - is it necessary to call spotifyApi.getMe() just to log the users details - either it is not, or the users details should be saved to a variable instead
+    }).then(function (result) {
+        // Success
+        log.warn('spotify-server.js:  Connected successfully.  Retrieved data for ' + result.body.display_name);
+        log.warn('spotify-server.js:    Email: ' + result.body.email);
+        log.warn('spotify-server.js:    Account type: ' + result.body.product);
+        //log.warn('spotify-server.js:    Image URL: ' + result.body.images[0].url);
+        return Promise.resolve(result) // TODO - Should this return a custom message, e.g. 'authorisation_granted'?
+    }).catch(function (err) {
+        log.warn('spotify-server.js:  [ERROR] Exception after authorision was not successfully granted.  Try revoking access to the application in the Apps section of your Spotify account, and re-authenticating.  Error ', err.message);
+        // Handle spotifyApi.authorizationCodeGrant() and spotifyApi.getMe() promise errors gracefully
+        handledErr = new Error("error_authorising")
+        handledErr.error = err;
+        return Promise.reject(handledErr);
+    });
 }
 
 

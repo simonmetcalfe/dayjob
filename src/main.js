@@ -194,6 +194,8 @@ function openAbout() {
 
 // Always open the window (test mode)
 
+
+
 ///////////////////////////////////////////////////////////////////
 //// Spotify auth mechanism
 ///////////////////////////////////////////////////////////////////
@@ -226,6 +228,54 @@ mb.on('after-create-window', function ready() {
 
 app.on('ready', () => {
   log.warn('main.js:  App is ready to start.')
+
+
+///////////////////////////////////////////////////////////////////
+//// spotify-server & web server 
+///////////////////////////////////////////////////////////////////
+
+// Start the web server after the app has initialised
+spotifyServer.startWebServer();
+
+// Monitor the web server for errors errors)
+spotifyServer.getWebServer().on('error', function (err) {
+  log.warn('Main.js:  An error occurred with the spotify-server web server: ' + JSON.stringify(err))
+  return Promise.reject(err)
+    .catch(function (err){
+      if (err.code == 'EADDRINUSE'){
+        handledErr = new Error("webserver_port_in_use")
+        handledErr.error = err;
+        // TODO - Web server port in use error is displayed using a dialog and not the notification window, becuase it is immediately replaced by the next notification 
+        const response = dialog.showMessageBox(null, {message: 'dayjob ERROR!  Port is in use.  dayjob needs port 8080 to authorise with Spotify.  Ensure the port is free and try again \n\n' + err.message});
+        //logAndDisplayError(handledErr)
+      }
+      else {
+        handledErr = new Error("webserver_general_error")
+        handledErr.error = err;
+        logAndDisplayError(handledErr)
+      }
+    })
+});
+
+spotifyServer.getAuthEvents().on('auth_code_grant_error', function (err){
+  console.log('Main.js:  An auth event \'auth_code_grant_error\' has been raised by spotify-server.js: ' +  err)
+  handledErr = new Error('error_authorising')
+  logAndDisplayError(handledErr)
+})
+spotifyServer.getAuthEvents().on('auth_code_grant_success', function (result){
+  connectApi();
+})
+
+/*
+spotifyServer.getWebServer().on('request', function(req, res) {
+  if (req.url === "/fucking") {
+    console.log('web server yeahhhhhhh')
+      res.writeHead(200, {'Content-Type' : 'text/plain'});
+      res.end("goodbye");
+  }       
+}); 
+
+*/
 
 ///////////////////////////////////////////////////////////////////
 //// Keyboard shortcuts
