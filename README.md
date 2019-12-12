@@ -8,12 +8,11 @@ dayjob lets you add tracks to your favourite playlists by using shortcut keys.  
 - Optioanlly remove and skip boring tracks from the current playlist
 - Cross-platform ([Node JS Electron](https://electronjs.org/))
 
-|Play some music on Spotify|When you hear a good track, press a shortcut |dayjob adds it to your playlist|
+|Play some new music|Hear a good tune?  Press a shortcut |dayjob adds it to your playlist|
 |:-----:|:-----:|:-----:|
-|<img src="assets_readme/spotify_playlist.png" width=200>|<img src="assets_readme/ctrl+alt+1.png" height=50>|<img src="assets_readme/dayjob_screenshot.png" height=80>
+|<img src="assets_readme/spotify_playlist.png" width=200>|<img src="assets_readme/ctrl+alt+1.png" height=50>|<img src="assets_readme/dayjob_screenshot.png" height=120>
 
 ## Download
-Current veresion:  1.0.0
 
 |Mac|Windows|Linux|
 |:-----:|:-----:|:-----:|
@@ -21,7 +20,7 @@ Current veresion:  1.0.0
 |dayjob.dmg|Register your interest [here](https://github.com/simonmetcalfe/dayjob/issues/1)|Register your interest [here](https://github.com/simonmetcalfe/dayjob/issues/1)|
 
 ## Keyboard shortcuts
-Add tracks to up to 10 favourite playlists by using the keyboard keys 1, 2, 3, 4, 5, 6, 7, 8 ,9 and 0.
+Add tracks to 10 of your favourite playlists by using the keyboard keys 1, 2, 3, 4, 5, 6, 7, 8 ,9 and 0.
 
 <img src="assets_readme/dayjob_keyboard_shortcuts_colour.png" width=600>
 
@@ -34,8 +33,8 @@ Add tracks to up to 10 favourite playlists by using the keyboard keys 1, 2, 3, 4
 
 ## Limitations
 
-* Tracks can only be moved or removed from the source playlist if you are the playlist owner.  
-* If trying to move tracks from a shared playlist, the radio, artists, etc., dayjob will warn you and fall back to copying
+* Tracks can only be moved or removed from a playlist if you are the playlist owner
+* If you try to move tracks from a read only source (shared playlist, the radio, artists, etc.) dayjob will warn you and copy the track instead
 
 ## Getting started
 ### Right-click menu
@@ -43,20 +42,20 @@ Add tracks to up to 10 favourite playlists by using the keyboard keys 1, 2, 3, 4
 |<img src="assets_readme/dayjob_rightclick_menu.png" height=120>
 
 ### Configure Spotify connection
-1. Log in to your [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/) and create a new Client ID,
+1. Log in to your [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/) and create a new Client ID
     * App or Hardware Name:  _dayjob_
     * App or Hardware Description: _Make great Spotify playlists while you work_
     * What are you building?:  _Desktop app_
     * Commercial:  _No_
-    * Redirect URI:  http://localhost:8888/callback
-1. Enter the Client ID and secret into dayjob and click *Connect to Spotify*
-1. Follow the prompts to authorise
+    * Redirect URI:  _http://localhost:8888/callback_
+1. Enter the Client ID and secret into dayjob
+1. Click *Connect to Spotify* and follow the prompts to authorise
 
 |<img src="assets_readme/dayjob_preferences_spotify.png" width=600>
 
 ### Add your playlists
-1. Right-click on a playlist in the Spotify app, and select *Share > Copy Spotify URI*. 
-1. Goto the *Playlists* tab in dayjob Settings and paste the playlist URI into an empty slot
+1. Right-click on a playlist in the Spotify app, and select *Share > Copy Spotify URI*
+1. Goto the *Playlists* tab in dayjob Preferences and paste the playlist URI into an empty slot
 1. Type a name for the playlist.
 
 |<img src="assets_readme/dayjob_preferences_playlists.png" width=600>
@@ -66,9 +65,11 @@ I created this app because I love discovering new music when at work, but wanted
 
 ## Development
 
-I'm not a developer by profession so apologise for any bugs and (a healthy dose of) poor coding practices!  dayjob is a simple project and should be easy to maintain.  After cloning use *npm install dayjob* to install.
+I'm not a developer by profession so apologise for any bugs and poor coding practices!  dayjob is a simple project and should be easy to maintain.  After cloning use *npm install dayjob* to install.
 
-A list of know issues (mostly tech debt) is maintained in GitHub which I might get round to some day.  Please log any bugs which relate to functionality issues and I will try and fix them.
+A list of known issues and tech debt is maintained in GitHub which I might get round to some day.  Please log any bugs which relate to functionality and I will try and fix them.
+
+Enjoy!
 
 
 
