@@ -21,11 +21,12 @@ src: url(../node_modules/font-awesome/fonts/fontawesome-webfont.woff2) format('w
     --dayjobGreyText: #8f8f8f;
     --dayjobWarning:  rgb(221, 96, 23);
     --dayjobError:  red;
+    --dayjobBlack: #272727;
 }
 
 body {
     font-family: 'Montserrat', sans-serif;
-    background: #272727;
+    background: var(--dayjobBlack);
     padding: 32px; /*Border around window*/
     margin: 0;
     text-align: center;

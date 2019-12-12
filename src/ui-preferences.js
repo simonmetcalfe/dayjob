@@ -213,12 +213,12 @@ $("#fldPlaylistName9").on( "input", function(event){
 
 //Playlist 10
 $("#fldPlaylistId10").on( "input", function(event){
-    playlists[10].playlistUri = this.value;
+    playlists[0].playlistUri = this.value;
     ipcRenderer.invoke('setPlaylists',playlists);
 });
 
 $("#fldPlaylistName10").on( "input", function(event){
-    playlists[10].playlistName = this.value;
+    playlists[0].playlistName = this.value;
     ipcRenderer.invoke('setPlaylists',playlists);
 });
 

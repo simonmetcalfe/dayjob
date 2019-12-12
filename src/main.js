@@ -195,7 +195,6 @@ function openAbout() {
 // Always open the window (test mode)
 
 
-
 ///////////////////////////////////////////////////////////////////
 //// Spotify auth mechanism
 ///////////////////////////////////////////////////////////////////
@@ -260,22 +259,13 @@ spotifyServer.getWebServer().on('error', function (err) {
 spotifyServer.getAuthEvents().on('auth_code_grant_error', function (err){
   console.log('Main.js:  An auth event \'auth_code_grant_error\' has been raised by spotify-server.js: ' +  err)
   handledErr = new Error('error_authorising')
+  handledErr.error = err;
   logAndDisplayError(handledErr)
 })
 spotifyServer.getAuthEvents().on('auth_code_grant_success', function (result){
+  console.log('Main.js:  Auth event \'auth_code_grant_success\' has been raised by spotify-server.js: ' +  result)
   connectApi();
 })
-
-/*
-spotifyServer.getWebServer().on('request', function(req, res) {
-  if (req.url === "/fucking") {
-    console.log('web server yeahhhhhhh')
-      res.writeHead(200, {'Content-Type' : 'text/plain'});
-      res.end("goodbye");
-  }       
-}); 
-
-*/
 
 ///////////////////////////////////////////////////////////////////
 //// Keyboard shortcuts
