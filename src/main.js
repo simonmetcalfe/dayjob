@@ -115,6 +115,25 @@ mb.setOption('index', url.format({
   slashes: true
 }))
 
+
+// TODO - Menubar 7.1.0 test
+/*
+ const mb = menubar({preloadWindow: true,
+                     browserWindow:{
+                       webPreferences: {nodeIntegration: true},
+                       height:200,
+                     },
+                     alwaysOnTop:true,
+                     icon: app.getAppPath() + '/assets/IconTemplate.png',
+                     index:
+                     url.format({
+                       pathname: path.join(app.getAppPath(), '/src/notification.html'),
+                       protocol: 'file:',
+                       slashes: true
+                     })
+});
+*/
+
 ///////////////////////////////////////////////////////////////////
 //// Right click menu module
 ///////////////////////////////////////////////////////////////////
@@ -273,6 +292,7 @@ spotifyServer.getAuthEvents().on('auth_code_grant_success', function (result){
 
   // There appears to be a bug with globalShortcut.registerAll so every key / modifier combination must be assigned separately
   // All shortcuts call keyPressed() and pass a JSON object with keys: "modifiers" and "key" 
+  
   // Register CRTL + ALT shortcuts
   const ctrlAlt1 = globalShortcut.register('Control+Alt+1', () =>          {keyPressed({modifiers: ["Control","Alt"],key: "1"})});
   const ctrlAlt2 = globalShortcut.register('Control+Alt+2', () =>          {keyPressed({modifiers: ["Control","Alt"],key: "2"})});
@@ -509,6 +529,7 @@ mb.on('ready', function ready() {
 ///////////////////////////////////////////////////////////////////
 
 //TODO - For consistency the old ipcMain.on functions could updated to ipcMain.handle 
+
 
 ipcMain.on('btnOpenDashboard', function (event) {
   log.warn('main.js:  Event btnOpenDashboard received by main process.');
