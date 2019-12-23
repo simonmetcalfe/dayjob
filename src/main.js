@@ -7,7 +7,7 @@
 const electron = require('electron');
 var shell = require('electron').shell;
 const {app, globalShortcut, ipcMain, dialog} = require('electron');  //globalShortcut must be defined with app or it does not work
-const menubar = require('menubar');
+const {menubar} = require('menubar');
 const spotifyServer = require('./spotify-server.js');
 const prefsLocal = require('./prefs.js');
 const fs = require ('fs');
@@ -101,6 +101,7 @@ else {
 ////  Menu bar module
 ///////////////////////////////////////////////////////////////////
 
+/* 
 const mb = menubar({webPreferences: {nodeIntegration: true}});
 
 mb.setOption('preload-window', true);
@@ -115,9 +116,9 @@ mb.setOption('index', url.format({
   slashes: true
 }))
 
+*/
+// Menubar 7.1.0 test
 
-// TODO - Menubar 7.1.0 test
-/*
  const mb = menubar({preloadWindow: true,
                      browserWindow:{
                        webPreferences: {nodeIntegration: true},
@@ -132,7 +133,6 @@ mb.setOption('index', url.format({
                        slashes: true
                      })
 });
-*/
 
 ///////////////////////////////////////////////////////////////////
 //// Right click menu module
