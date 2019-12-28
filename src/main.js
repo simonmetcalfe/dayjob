@@ -1,61 +1,52 @@
-///////////////////////////////////////////////////////////////////
-//// Modules
-///////////////////////////////////////////////////////////////////
-
-// Type 'npm install DependencyName' on command prompt to install
-// require('log-timestamp');
+const {app, BrowserWindow, globalShortcut, ipcMain, dialog} = require('electron');  //globalShortcut must be defined with app or it does not work
 const electron = require('electron');
-var shell = require('electron').shell;
-const {app, globalShortcut, ipcMain, dialog} = require('electron');  //globalShortcut must be defined with app or it does not work
-const {menubar} = require('menubar');
-const spotifyServer = require('./spotify-server.js');
-const prefsLocal = require('./prefs.js');
-const fs = require ('fs');
 
-///////////////////////////////////////////////////////////////////
-////  Global variables
-///////////////////////////////////////////////////////////////////
-
-// Control application life
-//app = electron.app  //Not required since defining app,globalShortcut together
-
-// Create native browser windows (for all of UI)
-const BrowserWindow = electron.BrowserWindow
-
-// Variables for constructing URLs
-const path = require('path')
-const url = require('url')
-
-///////////////////////////////////////////////////////////////////
-////  Logging module
+////////////////////////////////////////////////////////////////////
+////  Logging & app start
 ///////////////////////////////////////////////////////////////////
 
 var log = require('electron-log');
 
-log.warn('main.js:  dayjob started...');
+log.warn('main.js:  Starting application\n\n' +
+         '*********************************\n' + 
+         '* dayjob started...             *\n' + 
+         '*********************************\n');
+
 log.warn('main.js:  \'__dirname\' path is reported as: ' + __dirname);
 log.warn('main.js:  \'app.getAppPath\' path is reported as: ' + app.getAppPath());
 
-
+////////////////////////////////////////////////////////////////////
+//// Modules
 ///////////////////////////////////////////////////////////////////
+
+var shell = require('electron').shell;
+const {menubar} = require('menubar');
+const spotifyServer = require('./spotify-server.js');
+const prefsLocal = require('./prefs.js');
+const fs = require ('fs');
+const path = require('path') // For constructing URLs
+const url = require('url')
+
+////////////////////////////////////////////////////////////////////
 ////  Unhandled Promise rejection handling
 ///////////////////////////////////////////////////////////////////
 
 // In case of a programming error resulting in an unhandled rejection, the user will receive a message
 process.on('unhandledRejection', error => {
   // Will print "unhandledRejection err is not defined"
-  log.warn('main.js:  ERROR - UNHANDLED PROMISE REJECTION: ', error.message);
-  const response = dialog.showMessageBox(null, {message: 'dayjob ERROR!  Unhandled promise rejection.  This should be logged as a bug on the dayjob GitHub page. \n\n' + error.message});
+  log.warn('main.js:  [ERROR]  Unhandled promise rejection.  This should be logged as a bug on the dayjob GitHub page.  Error:  \n\n' + String(error.message) + '\n' + 
+  'Stack:   ' + error.stack);
+  dialog.showMessageBox(null, {message: 'dayjob encountered an error \n\nUnhandled promise rejection.  This should be logged as a bug on the dayjob GitHub page.\n\n' + error.message});
 });
 
-///////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
 ////  Load error message db
 ///////////////////////////////////////////////////////////////////
 
 let notifications = JSON.parse(fs.readFileSync(__dirname + '/notification.json'));
 log.warn('main.js:  Loaded notification/error handling database') 
 
-///////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
 ////  Load application defaults
 ///////////////////////////////////////////////////////////////////
 
@@ -63,16 +54,14 @@ log.warn('main.js:  Loaded notification/error handling database')
 if (prefsLocal.getPref('dayjob_always_move_tracks') == undefined){prefsLocal.setPref('dayjob_always_move_tracks',false)}
 if (prefsLocal.getPref('dayjob_always_skip_tracks') == undefined){prefsLocal.setPref('dayjob_always_skip_tracks',false)}
 
-///////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
 ////  Load saved playlist array
 ///////////////////////////////////////////////////////////////////
 
 // Playlist storage
 var playlists = {};
 
-// v1 playlist storage is an 11 object multimensional array (0 to 10), representing the keyboard keys `1234567890 in order
-// Each array item contains an array with (keyboard_key,playlist_uri,playlist_name,boolean_move_track) 
-
+// v1 playlist storage is an 10 object multimensional array (0 to 9), representing the keyboard keys 1234567890 in order
 if (prefsLocal.getPref('dayjob_playlists_v1') == undefined){
   // No playlists stored, create a blank array
   playlists = 
@@ -96,45 +85,7 @@ else {
   playlists = prefsLocal.getPref('dayjob_playlists_v1');
 }
 
-
-///////////////////////////////////////////////////////////////////
-////  Menu bar module
-///////////////////////////////////////////////////////////////////
-
-/* 
-const mb = menubar({webPreferences: {nodeIntegration: true}});
-
-mb.setOption('preload-window', true);
-mb.setOption('height', 200);
-mb.setOption('alwaysOnTop', true);
-// Set app icon
-mb.setOption('icon', app.getAppPath() + '/assets/IconTemplate.png')
-// Set the initial page
-mb.setOption('index', url.format({
-  pathname: path.join(app.getAppPath(), '/src/notification.html'),
-  protocol: 'file:',
-  slashes: true
-}))
-
-*/
-// Menubar 7.1.0 test
-
- const mb = menubar({preloadWindow: true,
-                     browserWindow:{
-                       webPreferences: {nodeIntegration: true},
-                       height:200,
-                     },
-                     alwaysOnTop:true,
-                     icon: app.getAppPath() + '/assets/IconTemplate.png',
-                     index:
-                     url.format({
-                       pathname: path.join(app.getAppPath(), '/src/notification.html'),
-                       protocol: 'file:',
-                       slashes: true
-                     })
-});
-
-///////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
 //// Right click menu module
 ///////////////////////////////////////////////////////////////////
 
@@ -151,43 +102,34 @@ const contextMenu = Menu.buildFromTemplate([
   { label: 'Quit dayjob', click: function () { mb.app.quit(); } }
 ]);
 
+
+////////////////////////////////////////////////////////////////////
+////  Menu bar module
 ///////////////////////////////////////////////////////////////////
-//// Main window handler
-///////////////////////////////////////////////////////////////////
 
-let mainWindow;  // Prevent window closure on garbage collection
+ const mb = menubar({preloadWindow: true,
+                     browserWindow:{
+                       webPreferences: {nodeIntegration: true},
+                       height:200,
+                     },
+                     alwaysOnTop:true,
+                     icon: app.getAppPath() + '/assets/IconTemplate.png',
+                     index: url.format({
+                       pathname: path.join(app.getAppPath(), '/src/notification.html'),
+                       protocol: 'file:',
+                       slashes: true
+                     })
+});
 
-function openMainWindow(urlToOpen) {
-  // To get a frameless window, add 'frame:false'
-  mainWindow = new BrowserWindow({ maxWidth: 1024, maxHeight: 768, show: false, webPreferences: {nodeIntegration: true}});
 
-  mainWindow.loadURL(url.format({
-    pathname: path.join(app.getAppPath(), urlToOpen),
-    protocol: 'file:',
-    slashes: true
-  }))
-
-  mainWindow.once('ready-to-show', () => {
-    mainWindow.show()
-  })
-
-  mainWindow.on('closed', function () {
-    mainWindow = null;
-  });
-
-  log.warn('main.js:  Main window opened with url: ' + urlToOpen);
-  //await sleep(1000);
-
-}
-
-///////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
 //// About window handler
 ///////////////////////////////////////////////////////////////////
 
 let aboutWindow;  // Prevent window closure on garbage collection
 
 function openAbout() {
-  aboutWindow = new BrowserWindow({ width: 400, height: 350, maxWidth: 400, maxHeight: 350, show: false, webPreferences: {nodeIntegration: true}});
+  aboutWindow = new BrowserWindow({ width: 400, height: 410, maxWidth: 400, maxHeight: 350, show: false, webPreferences: {nodeIntegration: true}});
 
   aboutWindow.loadURL(url.format({
     pathname: path.join(app.getAppPath(), '/src/about.html'),
@@ -204,17 +146,7 @@ function openAbout() {
   });
 }
 
-///////////////////////////////////////////////////////////////////
-//// Start-up options
-///////////////////////////////////////////////////////////////////
-
-// Open the DevTools.
-// mainWindow.webContents.openDevTools() 
-
-// Always open the window (test mode)
-
-
-///////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
 //// Spotify auth mechanism
 ///////////////////////////////////////////////////////////////////
 
@@ -229,51 +161,11 @@ function connectApi(){
       logAndDisplayError(err)
     })
 }
+
+
+////////////////////////////////////////////////////////////////////
+//// Monitor auth events from web server
 ///////////////////////////////////////////////////////////////////
-//// Applicacation start
-///////////////////////////////////////////////////////////////////
-
-// Actions after the window has first been rendered
-mb.on('after-create-window', function ready() {
-  log.warn('main.js:  Menubar after-create-window event happened.');
-  mb.window.webContents.on('did-finish-load', function () {
-    log.warn('main.js:  Menubar did-finish-load event happened.');
-    // Waits for MB window to initialise & content to finish loading.
-    // Interactions with notifcation window MUST only happen after this event or they are not dissplayed
-    connectApi();  // Check API connection and warn the user if any action is required.
-  });
-});
-
-app.on('ready', () => {
-  log.warn('main.js:  App is ready to start.')
-
-
-///////////////////////////////////////////////////////////////////
-//// spotify-server & web server 
-///////////////////////////////////////////////////////////////////
-
-// Start the web server after the app has initialised
-spotifyServer.startWebServer();
-
-// Monitor the web server for errors errors)
-spotifyServer.getWebServer().on('error', function (err) {
-  log.warn('Main.js:  An error occurred with the spotify-server web server: ' + JSON.stringify(err))
-  return Promise.reject(err)
-    .catch(function (err){
-      if (err.code == 'EADDRINUSE'){
-        handledErr = new Error("webserver_port_in_use")
-        handledErr.error = err;
-        // TODO - Web server port in use error is displayed using a dialog and not the notification window, becuase it is immediately replaced by the next notification 
-        const response = dialog.showMessageBox(null, {message: 'dayjob ERROR!  Port is in use.  dayjob needs port 8080 to authorise with Spotify.  Ensure the port is free and try again \n\n' + err.message});
-        //logAndDisplayError(handledErr)
-      }
-      else {
-        handledErr = new Error("webserver_general_error")
-        handledErr.error = err;
-        logAndDisplayError(handledErr)
-      }
-    })
-});
 
 spotifyServer.getAuthEvents().on('auth_code_grant_error', function (err){
   console.log('Main.js:  An auth event \'auth_code_grant_error\' has been raised by spotify-server.js: ' +  err)
@@ -286,9 +178,53 @@ spotifyServer.getAuthEvents().on('auth_code_grant_success', function (result){
   connectApi();
 })
 
+
+////////////////////////////////////////////////////////////////////
+//// Applicacation start
 ///////////////////////////////////////////////////////////////////
-//// Keyboard shortcuts
-///////////////////////////////////////////////////////////////////
+
+// Electron app start occurs before GUI, so instead we use Menubar's 'after-create-window' event 
+app.on('ready', () => {
+  log.warn('main.js:  App ready to start, but waiting for menubar \'after-create-window\' event...');
+});
+
+// Actions after the window has first been rendered
+mb.on('after-create-window', function ready() {
+  log.warn('main.js:  Menubar after-create-window event happened.');
+  connectApi();
+
+  ///////////////////////////////////////////////////////////////////
+  //// spotify-server & web server 
+  ///////////////////////////////////////////////////////////////////
+
+  // Start the web server after the app has initialised
+  spotifyServer.startWebServer();
+
+  // Monitor the web server for errors errors)
+  spotifyServer.getWebServer().on('error', function (err) {
+    log.warn('Main.js:  An error occurred with the spotify-server web server: ' + JSON.stringify(err))
+    return Promise.reject(err)
+      .catch(function (err){
+        if (err.code == 'EADDRINUSE'){
+          handledErr = new Error("webserver_port_in_use")
+          handledErr.error = err;
+          // TODO - Web server port in use error is displayed using a dialog and not the notification window, becuase it is immediately replaced by the next notification 
+          log.warn('main.js:  [ERROR] Port 8888 is in use but required by dayjob to authorise with Spotify.  Ensure port is free and start dayjob again.  Error:  \n\n' + String(err.message));
+          dialog.showMessageBox(null, {message: 'dayjob encountered an error \n\nPort 8888 is in use but required by dayjob to authorise with Spotify.  Ensure port is free and start dayjob again \n\n' + err.message});
+          //logAndDisplayError(handledErr)
+        }
+        else {
+          handledErr = new Error("webserver_general_error")
+          handledErr.error = err;
+          logAndDisplayError(handledErr)
+        }
+      })
+  });
+
+
+  ///////////////////////////////////////////////////////////////////
+  //// Keyboard shortcuts
+  ///////////////////////////////////////////////////////////////////
 
   // There appears to be a bug with globalShortcut.registerAll so every key / modifier combination must be assigned separately
   // All shortcuts call keyPressed() and pass a JSON object with keys: "modifiers" and "key" 
@@ -320,7 +256,7 @@ spotifyServer.getAuthEvents().on('auth_code_grant_success', function (result){
   const ctrlAltShfMinus = globalShortcut.register('Control+Alt+Shift+-', () =>      {keyPressed({modifiers: ["Control","Alt","Shift"],key: "-"})});
   const ctrlAltShfPlus = globalShortcut.register('Control+Alt+Shift+=', () =>       {keyPressed({modifiers: ["Control","Alt","Shift"],key: "="})});
   // Warn if registration of CRTL + ALT shortcuts fail
-  // TODO - Should alert  the user if a keuyboard shortcut fails
+  // TODO - Should alert the user if a keuyboard shortcut fails
   if (!ctrlAlt1) {log.warn('main.js:  registration failed of: ctrlAlt1 (Control+Alt+1)')};
   if (!ctrlAlt2) {log.warn('main.js:  registration failed of: ctrlAlt2 (Control+Alt+2)')};
   if (!ctrlAlt3) {log.warn('main.js:  registration failed of: ctrlAlt3 (Control+Alt+3)')};
@@ -353,7 +289,7 @@ spotifyServer.getAuthEvents().on('auth_code_grant_success', function (result){
 });
 
 
-///////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
 //// Keyboard shortcut actions
 ///////////////////////////////////////////////////////////////////
 
@@ -364,8 +300,7 @@ function keyPressed(key){
   ///////////////////////////////////////////////////////////////////
   
   if (key.modifiers.includes('Control') && key.modifiers.includes('Alt') && key.key == '-'){
-    // Determine if track should be moved
-    var skip = 0;
+    var skip = 0; // Determine if track should be skipped as well as moved
     if (prefsLocal.getPref('dayjob_always_skip_tracks') == 0 && key.modifiers.includes('Shift')) {skip = 1} 
     if (prefsLocal.getPref('dayjob_always_skip_tracks') == 1 && !key.modifiers.includes('Shift')){skip = 1}
     log.warn('main.js:  Remove track keyboard shortcut pressed...');
@@ -403,7 +338,7 @@ function keyPressed(key){
       }
       return Promise.resolve('ready')
     }).then(function (result){
-      // Determine if track should be moved
+      // Determine if track should be added or moved
       if (prefsLocal.getPref('dayjob_always_move_tracks') == 0 && key.modifiers.includes('Shift')) {move = 1} 
       if (prefsLocal.getPref('dayjob_always_move_tracks') == 1 && !key.modifiers.includes('Shift')){move = 1}
       log.warn('main.js:  Add/move track to playlist in slot shortcut pressed:  Slot: ' + key.key + ' Move: ' + move);
@@ -433,7 +368,7 @@ function keyPressed(key){
 }
 
 
-///////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
 //// Notifications display
 ///////////////////////////////////////////////////////////////////
 
@@ -448,31 +383,29 @@ function showNotification(uiData) {
   setTimeout(doAfterDelay, 5000);
 }
 
-///////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
 //// Log error
 ///////////////////////////////////////////////////////////////////
 
-// TODO - Error printing is not robust and will cause a Promise Unhandled Rejection if 
-// an error object is not in the speecified format - it should be revised
-
 function logError(err){
   try {
-    log.warn('main.js:  ERROR has occurred:  ' + err + '\n' + 
+    log.warn('main.js:  [ERROR] has occurred:  ' + err + '\n' + 
             'Stack:   ' + err.stack)
     
     // Check if the error was caused by an external module and log it     
     if (err.hasOwnProperty("error")){
-      log.warn('main.js:  ERROR in eternal module has occurred:  ' + err.error + '\n' + 
+      log.warn('main.js:  [ERROR] in eternal module has occurred:  ' + err.error + '\n' + 
       'Object:  ' + JSON.stringify(err.error) + '\n' + 
       'Stack :   ' + err.error.stack)
     }
   } 
   catch {
-    log.warn('main.js:  EXCEPTION OCCURRED when processing error:  ' + err)
+    log.warn('main.js:  [ERROR]  Exception when handling an error.  This should be logged as a bug on the dayjob GitHub page.  Error:  ' + String(err))
+    dialog.showMessageBox(null, {message: 'dayjob encountered an error \n\nException when handling an error.  This should be logged as a bug on the dayjob GitHub page. \n\n' + error.message});
   }  
 }
 
-///////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
 //// Log and display error
 ///////////////////////////////////////////////////////////////////
 
@@ -492,14 +425,15 @@ function logAndDisplayError(err) {
                     buttonCta: {title: notifications[err.message].actionTitle, 
                                 action: notifications[err.message].actionId},
                     errorType: notifications[err.message].errorType})
-  log.warn('main.js:  ERROR reported to the user: (' + notifications[err.message].errorType + ') ' + notifications[err.message].title + ': ' + notifications[err.message].description + externalError);
+  log.warn('main.js:  [ERROR] Error reported to the user: (' + notifications[err.message].errorType + ') ' + notifications[err.message].title + ': ' + notifications[err.message].description + externalError);
   }
   catch {
     showNotification({title: 'Cannot display error', 
                       description: 'An exception occurred when trying to display an error.  If the problem persists please seek help on the dayjob GitHub page.', 
                       subDescription: String(err),
                       errorType: 'error'})
-    log.warn('main.js:  EXCEPTION OCCURRED when processing error:  ' + String(err))
+    log.warn('main.js:  [ERROR]:  Exception when handling an error.  This should be logged as a bug on the dayjob GitHub page.  Error:  ' + String(err))
+    dialog.showMessageBox(null, {message: 'dayjob encountered an error \n\nException when handling an error.  This should be logged as a bug on the dayjob GitHub page. \n\n' + error.message});
   }  
 }
 
@@ -524,7 +458,7 @@ mb.on('ready', function ready() {
   //mb.showWindow();
 });
 
-///////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
 //// IPC listeners
 ///////////////////////////////////////////////////////////////////
 
@@ -583,7 +517,7 @@ ipcMain.handle('logAndDisplayError', async (event, msg) => {
   logAndDisplayError(new Error(msg))
 });
 
-///////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
 //// Applicacation end
 ///////////////////////////////////////////////////////////////////
 
@@ -603,3 +537,32 @@ app.on('will-quit', function () {
   globalShortcut.unregisterAll();
 })
 
+////////////////////////////////////////////////////////////////////
+//// Main window handler
+///////////////////////////////////////////////////////////////////
+
+let mainWindow;  // Prevent window closure on garbage collection
+
+function openMainWindow(urlToOpen) {
+  log.warn('main.js:  Opening main window... ' + urlToOpen);
+  // To get a frameless window, add 'frame:false'
+  mainWindow = new BrowserWindow({ maxWidth: 1024, maxHeight: 768, show: false, webPreferences: {nodeIntegration: true}});
+
+  mainWindow.loadURL(url.format({
+    pathname: path.join(app.getAppPath(), urlToOpen),
+    protocol: 'file:',
+    slashes: true
+  }))
+
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.show()
+  })
+
+  mainWindow.on('closed', function () {
+    mainWindow = null;
+  });
+
+  log.warn('main.js:  Main window opened with url: ' + urlToOpen);
+  //await sleep(1000);
+
+}

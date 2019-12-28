@@ -30,7 +30,6 @@
     "jquery": "3.3.1",
     "menubar": "7.1.0",
     "popper.js": "1.14.7",
-    "request": "2.87.0",
     "spotify-web-api-node": "4.0.0",
     "tether": "1.4.5"
   },
@@ -38,8 +37,7 @@
     "electron": "7.1.7",
     "electron-installer-dmg": "latest",
     "electron-installer-windows": "latest",
-    "electron-packager": "14.1.1",
-    "electron-rebuild": "1.8.6"
+    "electron-packager": "14.1.1"
   },
   "scripts": {
     "start": "electron .",

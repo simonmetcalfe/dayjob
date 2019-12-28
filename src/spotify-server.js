@@ -1,13 +1,19 @@
-///////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
 //// Name:         spotify-server.js
 //// Description:  Module for establishing and mainting an API 
 ////               connection to Spotify, using spotify-web-api-node.
 ////               
-//// Version:      0.0.1
 //// Author:       Simon Metcalfe
 ///////////////////////////////////////////////////////////////////
 
+////////////////////////////////////////////////////////////////////
+//// Logging
 ///////////////////////////////////////////////////////////////////
+
+var log = require('electron-log');
+log.warn('spotify-server.js:  Script has started.')
+
+////////////////////////////////////////////////////////////////////
 //// Modules
 ///////////////////////////////////////////////////////////////////
 
@@ -15,26 +21,30 @@ var SpotifyWebApi = require('spotify-web-api-node');
 var http = require("http");
 var url = require("url");
 const prefsLocal = require('./prefs.js');
-var log = require('electron-log');
 var events = require('events');
 
-//let _this; // For calling exported modules within this js file
-
-
-///////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
 //// Variables
 ///////////////////////////////////////////////////////////////////
 
 var spotifyApi; // Where we store the instance of spotifyApi
 var webServer;
 var authEvents; // Event emitter to let main process know when auth has taken place
-var scopes = ['user-read-private', 'user-read-email', 'playlist-read-private', 'playlist-modify-private', 'playlist-read-collaborative', 'playlist-modify-public', 'user-read-recently-played', 'user-read-currently-playing','user-modify-playback-state'];
 var redirectUri = 'http://localhost:8888/callback';
 var state; //For dayjob to verify requests to the redirect URI
 var spotifyUserId;
 var spotifyDisplayName;
+var scopes = ['user-read-private', 
+              'user-read-email', 
+              'playlist-read-private', 
+              'playlist-modify-private', 
+              'playlist-read-collaborative', 
+              'playlist-modify-public', 
+              'user-read-recently-played', 
+              'user-read-currently-playing',
+              'user-modify-playback-state'];
 
-///////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
 //// Variables external access
 ///////////////////////////////////////////////////////////////////
 
@@ -43,7 +53,7 @@ module.exports.getspotifyDisplayName = function(){return spotifyDisplayName;}
 module.exports.getWebServer = function(){return webServer;}
 module.exports.getAuthEvents = function(){return authEvents;}
 
-///////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
 //// Helper functions
 ///////////////////////////////////////////////////////////////////
 
@@ -62,17 +72,17 @@ var generateRandomString = function (length) {
     return text;
 };
 
-///////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
 //// Auth events emitter (let the main process know when auth is complete)
 ///////////////////////////////////////////////////////////////////
 
 authEvents = new events.EventEmitter(); 
 
-///////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
 //// Initialise web server (for receiving auth code in redirectURI)
 ///////////////////////////////////////////////////////////////////
 
-// Set a random state so webserver ignores all that are missing the 'state' query parameter 
+// Set a random state at startup to ensure webserver ignores requests without a 'state' query parameter 
 state = generateRandomString(16);
 
 module.exports.startWebServer = function(){
@@ -99,7 +109,6 @@ function startWebServer(){
             log.warn('spotify-server.js: [ERROR] Problem with authorisation code received in the URL, code is ' + queryAsObject.code);
         }
         else if (queryAsObject.state != state) {
-            
             response.writeHead(200, { "Content-Type": "text/plain" });
             response.write("Problem with redirect URL when authorising dayjob with Spotify.  State code missing or invalid.  Dayjob has ignored the authorisation request.  Please try again.");
             log.warn('spotify-server.js: [ERROR] Problem/mismatched state received in the URL, state is ' + queryAsObject.state);
@@ -120,10 +129,10 @@ function startWebServer(){
     }).listen(8888);
 }
 
-///////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////
 //// Initialise web API instance
 ///////////////////////////////////////////////////////////////////
-//_this = this; 
 
 function initialiseSpotifyApiInstance(){
     // The instance must be recreated to set clientId and other parameters because 'spotifyApi.setClientId' does not seem to work work
@@ -139,11 +148,11 @@ function initialiseSpotifyApiInstance(){
 
 initialiseSpotifyApiInstance() // Must be done on startup
 
-
-///////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
 //// Check API connection
 ///////////////////////////////////////////////////////////////////
-// Check the API connection each time before using it.  Will reject promise if there is an error condition or accept if API 'appears' to be ready for use.
+// Check the API connection each time before using it.  
+// Will reject promise if there is an error condition or accept if API 'appears' to be ready for use.
 
 module.exports.checkApiConnection = function () {
     return checkApiConnection();
@@ -206,12 +215,11 @@ function checkApiConnection() {
     })
 }
 
-///////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
 //// Generate auth URL
 ///////////////////////////////////////////////////////////////////
 
 module.exports.getAuthUrl = function () {
-    // spotifyApi.createAuthorizeURL does not return a promise, so we resolve one manually
     return Promise.resolve().then(function () {
         initialiseSpotifyApiInstance(); // Instance must be re-created to set the clientId
         spotifyApi.resetAccessToken();
@@ -238,7 +246,7 @@ module.exports.getAuthUrl = function () {
     });
 }
 
-///////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
 //// Grant auth
 ///////////////////////////////////////////////////////////////////
 // Triggered when the auth web server when callback URL is accessed
@@ -286,7 +294,7 @@ function authCodeGrant() {
 }
 
 
-///////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
 //// Refresh access tokens
 ///////////////////////////////////////////////////////////////////
 
@@ -311,7 +319,7 @@ function refreshAccessToken() {
         })
 }
 
-///////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
 //// API calls 
 ///////////////////////////////////////////////////////////////////
 
@@ -624,7 +632,7 @@ function movePlayingTrackToPlaylist(destPlaylistId, destPlaylistName){
         });
 }
 
-///////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
 //// Spotify helper functions
 ///////////////////////////////////////////////////////////////////
 

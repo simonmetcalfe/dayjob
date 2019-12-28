@@ -3,7 +3,6 @@
 //// Description:  Module for managing default, loading and saving 
 ////               of preferences using 'electron-store'
 ////               
-//// Version:      0.0.1
 //// Author:       Simon Metcalfe
 ///////////////////////////////////////////////////////////////////
 
