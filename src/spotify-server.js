@@ -1,21 +1,27 @@
-////////////////////////////////////////////////////////////////////
-//// Name:         spotify-server.js
-//// Description:  Module for establishing and mainting an API 
-////               connection to Spotify, using spotify-web-api-node.
-////               
-//// Author:       Simon Metcalfe
-///////////////////////////////////////////////////////////////////
+/**
+ * -----------------------------------------------------------------
+ * Name:         spotify-server.js
+ * Description:  Module for establishing and mainting an API 
+ *               connection to Spotify, using spotify-web-api-node.
+ *               
+ * Author:       Simon Metcalfe
+ * -----------------------------------------------------------------
+ */
 
-////////////////////////////////////////////////////////////////////
-//// Logging
-///////////////////////////////////////////////////////////////////
+/**
+ * -----------------------------------------------------------------
+ * Logging
+ * -----------------------------------------------------------------
+ */
 
 var log = require('electron-log');
 log.warn('spotify-server.js:  Script has started.')
 
-////////////////////////////////////////////////////////////////////
-//// Modules
-///////////////////////////////////////////////////////////////////
+/**
+ * -----------------------------------------------------------------
+ * Modules
+ * -----------------------------------------------------------------
+ */
 
 var SpotifyWebApi = require('spotify-web-api-node');
 var http = require("http");
@@ -23,9 +29,11 @@ var url = require("url");
 const prefsLocal = require('./prefs.js');
 var events = require('events');
 
-////////////////////////////////////////////////////////////////////
-//// Variables
-///////////////////////////////////////////////////////////////////
+/**
+ * -----------------------------------------------------------------
+ * Variables
+ * -----------------------------------------------------------------
+ */
 
 var spotifyApi; // Where we store the instance of spotifyApi
 var webServer;
@@ -44,18 +52,22 @@ var scopes = ['user-read-private',
               'user-read-currently-playing',
               'user-modify-playback-state'];
 
-////////////////////////////////////////////////////////////////////
-//// Variables external access
-///////////////////////////////////////////////////////////////////
+/**
+ * -----------------------------------------------------------------
+ * Variables external access
+ * -----------------------------------------------------------------
+ */
 
 module.exports.getSpotifyUserId = function(){return spotifyUserId;}
 module.exports.getspotifyDisplayName = function(){return spotifyDisplayName;}
 module.exports.getWebServer = function(){return webServer;}
 module.exports.getAuthEvents = function(){return authEvents;}
 
-////////////////////////////////////////////////////////////////////
-//// Helper functions
-///////////////////////////////////////////////////////////////////
+/**
+ * -----------------------------------------------------------------
+ * Helper functions
+ * -----------------------------------------------------------------
+ */
 
 /**
  * Generates a random string containing numbers and letters
@@ -72,15 +84,19 @@ var generateRandomString = function (length) {
     return text;
 };
 
-////////////////////////////////////////////////////////////////////
-//// Auth events emitter (let the main process know when auth is complete)
-///////////////////////////////////////////////////////////////////
+/**
+ * -----------------------------------------------------------------
+ * Auth events emitter (let the main process know when auth is complete)
+ * -----------------------------------------------------------------
+ */
 
 authEvents = new events.EventEmitter(); 
 
-////////////////////////////////////////////////////////////////////
-//// Initialise web server (for receiving auth code in redirectURI)
-///////////////////////////////////////////////////////////////////
+/**
+ * -----------------------------------------------------------------
+ * Initialise web server (for receiving auth code in redirectURI)
+ * -----------------------------------------------------------------
+ */
 
 // Set a random state at startup to ensure webserver ignores requests without a 'state' query parameter 
 state = generateRandomString(16);
@@ -130,9 +146,11 @@ function startWebServer(){
 }
 
 
-////////////////////////////////////////////////////////////////////
-//// Initialise web API instance
-///////////////////////////////////////////////////////////////////
+/**
+ * -----------------------------------------------------------------
+ * Initialise web API instance
+ * -----------------------------------------------------------------
+ */
 
 function initialiseSpotifyApiInstance(){
     // The instance must be recreated to set clientId and other parameters because 'spotifyApi.setClientId' does not seem to work work
@@ -148,11 +166,15 @@ function initialiseSpotifyApiInstance(){
 
 initialiseSpotifyApiInstance() // Must be done on startup
 
-////////////////////////////////////////////////////////////////////
-//// Check API connection
-///////////////////////////////////////////////////////////////////
-// Check the API connection each time before using it.  
-// Will reject promise if there is an error condition or accept if API 'appears' to be ready for use.
+/**
+ * -----------------------------------------------------------------
+ * Check API connection
+ * -----------------------------------------------------------------
+ * Check the API connection each time before using it.  
+ * Will reject promise if there is an error condition or accept if 
+ * API 'appears' to be ready for use.
+ * 
+ */
 
 module.exports.checkApiConnection = function () {
     return checkApiConnection();
@@ -215,9 +237,11 @@ function checkApiConnection() {
     })
 }
 
-////////////////////////////////////////////////////////////////////
-//// Generate auth URL
-///////////////////////////////////////////////////////////////////
+/**
+ * -----------------------------------------------------------------
+ * Generate auth URL
+ * -----------------------------------------------------------------
+ */
 
 module.exports.getAuthUrl = function () {
     return Promise.resolve().then(function () {
@@ -246,10 +270,12 @@ module.exports.getAuthUrl = function () {
     });
 }
 
-////////////////////////////////////////////////////////////////////
-//// Grant auth
-///////////////////////////////////////////////////////////////////
-// Triggered when the auth web server when callback URL is accessed
+/**
+ * -----------------------------------------------------------------
+ * Grant auth
+ * -----------------------------------------------------------------
+ * Triggered when the auth web server when callback URL is accessed
+ */
 
 function authCodeGrant() {
     // Clear tokens if retrying auth code grant
@@ -294,9 +320,11 @@ function authCodeGrant() {
 }
 
 
-////////////////////////////////////////////////////////////////////
-//// Refresh access tokens
-///////////////////////////////////////////////////////////////////
+/**
+ * -----------------------------------------------------------------
+ * Refresh access tokens
+ * -----------------------------------------------------------------
+ */
 
 function refreshAccessToken() {
     return spotifyApi.refreshAccessToken()
@@ -319,13 +347,16 @@ function refreshAccessToken() {
         })
 }
 
-////////////////////////////////////////////////////////////////////
-//// API calls 
-///////////////////////////////////////////////////////////////////
+/**
+ * -----------------------------------------------------------------
+ * API calls 
+ * -----------------------------------------------------------------
+ */
 
-
-//// Get the current playling track
-///////////////////////////////////////////////////////////////////
+/**
+ * Get the current playling track
+ * -----------------------------------------------------------------
+ */
 
 function getMyCurrentPlayingTrack() {
     // Directly exports the result of the spotify-web-api-node function
@@ -341,8 +372,10 @@ function getMyCurrentPlayingTrack() {
         })
 }
 
-//// Add tracks to playlist
-///////////////////////////////////////////////////////////////////
+/**
+ * Add tracks to playlist
+ * -----------------------------------------------------------------
+ */
 
 module.exports.addTracksToPlaylist = function (playlistId, tracks) {
     return addTracksToPlaylist(playlistId, tracks)
@@ -363,8 +396,10 @@ function addTracksToPlaylist(playlistId, tracks){
         })
 }
 
-//// Remove track from playlist
-///////////////////////////////////////////////////////////////////
+/**
+ * Remove track from playlist
+ * -----------------------------------------------------------------
+ */
 
 module.exports.removeTracksFromPlaylist = function (playlistId, tracks) {
     return removeTracksFromPlaylist (playlistId, tracks) 
@@ -384,9 +419,10 @@ function removeTracksFromPlaylist (playlistId, tracks) {
         })
 }
 
-
-//// Get playlist
-///////////////////////////////////////////////////////////////////
+/**
+ * Get playlist
+ * -----------------------------------------------------------------
+ */
 
 function getPlaylist(playlistId) {
     // Directly exports the result of the spotify-web-api-node function
@@ -403,8 +439,10 @@ function getPlaylist(playlistId) {
         })
 }
 
-//// Get playlist name
-///////////////////////////////////////////////////////////////////
+/**
+ * Get playlist name
+ * -----------------------------------------------------------------
+ */
 
 module.exports.getPlaylistName = function(playlistId) {
     return getPlaylistName(playlistId);
@@ -418,8 +456,10 @@ function getPlaylistName(playlistId){
     })
 }
 
-//// Skip track
-///////////////////////////////////////////////////////////////////
+/**
+ * Skip track
+ * -----------------------------------------------------------------
+ */
 
 module.exports.skipToNext = function() {
     return skipToNext();
@@ -436,8 +476,10 @@ function skipToNext(){
         })
 }
 
-//// Parse playing track info
-///////////////////////////////////////////////////////////////////
+/**
+ * Parse playing track info
+ * -----------------------------------------------------------------
+ */
 // This is in a separate function so that we can capture any errors that occur
 // Returns a JSON object 'trackinfo'
 
@@ -497,12 +539,15 @@ function parsePlayingTrackInfo(playingTrackJson){
     })
 }
 
-
-//// Get playing track info
-///////////////////////////////////////////////////////////////////
-// Get basic track info from JSON response
-// Identify the source of the playling track using logic, and if it is read only 
-// Lookup name of playlist if possible (2nd API call)
+/**
+ * Get playing track info
+ * -----------------------------------------------------------------
+ * Get basic track info from JSON response
+ * Identify the source of the playling track using logic, and if 
+ * it is read only 
+ * Lookup name of playlist if possible (2nd API call)
+ * 
+ */
 
 module.exports.getPlayingTrackInfo = function() {
     return getPlayingTrackInfo();
@@ -522,8 +567,10 @@ function getPlayingTrackInfo(){
         })
 }
 
-//// Remove playing track from its playlist 
-///////////////////////////////////////////////////////////////////
+/**
+ * Remove playing track from its playlist 
+ * -----------------------------------------------------------------
+ */
 
 module.exports.removePlayingTrackFromPlaylist = function() {
     return removePlayingTrackFromPlaylist()
@@ -554,17 +601,20 @@ function removePlayingTrackFromPlaylist(){
         });
 }
 
-//// Copy OR Move playing track to specified playlist based on parameter
-///////////////////////////////////////////////////////////////////
+/**
+ * Copy OR Move playing track to specified playlist based on parameter
+ * -----------------------------------------------------------------
+ */
 
 module.exports.copyOrMovePlayingTrackToPlaylist = function(destPlaylistId, destPlaylistName, move) {
     if (move == 0) {return copyPlayingTrackToPlaylist(destPlaylistId, destPlaylistName);}
     if (move == 1) {return movePlayingTrackToPlaylist(destPlaylistId, destPlaylistName);}
 }
 
-
-//// Copy playing track to specified playlist 
-///////////////////////////////////////////////////////////////////
+/**
+ * Copy playing track to specified playlist 
+ * -----------------------------------------------------------------
+ */
 
 module.exports.copyPlayingTrackToPlaylist = function(destPlaylistId, destPlaylistName) {
     return copyPlayingTrackToPlaylist(destPlaylistId, destPlaylistName);
@@ -589,8 +639,10 @@ function copyPlayingTrackToPlaylist(destPlaylistId, destPlaylistName){
         });
 }
 
-//// Move playing track from current playlist to specified playlist 
-///////////////////////////////////////////////////////////////////
+/**
+ * Move playing track from current playlist to specified playlist 
+ * -----------------------------------------------------------------
+ */
 
 module.exports.movePlayingTrackToPlaylist = function(destPlaylistId, destPlaylistName) {
     return movePlayingTrackToPlaylist(destPlaylistId, destPlaylistName);
@@ -632,9 +684,11 @@ function movePlayingTrackToPlaylist(destPlaylistId, destPlaylistName){
         });
 }
 
-////////////////////////////////////////////////////////////////////
-//// Spotify helper functions
-///////////////////////////////////////////////////////////////////
+/**
+ * -----------------------------------------------------------------
+ * Spotify helper functions
+ * -----------------------------------------------------------------
+ */
 
 module.exports.getPlaylistIdFromUri = function(uri){
     return getPlaylistIdFromUri(uri);

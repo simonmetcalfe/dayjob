@@ -1,30 +1,38 @@
-///////////////////////////////////////////////////////////////////
-//// Included modules
-///////////////////////////////////////////////////////////////////
+/**
+ * -----------------------------------------------------------------
+ * Logging
+ * -----------------------------------------------------------------
+ */
 
-// 'use strict'
+var log = require('electron-log');
+log.warn('ui-preferences.js:  The ui-preferences.js script has run...');
+
+/**
+ * -----------------------------------------------------------------
+ * Modules
+ * -----------------------------------------------------------------
+ */
 
 const electron = require('electron');
 const ipcRenderer = electron.ipcRenderer;
-var log = require('electron-log');
-
-log.warn('ui-preferences.js:  The ui-preferences.js script has run...');
-
-// Bootstrap
 window.$ = window.jQuery = require('jquery')
 window.Tether = require('tether')
 window.Bootstrap = require('bootstrap')
 
-///////////////////////////////////////////////////////////////////
-//// Included modules
-///////////////////////////////////////////////////////////////////
+/**
+ * -----------------------------------------------------------------
+ * Variables
+ * -----------------------------------------------------------------
+ */
 
 var playlists = {}; // Easier to read/write to playlust object here
 
 
-///////////////////////////////////////////////////////////////////
-//// Retrieve data on load
-///////////////////////////////////////////////////////////////////
+/**
+ * -----------------------------------------------------------------
+ * Retrieve data on load
+ * -----------------------------------------------------------------
+ */
 
 async () => {
     // This is required - unsure why
@@ -87,9 +95,11 @@ async () => {
     }
 })();
 
-///////////////////////////////////////////////////////////////////
-//// Button event listeners
-///////////////////////////////////////////////////////////////////
+/**
+ * -----------------------------------------------------------------
+ * Button event listeners
+ * -----------------------------------------------------------------
+ */
 
 $("#btnOpenDashboard").on( "click", function(event){
     ipcRenderer.send('btnOpenDashboard');
@@ -99,9 +109,11 @@ $("#btnConnectToSpotify").on( "click", function(event){
     ipcRenderer.send('connect_api');
 });
 
-///////////////////////////////////////////////////////////////////
-//// Field change detection (save to preferences)
-///////////////////////////////////////////////////////////////////
+/**
+ * -----------------------------------------------------------------
+ * Field change detection (save to preferences)
+ * -----------------------------------------------------------------
+ */
 
 $("#fldClientId").on( "input", function(event){
     ipcRenderer.invoke('setPref','spotify-server_clientId',this.value);

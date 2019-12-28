@@ -1,9 +1,11 @@
 const {app, BrowserWindow, globalShortcut, ipcMain, dialog} = require('electron');  //globalShortcut must be defined with app or it does not work
 const electron = require('electron');
 
-////////////////////////////////////////////////////////////////////
-////  Logging & app start
-///////////////////////////////////////////////////////////////////
+/**
+ * -----------------------------------------------------------------
+ *  Logging & app start
+ * -----------------------------------------------------------------
+ */
 
 var log = require('electron-log');
 
@@ -15,9 +17,11 @@ log.warn('main.js:  Starting application\n\n' +
 log.warn('main.js:  \'__dirname\' path is reported as: ' + __dirname);
 log.warn('main.js:  \'app.getAppPath\' path is reported as: ' + app.getAppPath());
 
-////////////////////////////////////////////////////////////////////
-//// Modules
-///////////////////////////////////////////////////////////////////
+/**
+ * -----------------------------------------------------------------
+ * Modules
+ * -----------------------------------------------------------------
+ */
 
 var shell = require('electron').shell;
 const {menubar} = require('menubar');
@@ -27,9 +31,11 @@ const fs = require ('fs');
 const path = require('path') // For constructing URLs
 const url = require('url')
 
-////////////////////////////////////////////////////////////////////
-////  Unhandled Promise rejection handling
-///////////////////////////////////////////////////////////////////
+/**
+ * -----------------------------------------------------------------
+ *  Unhandled Promise rejection handling
+ * -----------------------------------------------------------------
+ */
 
 // In case of a programming error resulting in an unhandled rejection, the user will receive a message
 process.on('unhandledRejection', error => {
@@ -39,24 +45,30 @@ process.on('unhandledRejection', error => {
   dialog.showMessageBox(null, {message: 'dayjob encountered an error \n\nUnhandled promise rejection.  This should be logged as a bug on the dayjob GitHub page.\n\n' + error.message});
 });
 
-////////////////////////////////////////////////////////////////////
-////  Load error message db
-///////////////////////////////////////////////////////////////////
+/**
+ * -----------------------------------------------------------------
+ *  Load error message db
+ * -----------------------------------------------------------------
+ */
 
 let notifications = JSON.parse(fs.readFileSync(__dirname + '/notification.json'));
 log.warn('main.js:  Loaded notification/error handling database') 
 
-////////////////////////////////////////////////////////////////////
-////  Load application defaults
-///////////////////////////////////////////////////////////////////
+/**
+ * -----------------------------------------------------------------
+ *  Load application defaults
+ * -----------------------------------------------------------------
+ */
 
 // Any variables that should have a default should be specified here
 if (prefsLocal.getPref('dayjob_always_move_tracks') == undefined){prefsLocal.setPref('dayjob_always_move_tracks',false)}
 if (prefsLocal.getPref('dayjob_always_skip_tracks') == undefined){prefsLocal.setPref('dayjob_always_skip_tracks',false)}
 
-////////////////////////////////////////////////////////////////////
-////  Load saved playlist array
-///////////////////////////////////////////////////////////////////
+/**
+ * -----------------------------------------------------------------
+ *  Load saved playlist array
+ * -----------------------------------------------------------------
+ */
 
 // Playlist storage
 var playlists = {};
@@ -85,9 +97,11 @@ else {
   playlists = prefsLocal.getPref('dayjob_playlists_v1');
 }
 
-////////////////////////////////////////////////////////////////////
-//// Right click menu module
-///////////////////////////////////////////////////////////////////
+/**
+ * -----------------------------------------------------------------
+ * Right click menu module
+ * -----------------------------------------------------------------
+ */
 
 const Menu = electron.Menu;
 
@@ -103,9 +117,11 @@ const contextMenu = Menu.buildFromTemplate([
 ]);
 
 
-////////////////////////////////////////////////////////////////////
-////  Menu bar module
-///////////////////////////////////////////////////////////////////
+/**
+ * -----------------------------------------------------------------
+ *  Menu bar module
+ * -----------------------------------------------------------------
+ */
 
  const mb = menubar({preloadWindow: true,
                      browserWindow:{
@@ -121,10 +137,43 @@ const contextMenu = Menu.buildFromTemplate([
                      })
 });
 
+/**
+ * -----------------------------------------------------------------
+ * Main window handler
+ * -----------------------------------------------------------------
+ */
 
-////////////////////////////////////////////////////////////////////
-//// About window handler
-///////////////////////////////////////////////////////////////////
+let mainWindow;  // Prevent window closure on garbage collection
+
+function openMainWindow(urlToOpen) {
+  log.warn('main.js:  Opening main window... ' + urlToOpen);
+  // To get a frameless window, add 'frame:false'
+  mainWindow = new BrowserWindow({ maxWidth: 1024, maxHeight: 768, show: false, webPreferences: {nodeIntegration: true}});
+
+  mainWindow.loadURL(url.format({
+    pathname: path.join(app.getAppPath(), urlToOpen),
+    protocol: 'file:',
+    slashes: true
+  }))
+
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.show()
+  })
+
+  mainWindow.on('closed', function () {
+    mainWindow = null;
+  });
+
+  log.warn('main.js:  Main window opened with url: ' + urlToOpen);
+  //await sleep(1000);
+
+}
+
+/**
+ * -----------------------------------------------------------------
+ * About window handler
+ * -----------------------------------------------------------------
+ */
 
 let aboutWindow;  // Prevent window closure on garbage collection
 
@@ -146,9 +195,11 @@ function openAbout() {
   });
 }
 
-////////////////////////////////////////////////////////////////////
-//// Spotify auth mechanism
-///////////////////////////////////////////////////////////////////
+/**
+ * -----------------------------------------------------------------
+ * Spotify auth mechanism
+ * -----------------------------------------------------------------
+ */
 
 function connectApi(){
   log.warn('main.js:  Attempting to connect to the Spotify API...');
@@ -163,9 +214,11 @@ function connectApi(){
 }
 
 
-////////////////////////////////////////////////////////////////////
-//// Monitor auth events from web server
-///////////////////////////////////////////////////////////////////
+/**
+ * -----------------------------------------------------------------
+ * Monitor auth events from web server
+ * -----------------------------------------------------------------
+ */
 
 spotifyServer.getAuthEvents().on('auth_code_grant_error', function (err){
   console.log('Main.js:  An auth event \'auth_code_grant_error\' has been raised by spotify-server.js: ' +  err)
@@ -179,9 +232,11 @@ spotifyServer.getAuthEvents().on('auth_code_grant_success', function (result){
 })
 
 
-////////////////////////////////////////////////////////////////////
-//// Applicacation start
-///////////////////////////////////////////////////////////////////
+/**
+ * -----------------------------------------------------------------
+ * Applicacation start
+ * -----------------------------------------------------------------
+ */
 
 // Electron app start occurs before GUI, so instead we use Menubar's 'after-create-window' event 
 app.on('ready', () => {
@@ -193,9 +248,11 @@ mb.on('after-create-window', function ready() {
   log.warn('main.js:  Menubar after-create-window event happened.');
   connectApi();
 
-  ///////////////////////////////////////////////////////////////////
-  //// spotify-server & web server 
-  ///////////////////////////////////////////////////////////////////
+  /**
+   * -----------------------------------------------------------------
+   * spotify-server & web server 
+   * -----------------------------------------------------------------
+ */
 
   // Start the web server after the app has initialised
   spotifyServer.startWebServer();
@@ -221,10 +278,11 @@ mb.on('after-create-window', function ready() {
       })
   });
 
-
-  ///////////////////////////////////////////////////////////////////
-  //// Keyboard shortcuts
-  ///////////////////////////////////////////////////////////////////
+/**
+   * -----------------------------------------------------------------
+   * Keyboard shortcuts
+   * -----------------------------------------------------------------
+ */
 
   // There appears to be a bug with globalShortcut.registerAll so every key / modifier combination must be assigned separately
   // All shortcuts call keyPressed() and pass a JSON object with keys: "modifiers" and "key" 
@@ -289,15 +347,19 @@ mb.on('after-create-window', function ready() {
 });
 
 
-////////////////////////////////////////////////////////////////////
-//// Keyboard shortcut actions
-///////////////////////////////////////////////////////////////////
+/**
+ * -----------------------------------------------------------------
+ * Keyboard shortcut actions
+ * -----------------------------------------------------------------
+ */
 
 function keyPressed(key){
   log.warn('main.js:  Keyboard shortcut pressed: ' + JSON.stringify(key.modifiers) + ' AND ' + key.key);
 
-  //// Remove track
-  ///////////////////////////////////////////////////////////////////
+  /**
+   * Remove track
+   * -----------------------------------------------------------------
+   */
   
   if (key.modifiers.includes('Control') && key.modifiers.includes('Alt') && key.key == '-'){
     var skip = 0; // Determine if track should be skipped as well as moved
@@ -315,8 +377,10 @@ function keyPressed(key){
       })
   }
 
-  //// Add or move track to specifed playlist (+) 
-  ///////////////////////////////////////////////////////////////////
+  /**
+     * Add or move track to specifed playlist (+) 
+     * -----------------------------------------------------------------
+   */
 
   if (key.modifiers.includes('Control') && key.modifiers.includes('Alt') && key.key == '='){
     log.warn('main.js:  Add/move track to specified playlist (+) shortcut pressed... THIS FEATURE ISN\'T SUPPORTED YET SORRY!');
@@ -324,8 +388,10 @@ function keyPressed(key){
     // Feature not supported yet, coming!
   }
 
-  //// Add or more track to playlist in slot #
-  ///////////////////////////////////////////////////////////////////
+  /**
+     * Add or more track to playlist in slot #
+     * -----------------------------------------------------------------
+   */
   
   if (key.modifiers.includes('Control') && key.modifiers.includes('Alt') && ['1','2','3','4','5','6','7','8','9','0'].includes(key.key)){
     var move = 0;
@@ -368,9 +434,11 @@ function keyPressed(key){
 }
 
 
-////////////////////////////////////////////////////////////////////
-//// Notifications display
-///////////////////////////////////////////////////////////////////
+/**
+ * -----------------------------------------------------------------
+ * Notifications display
+ * -----------------------------------------------------------------
+ */
 
 // An example version of the uiData object is defined in notifications.js
 
@@ -383,9 +451,11 @@ function showNotification(uiData) {
   setTimeout(doAfterDelay, 5000);
 }
 
-////////////////////////////////////////////////////////////////////
-//// Log error
-///////////////////////////////////////////////////////////////////
+/**
+ * -----------------------------------------------------------------
+ * Log error
+ * -----------------------------------------------------------------
+ */
 
 function logError(err){
   try {
@@ -405,9 +475,11 @@ function logError(err){
   }  
 }
 
-////////////////////////////////////////////////////////////////////
-//// Log and display error
-///////////////////////////////////////////////////////////////////
+/**
+ * -----------------------------------------------------------------
+ * Log and display error
+ * -----------------------------------------------------------------
+ */
 
 // TODO - This also has unhandled exception issues, e.g. an unhandled exception occurs if the requested error message is not found in the DB
 
@@ -458,12 +530,14 @@ mb.on('ready', function ready() {
   //mb.showWindow();
 });
 
-////////////////////////////////////////////////////////////////////
-//// IPC listeners
-///////////////////////////////////////////////////////////////////
+
+/**
+ * -----------------------------------------------------------------
+ * IPC listeners
+ * -----------------------------------------------------------------
+ */
 
 //TODO - For consistency the old ipcMain.on functions could updated to ipcMain.handle 
-
 
 ipcMain.on('btnOpenDashboard', function (event) {
   log.warn('main.js:  Event btnOpenDashboard received by main process.');
@@ -517,9 +591,11 @@ ipcMain.handle('logAndDisplayError', async (event, msg) => {
   logAndDisplayError(new Error(msg))
 });
 
-////////////////////////////////////////////////////////////////////
-//// Applicacation end
-///////////////////////////////////////////////////////////////////
+/**
+ * -----------------------------------------------------------------
+ * Applicacation end
+ * -----------------------------------------------------------------
+ */
 
 // Quit when all windows are closed.
 app.on('window-all-closed', function () {
@@ -537,32 +613,3 @@ app.on('will-quit', function () {
   globalShortcut.unregisterAll();
 })
 
-////////////////////////////////////////////////////////////////////
-//// Main window handler
-///////////////////////////////////////////////////////////////////
-
-let mainWindow;  // Prevent window closure on garbage collection
-
-function openMainWindow(urlToOpen) {
-  log.warn('main.js:  Opening main window... ' + urlToOpen);
-  // To get a frameless window, add 'frame:false'
-  mainWindow = new BrowserWindow({ maxWidth: 1024, maxHeight: 768, show: false, webPreferences: {nodeIntegration: true}});
-
-  mainWindow.loadURL(url.format({
-    pathname: path.join(app.getAppPath(), urlToOpen),
-    protocol: 'file:',
-    slashes: true
-  }))
-
-  mainWindow.once('ready-to-show', () => {
-    mainWindow.show()
-  })
-
-  mainWindow.on('closed', function () {
-    mainWindow = null;
-  });
-
-  log.warn('main.js:  Main window opened with url: ' + urlToOpen);
-  //await sleep(1000);
-
-}
