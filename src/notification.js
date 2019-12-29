@@ -19,6 +19,7 @@ log.warn('notification.js:  The notification.js script has run...');
 
 var uiData // Data passsed to the notification window to configure its appearance
 
+
 /**
  * -----------------------------------------------------------------
  * Example uiData JSON Object

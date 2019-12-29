@@ -38,11 +38,10 @@ const url = require('url')
  */
 
 // In case of a programming error resulting in an unhandled rejection, the user will receive a message
-process.on('unhandledRejection', error => {
-  // Will print "unhandledRejection err is not defined"
-  log.warn('main.js:  [ERROR]  Unhandled promise rejection.  This should be logged as a bug on the dayjob GitHub page.  Error:  \n\n' + String(error.message) + '\n' + 
-  'Stack:   ' + error.stack);
-  dialog.showMessageBox(null, {message: 'dayjob encountered an error \n\nUnhandled promise rejection.  This should be logged as a bug on the dayjob GitHub page.\n\n' + error.message});
+process.on('unhandledRejection', err => {
+  log.warn('main.js:  [ERROR]  Unhandled promise rejection.  This should be logged as a bug on the dayjob GitHub page.  Error:  \n\n' + String(err.message) + '\n' + 
+  'Stack:   ' + err.stack);
+  dialog.showMessageBox(null, {message: 'dayjob encountered an error \n\nUnhandled promise rejection.  This should be logged as a bug on the dayjob GitHub page.\n\n' + err.message});
 });
 
 /**
@@ -70,7 +69,6 @@ if (prefsLocal.getPref('dayjob_always_skip_tracks') == undefined){prefsLocal.set
  * -----------------------------------------------------------------
  */
 
-// Playlist storage
 var playlists = {};
 
 // v1 playlist storage is an 10 object multimensional array (0 to 9), representing the keyboard keys 1234567890 in order
@@ -107,7 +105,7 @@ const Menu = electron.Menu;
 
 const contextMenu = Menu.buildFromTemplate([
   // Item 0 - Preferences
-  { label: 'Preferences', click: function () { openMainWindow('/src/ui-preferences.html'); } },
+  { label: 'Preferences', click: function () { openPrefsWindow(); } },
   // Item 0 - About menu
   { label: 'About dayjob', click: function () { openAbout(); } },
   // Separator
@@ -123,6 +121,22 @@ const contextMenu = Menu.buildFromTemplate([
  * -----------------------------------------------------------------
  */
 
+
+/*
+// Menubar v5.2.3 initalisation must be done as follows
+const mb = menubar({webPreferences: {nodeIntegration: true}});
+mb.setOption('preload-window', true);
+mb.setOption('height', 200);
+mb.setOption('alwaysOnTop', true);
+mb.setOption('icon', app.getAppPath() + '/assets/IconTemplate.png')  // Set app icon
+mb.setOption('index', url.format({ // Set the initial page
+  pathname: path.join(app.getAppPath(), '/src/notification.html'), 
+  protocol: 'file:',
+  slashes: true
+}))
+*/
+ 
+
  const mb = menubar({preloadWindow: true,
                      browserWindow:{
                        webPreferences: {nodeIntegration: true},
@@ -137,36 +151,35 @@ const contextMenu = Menu.buildFromTemplate([
                      })
 });
 
+
+
 /**
  * -----------------------------------------------------------------
  * Main window handler
  * -----------------------------------------------------------------
  */
 
-let mainWindow;  // Prevent window closure on garbage collection
+let prefsWindow;  // Prevent window closure on garbage collection
 
-function openMainWindow(urlToOpen) {
-  log.warn('main.js:  Opening main window... ' + urlToOpen);
+function openPrefsWindow() {
+  log.warn('main.js:  Opening preferences window... ');
   // To get a frameless window, add 'frame:false'
-  mainWindow = new BrowserWindow({ maxWidth: 1024, maxHeight: 768, show: false, webPreferences: {nodeIntegration: true}});
+  prefsWindow = new BrowserWindow({ maxWidth: 1024, maxHeight: 768, show: false, webPreferences: {nodeIntegration: true}});
 
-  mainWindow.loadURL(url.format({
-    pathname: path.join(app.getAppPath(), urlToOpen),
+  prefsWindow.loadURL(url.format({
+    pathname: path.join(app.getAppPath(), '/src/ui-preferences.html'),
     protocol: 'file:',
     slashes: true
   }))
 
-  mainWindow.once('ready-to-show', () => {
-    mainWindow.show()
+  prefsWindow.once('ready-to-show', () => {
+    prefsWindow.show()
   })
 
-  mainWindow.on('closed', function () {
-    mainWindow = null;
+  prefsWindow.on('closed', function () {
+    prefsWindow = null;
   });
-
-  log.warn('main.js:  Main window opened with url: ' + urlToOpen);
   //await sleep(1000);
-
 }
 
 /**
@@ -238,18 +251,33 @@ spotifyServer.getAuthEvents().on('auth_code_grant_success', function (result){
  * -----------------------------------------------------------------
  */
 
-// Electron app start occurs before GUI, so instead we use Menubar's 'after-create-window' event 
+// Electron app start occurs before GUI is ready, so instead we use Menubar's 'after-create-window' event for most tasks
 app.on('ready', () => {
-  log.warn('main.js:  App ready to start, but waiting for menubar \'after-create-window\' event...');
+  log.warn('main.js:  app.on ready event occurred...');
 });
+
+// When menubar is loaded open the notification window to initialise it
+mb.on('ready', function ready() {
+  log.warn('main.js:  mb.on ready event occurred...');
+  mb.showWindow();  // Trigger menubar notification window to align it to the toolbar
+
+  mb.tray.on('click', function () {
+    log.warn('mb:  left-click event happened.');
+  });
+
+  //Context menu open
+  mb.tray.on('right-click', function () {
+    log.warn('mb:  right-click event happened.');
+    mb.tray.popUpContextMenu(contextMenu);
+  });
+})
+
 
 // Actions after the window has first been rendered
 mb.on('after-create-window', function ready() {
   log.warn('main.js:  Menubar after-create-window event happened.');
-  connectApi();
 
   /**
-   * -----------------------------------------------------------------
    * spotify-server & web server 
    * -----------------------------------------------------------------
  */
@@ -279,14 +307,15 @@ mb.on('after-create-window', function ready() {
   });
 
 /**
-   * -----------------------------------------------------------------
    * Keyboard shortcuts
    * -----------------------------------------------------------------
+   * There appears to be a bug with globalShortcut.registerAll so 
+   * every key / modifier combination must be assigned separately
+   * 
+   * All shortcuts call keyPressed() and pass a JSON object with 
+   * keys: "modifiers" and "key" 
  */
 
-  // There appears to be a bug with globalShortcut.registerAll so every key / modifier combination must be assigned separately
-  // All shortcuts call keyPressed() and pass a JSON object with keys: "modifiers" and "key" 
-  
   // Register CRTL + ALT shortcuts
   const ctrlAlt1 = globalShortcut.register('Control+Alt+1', () =>          {keyPressed({modifiers: ["Control","Alt"],key: "1"})});
   const ctrlAlt2 = globalShortcut.register('Control+Alt+2', () =>          {keyPressed({modifiers: ["Control","Alt"],key: "2"})});
@@ -344,6 +373,9 @@ mb.on('after-create-window', function ready() {
 
   // Check whether a shortcut is registered.
   //log.warn(globalShortcut.isRegistered('CommandOrControl+X'))
+
+  // Try connecting to Spotify on start-up and show welcome message or error status to user
+  connectApi();
 });
 
 
@@ -438,9 +470,9 @@ function keyPressed(key){
  * -----------------------------------------------------------------
  * Notifications display
  * -----------------------------------------------------------------
+ * An example version of how the uiData object should be formatted
+ * is defined in notifications.js
  */
-
-// An example version of the uiData object is defined in notifications.js
 
 function showNotification(uiData) {
   mb.window.webContents.send('updateUi', uiData)
@@ -469,9 +501,9 @@ function logError(err){
       'Stack :   ' + err.error.stack)
     }
   } 
-  catch {
-    log.warn('main.js:  [ERROR]  Exception when handling an error.  This should be logged as a bug on the dayjob GitHub page.  Error:  ' + String(err))
-    dialog.showMessageBox(null, {message: 'dayjob encountered an error \n\nException when handling an error.  This should be logged as a bug on the dayjob GitHub page. \n\n' + error.message});
+  catch (errCaught) {
+    log.warn('main.js:  [ERROR]  Exception when handling an error.  This should be logged as a bug on the dayjob GitHub page.  Error:  ' + String(errCaught))
+    dialog.showMessageBox(null, {message: 'dayjob encountered an error \n\nException when handling an error.  This should be logged as a bug on the dayjob GitHub page. \n\n' + errCaught.message});
   }  
 }
 
@@ -480,8 +512,6 @@ function logError(err){
  * Log and display error
  * -----------------------------------------------------------------
  */
-
-// TODO - This also has unhandled exception issues, e.g. an unhandled exception occurs if the requested error message is not found in the DB
 
 function logAndDisplayError(err) {
   try {
@@ -499,37 +529,14 @@ function logAndDisplayError(err) {
                     errorType: notifications[err.message].errorType})
   log.warn('main.js:  [ERROR] Error reported to the user: (' + notifications[err.message].errorType + ') ' + notifications[err.message].title + ': ' + notifications[err.message].description + externalError);
   }
-  catch {
+  catch (errCaught){
     showNotification({title: 'Cannot display error', 
                       description: 'An exception occurred when trying to display an error.  If the problem persists please seek help on the dayjob GitHub page.', 
                       subDescription: String(err),
                       errorType: 'error'})
-    log.warn('main.js:  [ERROR]:  Exception when handling an error.  This should be logged as a bug on the dayjob GitHub page.  Error:  ' + String(err))
-    dialog.showMessageBox(null, {message: 'dayjob encountered an error \n\nException when handling an error.  This should be logged as a bug on the dayjob GitHub page. \n\n' + error.message});
+    log.warn('main.js:  [ERROR]:  Exception when handling an error.  This should be logged as a bug on the dayjob GitHub page.  Error:  ' + String(errCaught))
   }  
 }
-
-// Actions after mb is ready but the window is not
-mb.on('ready', function ready() {
-  log.warn('main.js:  Menubar ready event happened.');
-
-  // Notification messages are not being received until the window has been opened at least once.  Open it on start-up
-  mb.showWindow();
-
-  mb.tray.on('click', function () {
-    log.warn('mb:  left-click event happened.');
-  });
-
-  //Context menu open
-  mb.tray.on('right-click', function () {
-    log.warn('mb:  right-click event happened.');
-    mb.tray.popUpContextMenu(contextMenu);
-  });
-
-  // Show the window immediately after starting (test mode)
-  //mb.showWindow();
-});
-
 
 /**
  * -----------------------------------------------------------------
@@ -546,7 +553,7 @@ ipcMain.on('btnOpenDashboard', function (event) {
 
 ipcMain.on('check_api_connection', function (event) {
   log.warn('main.js:  Event check_api_connection received by main process.');
-  openMainWindow('/src/ui-preferences.html');
+  openPrefsWindow();
 });
 
 ipcMain.on('authorise_dayjob', function (event) {
@@ -566,7 +573,7 @@ ipcMain.on('connect_api', function (event) {
 
 ipcMain.on('playlist_settings', function (event) {
   log.warn('main.js:  Event playlist_settings received by main process.');
-  openMainWindow('/src/ui-preferences.html');
+  openPrefsWindow();
 });
 
 ipcMain.handle('getPref', async (event, pref) => {
