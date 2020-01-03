@@ -18,7 +18,7 @@ Before downloading please read the [disclaimer](https://opensource.org/licenses/
 
 |Mac|Windows|Linux|
 |:-----:|:-----:|:-----:|
-|[dayjob.dmg](https://www.dropbox.com)|Coming soon!|Coming soon!|
+|[dayjob.dmg](https://github.com/simonmetcalfe/dayjob/releases/download/v1.0.0/dayjob.dmg)|Coming soon!|Coming soon!|
 |v1.0.0|Register your interest [here](https://github.com/simonmetcalfe/dayjob/issues/1)|Register your interest [here](https://github.com/simonmetcalfe/dayjob/issues/2)|
 
 ## Keyboard shortcuts
@@ -28,10 +28,10 @@ Add tracks to 10 of your favourite playlists by using the keyboard keys 1, 2, 3,
 
 |Shortcut|Function|
 |:-----:|:-----:|
-|<img src="assets_readme/ctrl+alt+1to0.png" width=300>|Add track to playlist #|
-|<img src="assets_readme/ctrl+alt+shift+1to0.png" width=450>|Move track to playlist #|
-|<img src="assets_readme/ctrl+alt+minus.png" width=225>|Remove track from current playlist|
-|<img src="assets_readme/ctrl+alt+shift+minus.png" width=370>|Remove track from current playlist and skip to next song |
+|<img src="assets_readme/ctrl+alt+1to0.png" width=300> <br>*CTRL* + *ALT* + *1* ... *0*|Add track to playlist #|
+|<img src="assets_readme/ctrl+alt+shift+1to0.png" width=450> <br>*CTRL* + *ALT* + *SHIFT* + *1* ... *0*|Move track to playlist #|
+|<img src="assets_readme/ctrl+alt+minus.png" width=225> <br>*CTRL* + *ALT* + *-*|Remove track from current playlist|
+|<img src="assets_readme/ctrl+alt+shift+minus.png" width=370> <br>*CTRL* + *ALT* + *SHIFT* + *-*|Remove track from current playlist and skip to next song |
 
 ## Limitations
 
@@ -50,7 +50,7 @@ dayjob will prompt you to set up the Spotify connection on first use, but you us
 <img src="assets_readme/dayjob_rightclick_menu.png" width=150>
 
 ### Configure Spotify connection
-1. Log in to your [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/) and create a new Client ID
+1. Log in to your [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/) and create a new Client ID and use the following settings:
     * App or Hardware Name:  _dayjob_
     * App or Hardware Description: _Make great Spotify playlists while you work_
     * What are you building?:  _Desktop app_
