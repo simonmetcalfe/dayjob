@@ -40,11 +40,13 @@ Add tracks to 10 of your favourite playlists by using the keyboard keys 1, 2, 3,
 
 ## Getting started
 ### Icon and notification window
-dayjob creates an icon in the the status / tray area of your computer.  It will mostly communicate with you through it's notification window.
+dayjob creates an icon in the the status / tray area of your computer.  It will mostly interact with you through notifications shown here.
+
 <img src="assets_readme/dayjob_notification_welcome.png" height=200>
 
 ### Right-click menu
-dayjob will prompt you to set up the Spotify connection on first use, but you use the right-click menu to open the Preferences or to quit at any time.   
+dayjob will prompt you to set up the Spotify connection on first use, but you use the right-click menu to open the Preferences or to quit at any time.  
+
 <img src="assets_readme/dayjob_rightclick_menu.png" height=120>
 
 ### Configure Spotify connection
@@ -71,11 +73,11 @@ dayjob will prompt you to set up the Spotify connection on first use, but you us
 1. When a song is playing that you want to add to a playlist, add it using one of the [keyboard shortcuts](#keyboard-shortcuts).
 
 ## History
-I created this app because I love discovering new music when at work, but wanted to minimise distractions and the time spent in the Spotify app.  I've been using a proof of concept since 2017, but finally in 2019 I'm able to release a configurable version that everyone can use.
+I created this app because I love discovering new music when at work, but wanted to minimise distractions and the time spent in the Spotify app.  I've been using a proof of concept for 2 years, but finally I've been able to release a configurable version that everyone can use.
 
 ## Development
 
-I'm not a developer by profession so apologise for any bugs and poor coding practices!  dayjob is a simple project and should be easy to maintain.  After cloning use *npm install dayjob* to install.
+I'm not a developer by profession so apologise for any bugs and poor coding practices!  dayjob is a simple project and should be easy to maintain.  After cloning use *npm install* to install.
 
 A list of known issues and tech debt is maintained in GitHub which I might get round to some day.  
 
