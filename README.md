@@ -11,7 +11,7 @@ dayjob is a desktop app that lets you add tracks to your favourite playlists by 
 
 |Play some new music|Hear a good tune?  Press a shortcut |dayjob adds it to your playlist|
 |:-----:|:-----:|:-----:|
-|<img src="assets_readme/spotify_playlist.png" height=150>|<img src="assets_readme/ctrl+alt+1.png" height=50>|<img src="assets_readme/dayjob_screenshot.png" height=150>
+|<img src="assets_readme/spotify_playlist.png" width=350>|<img src="assets_readme/ctrl+alt+1.png" width=250>|<img src="assets_readme/dayjob_screenshot.png" width=350>
 
 ## Download
 Before downloading please read the [disclaimer](https://opensource.org/licenses/MIT).
@@ -24,14 +24,14 @@ Before downloading please read the [disclaimer](https://opensource.org/licenses/
 ## Keyboard shortcuts
 Add tracks to 10 of your favourite playlists by using the keyboard keys 1, 2, 3, 4, 5, 6, 7, 8 ,9 and 0.
 
-<img src="assets_readme/dayjob_keyboard_shortcuts_colour.png" width=600>
+<img src="assets_readme/dayjob_keyboard_shortcuts_colour.png" width=700>
 
 |Shortcut|Function|
 |:-----:|:-----:|
-|<img src="assets_readme/ctrl+alt+1to0.png" height=50>|Add track to playlist #|
-|<img src="assets_readme/ctrl+alt+shift+1to0.png" height=50>|Move track to playlist #|
-|<img src="assets_readme/ctrl+alt+minus.png" height=50>|Remove track from current playlist|
-|<img src="assets_readme/ctrl+alt+shift+minus.png" height=50>|Remove track from current playlist and skip to next song |
+|<img src="assets_readme/ctrl+alt+1to0.png" width=300>|Add track to playlist #|
+|<img src="assets_readme/ctrl+alt+shift+1to0.png" width=450>|Move track to playlist #|
+|<img src="assets_readme/ctrl+alt+minus.png" width=225>|Remove track from current playlist|
+|<img src="assets_readme/ctrl+alt+shift+minus.png" width=370>|Remove track from current playlist and skip to next song |
 
 ## Limitations
 
@@ -42,12 +42,12 @@ Add tracks to 10 of your favourite playlists by using the keyboard keys 1, 2, 3,
 ### Icon and notification window
 dayjob creates an icon in the the status / tray area of your computer.  It will mostly interact with you through notifications shown here.
 
-<img src="assets_readme/dayjob_notification_welcome.png" height=200>
+<img src="assets_readme/dayjob_notification_welcome.png" width=370>
 
 ### Right-click menu
 dayjob will prompt you to set up the Spotify connection on first use, but you use the right-click menu to open the Preferences or to quit at any time.  
 
-<img src="assets_readme/dayjob_rightclick_menu.png" height=120>
+<img src="assets_readme/dayjob_rightclick_menu.png" width=150>
 
 ### Configure Spotify connection
 1. Log in to your [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/) and create a new Client ID
