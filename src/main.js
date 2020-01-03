@@ -24,7 +24,7 @@ log.warn('main.js:  \'app.getAppPath\' path is reported as: ' + app.getAppPath()
  */
 
 var shell = require('electron').shell;
-const {menubar} = require('menubar');
+const menubar = require('menubar');
 const spotifyServer = require('./spotify-server.js');
 const prefsLocal = require('./prefs.js');
 const fs = require ('fs');
@@ -121,9 +121,7 @@ const contextMenu = Menu.buildFromTemplate([
  * -----------------------------------------------------------------
  */
 
-
-/*
-// Menubar v5.2.3 initalisation must be done as follows
+// Menubar v5.2.3 initalisation - reverted back to v5.2.3 due to menubar bug https://github.com/maxogden/menubar/issues/260
 const mb = menubar({webPreferences: {nodeIntegration: true}});
 mb.setOption('preload-window', true);
 mb.setOption('height', 200);
@@ -134,9 +132,9 @@ mb.setOption('index', url.format({ // Set the initial page
   protocol: 'file:',
   slashes: true
 }))
-*/
- 
 
+/*
+// Menubar v7.1.0 initalisation
  const mb = menubar({preloadWindow: true,
                      browserWindow:{
                        webPreferences: {nodeIntegration: true},
@@ -150,7 +148,7 @@ mb.setOption('index', url.format({ // Set the initial page
                        slashes: true
                      })
 });
-
+*/
 
 
 /**
@@ -262,12 +260,12 @@ mb.on('ready', function ready() {
   mb.showWindow();  // Trigger menubar notification window to align it to the toolbar
 
   mb.tray.on('click', function () {
-    log.warn('mb:  left-click event happened.');
+    log.warn('main.js:  mb.tray.on click event occurred...');
   });
 
   //Context menu open
   mb.tray.on('right-click', function () {
-    log.warn('mb:  right-click event happened.');
+    log.warn('main.js:  mb.tray.on right-click event occurred...');
     mb.tray.popUpContextMenu(contextMenu);
   });
 })
@@ -275,7 +273,8 @@ mb.on('ready', function ready() {
 
 // Actions after the window has first been rendered
 mb.on('after-create-window', function ready() {
-  log.warn('main.js:  Menubar after-create-window event happened.');
+  log.warn('main.js:  mb.on after-create-window event occurred...');
+
 
   /**
    * spotify-server & web server 
@@ -374,8 +373,12 @@ mb.on('after-create-window', function ready() {
   // Check whether a shortcut is registered.
   //log.warn(globalShortcut.isRegistered('CommandOrControl+X'))
 
-  // Try connecting to Spotify on start-up and show welcome message or error status to user
-  connectApi();
+  // Menubar 5.2.3 requires the window to be fully loaded before we can send data to it
+  mb.window.webContents.on('did-finish-load', function () {
+    log.warn('main.js:  mb.window.webContents.on did-finish-load event occurred...');
+    // Try connecting to Spotify on start-up and show welcome message or error status to user
+    connectApi();
+  })
 });
 
 
