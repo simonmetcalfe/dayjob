@@ -41,7 +41,8 @@
   },
   "scripts": {
     "start": "electron .",
-    "build": "electron-packager . --platform=darwin --arch=x64 --overwrite --out=installers/_build-temp --ignore=/installers --ignore/assets_readme",
+    "build-mac": "electron-packager . --platform=darwin --arch=x64 --overwrite --out=installers/_build-temp --ignore=/installers --ignore/assets_readme",
+    "build-win": "electron-packager . --platform=win32 --arch=x64 --overwrite --out=installers/_build-temp --ignore=/installers --ignore/assets_readme",
     "package-mac": "electron-installer-dmg --overwrite ./installers/_build-temp/dayjob-darwin-x64/dayjob.app ./installers/osx/dayjob",
     "package-win": "electron-installer-windows --src build-temp/dayjob-win32-x64/ --dest installers/windows/dayjob"
   }
