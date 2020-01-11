@@ -1,0 +1,4 @@
+{
+    "en":{"name":"English (default) [-][+]", "minus_key":"12", "plus_key":"13"},
+    "de":{"name":"Deutsch [ß][´]", "minus_key":"26", "plus_key":"27"}
+}

@@ -1,4 +1,4 @@
-const {app, BrowserWindow, globalShortcut, ipcMain, dialog} = require('electron');  //globalShortcut must be defined with app or it does not work
+const {app, BrowserWindow, ipcMain, dialog} = require('electron');  
 const electron = require('electron');
 
 /**
@@ -30,6 +30,7 @@ const prefsLocal = require('./prefs.js');
 const fs = require ('fs');
 const path = require('path') // For constructing URLs
 const url = require('url')
+const ioHook = require('iohook');
 
 /**
  * -----------------------------------------------------------------
@@ -55,6 +56,15 @@ log.warn('main.js:  Loaded notification/error handling database')
 
 /**
  * -----------------------------------------------------------------
+ *  Load keyboard layout db
+ * -----------------------------------------------------------------
+ */
+
+let keyboardLayouts = JSON.parse(fs.readFileSync(__dirname + '/keyboard_layouts.json'));
+log.warn('main.js:  Loaded keyboard layouts database') 
+
+/**
+ * -----------------------------------------------------------------
  *  Load application defaults
  * -----------------------------------------------------------------
  */
@@ -62,6 +72,8 @@ log.warn('main.js:  Loaded notification/error handling database')
 // Any variables that should have a default should be specified here
 if (prefsLocal.getPref('dayjob_always_move_tracks') == undefined){prefsLocal.setPref('dayjob_always_move_tracks',false)}
 if (prefsLocal.getPref('dayjob_always_skip_tracks') == undefined){prefsLocal.setPref('dayjob_always_skip_tracks',false)}
+if (prefsLocal.getPref('keyboard_layout') == undefined){prefsLocal.setPref('keyboard_layout','en')}
+var keyboardLayout = prefsLocal.getPref('keyboard_layout');
 
 /**
  * -----------------------------------------------------------------
@@ -308,70 +320,46 @@ mb.on('after-create-window', function ready() {
 /**
    * Keyboard shortcuts
    * -----------------------------------------------------------------
-   * There appears to be a bug with globalShortcut.registerAll so 
-   * every key / modifier combination must be assigned separately
-   * 
    * All shortcuts call keyPressed() and pass a JSON object with 
    * keys: "modifiers" and "key" 
  */
 
-  // Register CRTL + ALT shortcuts
-  const ctrlAlt1 = globalShortcut.register('Control+Alt+1', () =>          {keyPressed({modifiers: ["Control","Alt"],key: "1"})});
-  const ctrlAlt2 = globalShortcut.register('Control+Alt+2', () =>          {keyPressed({modifiers: ["Control","Alt"],key: "2"})});
-  const ctrlAlt3 = globalShortcut.register('Control+Alt+3', () =>          {keyPressed({modifiers: ["Control","Alt"],key: "3"})});
-  const ctrlAlt4 = globalShortcut.register('Control+Alt+4', () =>          {keyPressed({modifiers: ["Control","Alt"],key: "4"})});
-  const ctrlAlt5 = globalShortcut.register('Control+Alt+5', () =>          {keyPressed({modifiers: ["Control","Alt"],key: "5"})});
-  const ctrlAlt6 = globalShortcut.register('Control+Alt+6', () =>          {keyPressed({modifiers: ["Control","Alt"],key: "6"})});
-  const ctrlAlt7 = globalShortcut.register('Control+Alt+7', () =>          {keyPressed({modifiers: ["Control","Alt"],key: "7"})});
-  const ctrlAlt8 = globalShortcut.register('Control+Alt+8', () =>          {keyPressed({modifiers: ["Control","Alt"],key: "8"})});
-  const ctrlAlt9 = globalShortcut.register('Control+Alt+9', () =>          {keyPressed({modifiers: ["Control","Alt"],key: "9"})});
-  const ctrlAlt0 = globalShortcut.register('Control+Alt+0', () =>          {keyPressed({modifiers: ["Control","Alt"],key: "0"})});
-  const ctrlAltMinus = globalShortcut.register('Control+Alt+-', () =>      {keyPressed({modifiers: ["Control","Alt"],key: "-"})});
-  const ctrlAltPlus = globalShortcut.register('Control+Alt+=', () =>       {keyPressed({modifiers: ["Control","Alt"],key: "="})});
-  // Register CRTL + ALT + SHIFT shortcuts
-  const ctrlAltShf1 = globalShortcut.register('Control+Alt+Shift+1', () =>          {keyPressed({modifiers: ["Control","Alt","Shift"],key: "1"})});
-  const ctrlAltShf2 = globalShortcut.register('Control+Alt+Shift+2', () =>          {keyPressed({modifiers: ["Control","Alt","Shift"],key: "2"})});
-  const ctrlAltShf3 = globalShortcut.register('Control+Alt+Shift+3', () =>          {keyPressed({modifiers: ["Control","Alt","Shift"],key: "3"})});
-  const ctrlAltShf4 = globalShortcut.register('Control+Alt+Shift+4', () =>          {keyPressed({modifiers: ["Control","Alt","Shift"],key: "4"})});
-  const ctrlAltShf5 = globalShortcut.register('Control+Alt+Shift+5', () =>          {keyPressed({modifiers: ["Control","Alt","Shift"],key: "5"})});
-  const ctrlAltShf6 = globalShortcut.register('Control+Alt+Shift+6', () =>          {keyPressed({modifiers: ["Control","Alt","Shift"],key: "6"})});
-  const ctrlAltShf7 = globalShortcut.register('Control+Alt+Shift+7', () =>          {keyPressed({modifiers: ["Control","Alt","Shift"],key: "7"})});
-  const ctrlAltShf8 = globalShortcut.register('Control+Alt+Shift+8', () =>          {keyPressed({modifiers: ["Control","Alt","Shift"],key: "8"})});
-  const ctrlAltShf9 = globalShortcut.register('Control+Alt+Shift+9', () =>          {keyPressed({modifiers: ["Control","Alt","Shift"],key: "9"})});
-  const ctrlAltShf0 = globalShortcut.register('Control+Alt+Shift+0', () =>          {keyPressed({modifiers: ["Control","Alt","Shift"],key: "0"})});
-  const ctrlAltShfMinus = globalShortcut.register('Control+Alt+Shift+-', () =>      {keyPressed({modifiers: ["Control","Alt","Shift"],key: "-"})});
-  const ctrlAltShfPlus = globalShortcut.register('Control+Alt+Shift+=', () =>       {keyPressed({modifiers: ["Control","Alt","Shift"],key: "="})});
-  // Warn if registration of CRTL + ALT shortcuts fail
-  // TODO - Should alert the user if a keuyboard shortcut fails
-  if (!ctrlAlt1) {log.warn('main.js:  registration failed of: ctrlAlt1 (Control+Alt+1)')};
-  if (!ctrlAlt2) {log.warn('main.js:  registration failed of: ctrlAlt2 (Control+Alt+2)')};
-  if (!ctrlAlt3) {log.warn('main.js:  registration failed of: ctrlAlt3 (Control+Alt+3)')};
-  if (!ctrlAlt4) {log.warn('main.js:  registration failed of: ctrlAlt4 (Control+Alt+4)')};
-  if (!ctrlAlt5) {log.warn('main.js:  registration failed of: ctrlAlt5 (Control+Alt+5)')};
-  if (!ctrlAlt6) {log.warn('main.js:  registration failed of: ctrlAlt6 (Control+Alt+6)')};
-  if (!ctrlAlt7) {log.warn('main.js:  registration failed of: ctrlAlt7 (Control+Alt+7)')};
-  if (!ctrlAlt8) {log.warn('main.js:  registration failed of: ctrlAlt8 (Control+Alt+8)')};
-  if (!ctrlAlt9) {log.warn('main.js:  registration failed of: ctrlAlt9 (Control+Alt+9)')};
-  if (!ctrlAlt0) {log.warn('main.js:  registration failed of: ctrlAlt0 (Control+Alt+0)')};
-  if (!ctrlAltMinus) {log.warn('main.js:  registration failed of: ctrlAltMinus (Control+Alt+-)')};
-  if (!ctrlAltPlus) {log.warn('main.js:  registration failed of: ctrlAltPlus (Control+Alt+=)')};
-  // Warn if registration of CRTL + ALT + SHIFT shortcuts fail
-  // TODO - Should alert  the user if a keuyboard shortcut fails
-  if (!ctrlAltShf1) {log.warn('main.js:  registration failed of: ctrlAlt1 (Control+Alt+Shift+1)')};
-  if (!ctrlAltShf2) {log.warn('main.js:  registration failed of: ctrlAlt2 (Control+Alt+Shift+2)')};
-  if (!ctrlAltShf3) {log.warn('main.js:  registration failed of: ctrlAlt3 (Control+Alt+Shift+3)')};
-  if (!ctrlAltShf4) {log.warn('main.js:  registration failed of: ctrlAlt4 (Control+Alt+Shift+4)')};
-  if (!ctrlAltShf5) {log.warn('main.js:  registration failed of: ctrlAlt5 (Control+Alt+Shift+5)')};
-  if (!ctrlAltShf6) {log.warn('main.js:  registration failed of: ctrlAlt6 (Control+Alt+Shift+6)')};
-  if (!ctrlAltShf7) {log.warn('main.js:  registration failed of: ctrlAlt7 (Control+Alt+Shift+7)')};
-  if (!ctrlAltShf8) {log.warn('main.js:  registration failed of: ctrlAlt8 (Control+Alt+Shift+8)')};
-  if (!ctrlAltShf9) {log.warn('main.js:  registration failed of: ctrlAlt9 (Control+Alt+Shift+9)')};
-  if (!ctrlAltShf0) {log.warn('main.js:  registration failed of: ctrlAlt0 (Control+Alt+Shift+0)')};
-  if (!ctrlAltShfMinus) {log.warn('main.js:  registration failed of: ctrlAltMinus (Control+Alt+Shift+-)')};
-  if (!ctrlAltShfPlus) {log.warn('main.js:  registration failed of: ctrlAltPlus (Control+Alt+Shift+=)')};
+  ioHook.start(true);
 
-  // Check whether a shortcut is registered.
-  //log.warn(globalShortcut.isRegistered('CommandOrControl+X'))
+  // Test keyboard keys
+  /*
+  ioHook.on('keydown', event => {
+    log.warn(JSON.stringify(event)); // 
+    dialog.showMessageBox(null, {message: JSON.stringify(event)});
+  });
+  */
+
+  // Register CRTL + ALT shortcuts
+  const ctrlAlt1 = ioHook.registerShortcut([29, 56, 2], (KEYS) =>          {keyPressed({modifiers: ["Control","Alt"],key: "1"})});
+  const ctrlAlt2 = ioHook.registerShortcut([29, 56, 3], (KEYS) =>          {keyPressed({modifiers: ["Control","Alt"],key: "2"})});
+  const ctrlAlt3 = ioHook.registerShortcut([29, 56, 4], (KEYS) =>          {keyPressed({modifiers: ["Control","Alt"],key: "3"})});
+  const ctrlAlt4 = ioHook.registerShortcut([29, 56, 5], (KEYS) =>          {keyPressed({modifiers: ["Control","Alt"],key: "4"})});
+  const ctrlAlt5 = ioHook.registerShortcut([29, 56, 6], (KEYS) =>          {keyPressed({modifiers: ["Control","Alt"],key: "5"})});
+  const ctrlAlt6 = ioHook.registerShortcut([29, 56, 7], (KEYS) =>          {keyPressed({modifiers: ["Control","Alt"],key: "6"})});
+  const ctrlAlt7 = ioHook.registerShortcut([29, 56, 8], (KEYS) =>          {keyPressed({modifiers: ["Control","Alt"],key: "7"})});
+  const ctrlAlt8 = ioHook.registerShortcut([29, 56, 9], (KEYS) =>          {keyPressed({modifiers: ["Control","Alt"],key: "8"})});
+  const ctrlAlt9 = ioHook.registerShortcut([29, 56, 10], (KEYS) =>         {keyPressed({modifiers: ["Control","Alt"],key: "9"})});
+  const ctrlAlt0 = ioHook.registerShortcut([29, 56, 11], (KEYS) =>         {keyPressed({modifiers: ["Control","Alt"],key: "0"})});
+  const ctrlAltMinus = ioHook.registerShortcut([29, 56, keyboardLayouts[keyboardLayout].minus_key], (KEYS) =>     {keyPressed({modifiers: ["Control","Alt"],key: "-"})});
+  const ctrlAltPlus = ioHook.registerShortcut([29, 56,  keyboardLayouts[keyboardLayout].plus_key], (KEYS) =>      {keyPressed({modifiers: ["Control","Alt"],key: "="})});
+  // Register CRTL + ALT + SHIFT shortcuts
+  const ctrlAltShf1 = ioHook.registerShortcut([29, 56, 42, 2], (KEYS) =>          {keyPressed({modifiers: ["Control","Alt","Shift"],key: "1"})});
+  const ctrlAltShf2 = ioHook.registerShortcut([29, 56, 42, 3], (KEYS) =>          {keyPressed({modifiers: ["Control","Alt","Shift"],key: "2"})});
+  const ctrlAltShf3 = ioHook.registerShortcut([29, 56, 42, 4], (KEYS) =>          {keyPressed({modifiers: ["Control","Alt","Shift"],key: "3"})});
+  const ctrlAltShf4 = ioHook.registerShortcut([29, 56, 42, 5], (KEYS) =>          {keyPressed({modifiers: ["Control","Alt","Shift"],key: "4"})});
+  const ctrlAltShf5 = ioHook.registerShortcut([29, 56, 42, 6], (KEYS) =>          {keyPressed({modifiers: ["Control","Alt","Shift"],key: "5"})});
+  const ctrlAltShf6 = ioHook.registerShortcut([29, 56, 42, 7], (KEYS) =>          {keyPressed({modifiers: ["Control","Alt","Shift"],key: "6"})});
+  const ctrlAltShf7 = ioHook.registerShortcut([29, 56, 42, 8], (KEYS) =>          {keyPressed({modifiers: ["Control","Alt","Shift"],key: "7"})});
+  const ctrlAltShf8 = ioHook.registerShortcut([29, 56, 42, 9], (KEYS) =>          {keyPressed({modifiers: ["Control","Alt","Shift"],key: "8"})});
+  const ctrlAltShf9 = ioHook.registerShortcut([29, 56, 42, 10], (KEYS) =>         {keyPressed({modifiers: ["Control","Alt","Shift"],key: "9"})});
+  const ctrlAltShf0 = ioHook.registerShortcut([29, 56, 42, 11], (KEYS) =>         {keyPressed({modifiers: ["Control","Alt","Shift"],key: "0"})});
+  const ctrlAltShfMinus = ioHook.registerShortcut([29, 56, 42, keyboardLayouts[keyboardLayout].minus_key], (KEYS) =>     {keyPressed({modifiers: ["Control","Alt","Shift"],key: "-"})});
+  const ctrlAltShfPlus = ioHook.registerShortcut([29, 56, 42,  keyboardLayouts[keyboardLayout].plus_key], (KEYS) =>      {keyPressed({modifiers: ["Control","Alt","Shift"],key: "="})});
 
   // Menubar 5.2.3 requires the window to be fully loaded before we can send data to it
   mb.window.webContents.on('did-finish-load', function () {
@@ -620,6 +608,6 @@ app.on('window-all-closed', function () {
 app.on('will-quit', function () {
   log.warn('app:  will-quit event happened.');
   // Unregister all shortcuts.
-  globalShortcut.unregisterAll();
+  ioHook.unregisterAllShortcuts();
 })
 

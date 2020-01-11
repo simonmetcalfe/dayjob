@@ -1,5 +1,4 @@
 {   
-
     "no_client_id":                      {"title":  "Welcome to dayjob!",                "description":  "You need to connect your Spotify account before you can make awesome playlists!",                                                                                 "actionId":  "check_api_connection",    "actionTitle":  "Open Preferences"},
     "no_client_secret":                  {"title":  "No client secret",                  "description":  "Please paste the Client secret from your Spotify developer dashboard into Preferences, and try again",                                "errorType":  "warning",    "actionId":  "check_api_connection",    "actionTitle":  "Open Preferences"},
     "no_authorisation_code":             {"title":  "Authorise dayjob",                  "description":  "You need to authorise dayjob with Spotify using your web browser.  Spotify may ask you to log in",                                    "errorType":  "warning",    "actionId":  "authorise_dayjob",        "actionTitle":  "Authorise dayjob"},

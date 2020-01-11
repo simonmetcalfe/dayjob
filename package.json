@@ -1,6 +1,6 @@
 {
   "name": "dayjob",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Make great Spotify playlists while you work.",
   "author": "Simon Metcalfe",
   "keywords": [
@@ -27,6 +27,7 @@
     "electron-log": "4.0.0",
     "electron-store": "5.1.0",
     "font-awesome": "4.6.1",
+    "iohook": "0.6.2",
     "jquery": "3.3.1",
     "menubar": "5.2.3",
     "popper.js": "1.14.7",
@@ -44,6 +45,20 @@
     "build-mac": "electron-packager . --platform=darwin --arch=x64 --overwrite --out=installers/_build-temp --ignore=/installers --ignore/assets_readme",
     "build-win": "electron-packager . --platform=win32 --arch=x64 --overwrite --out=installers/_build-temp --ignore=/installers --ignore/assets_readme",
     "package-mac": "electron-installer-dmg --overwrite ./installers/_build-temp/dayjob-darwin-x64/dayjob.app ./installers/osx/dayjob",
-    "package-win": "electron-installer-windows --src build-temp/dayjob-win32-x64/ --dest installers/windows/dayjob"
+    "package-win": "electron-installer-windows --src ./installers/_build-temp/dayjob-win32-x64/ --dest installers/windows/dayjob"
+  },
+  "iohook": {
+    "targets": [
+      "node-64",
+      "electron-75"
+    ],
+    "platforms": [
+      "win32",
+      "darwin"
+    ],
+    "arches": [
+      "x64",
+      "ia32"
+    ]
   }
 }
