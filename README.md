@@ -18,8 +18,10 @@ Before downloading please read the [disclaimer](https://opensource.org/licenses/
 
 |Mac|Windows|Linux|
 |:-----:|:-----:|:-----:|
-|[dayjob.dmg](https://github.com/simonmetcalfe/dayjob/releases/download/v1.0.0/dayjob.dmg)|Coming soon!|Coming soon!|
-|v1.0.0|Register your interest [here](https://github.com/simonmetcalfe/dayjob/issues/1)|Register your interest [here](https://github.com/simonmetcalfe/dayjob/issues/2)|
+|[dayjob.dmg](https://github.com/simonmetcalfe/dayjob/releases/download/v1.0.1/dayjob.dmg)|[dayjob-win32-x64.zip](https://github.com/simonmetcalfe/dayjob/releases/download/v1.0.1/dayjob-win32-x64.zip)|Coming soon!|
+|v1.0.1|v1.0.1*|Register your interest [here](https://github.com/simonmetcalfe/dayjob/issues/2)|
+
+\* No installer for Windows version yet - drag the 'dayjob-win32-x64' folder from inside the ZIP file into your Users folder, and run dayjob.exe
 
 ## Keyboard shortcuts
 Add tracks to 10 of your favourite playlists by using the keyboard keys 1, 2, 3, 4, 5, 6, 7, 8 ,9 and 0.
