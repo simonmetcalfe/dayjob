@@ -1,5 +1,6 @@
 const {app, BrowserWindow, globalShortcut, ipcMain, dialog} = require('electron');  //globalShortcut must be defined with app or it does not work
 const electron = require('electron');
+require('v8-compile-cache');
 
 /**
  * -----------------------------------------------------------------
@@ -229,19 +230,33 @@ function connectApi(){
  * -----------------------------------------------------------------
  * Monitor auth events from web server
  * -----------------------------------------------------------------
+ * When the 'ready' event is received the auth URL is launched so 
+ * Spotify can authorise dayjob
  */
 
 spotifyServer.getAuthEvents().on('auth_code_grant_error', function (err){
-  console.log('Main.js:  An auth event \'auth_code_grant_error\' has been raised by spotify-server.js: ' +  err)
+  spotifyServer.stopWebServer();
+  console.log('Main.js:  An auth event \'auth_code_grant_error\' has been raised by spotify-server.js, reporting the error.... ' +  err)
   handledErr = new Error('error_authorising')
   handledErr.error = err;
   logAndDisplayError(handledErr)
 })
 spotifyServer.getAuthEvents().on('auth_code_grant_success', function (result){
-  console.log('Main.js:  Auth event \'auth_code_grant_success\' has been raised by spotify-server.js: ' +  result)
+  spotifyServer.stopWebServer();
+  console.log('Main.js:  Auth event \'auth_code_grant_success\' has been raised by spotify-server.js, now connecting API... ' +  result)
   connectApi();
 })
 
+spotifyServer.getAuthEvents().on('ready', function (result){
+  log.warn('Main.js:  Auth event \'ready\' has been raised by spotify-server.js, launching auth URL...')
+
+  spotifyServer.getAuthUrl()
+    .then(function (result) {
+      shell.openExternal(result);
+    }).catch(function (err) {
+      logAndDisplayError(err)
+    })
+})
 
 /**
  * -----------------------------------------------------------------
@@ -274,36 +289,6 @@ mb.on('ready', function ready() {
 // Actions after the window has first been rendered
 mb.on('after-create-window', function ready() {
   log.warn('main.js:  mb.on after-create-window event occurred...');
-
-
-  /**
-   * spotify-server & web server 
-   * -----------------------------------------------------------------
- */
-
-  // Start the web server after the app has initialised
-  spotifyServer.startWebServer();
-
-  // Monitor the web server for errors errors)
-  spotifyServer.getWebServer().on('error', function (err) {
-    log.warn('Main.js:  An error occurred with the spotify-server web server: ' + JSON.stringify(err))
-    return Promise.reject(err)
-      .catch(function (err){
-        if (err.code == 'EADDRINUSE'){
-          handledErr = new Error("webserver_port_in_use")
-          handledErr.error = err;
-          // TODO - Web server port in use error is displayed using a dialog and not the notification window, becuase it is immediately replaced by the next notification 
-          log.warn('main.js:  [ERROR] Port 8888 is in use but required by dayjob to authorise with Spotify.  Ensure port is free and start dayjob again.  Error:  \n\n' + String(err.message));
-          dialog.showMessageBox(null, {message: 'dayjob encountered an error \n\nPort 8888 is in use but required by dayjob to authorise with Spotify.  Ensure port is free and start dayjob again \n\n' + err.message});
-          //logAndDisplayError(handledErr)
-        }
-        else {
-          handledErr = new Error("webserver_general_error")
-          handledErr.error = err;
-          logAndDisplayError(handledErr)
-        }
-      })
-  });
 
 /**
    * Keyboard shortcuts
@@ -561,12 +546,31 @@ ipcMain.on('check_api_connection', function (event) {
 
 ipcMain.on('authorise_dayjob', function (event) {
   log.warn('main.js:  Event authorise_dayjob received by main process.');
-  spotifyServer.getAuthUrl()
-      .then(function (result) {
-        shell.openExternal(result);
-      }).catch(function (err) {
-        logAndDisplayError(err)
+  
+  if (spotifyServer.getWebServer() == undefined){
+    spotifyServer.startWebServer()  // Start the web server if not already started
+  }
+
+  // Monitor the web server for errors)
+  spotifyServer.getWebServer().on('error', function (err) {
+    log.warn('main.js:  An error occurred with the spotify-server web server: ' + JSON.stringify(err))
+    return Promise.reject(err)
+      .catch(function (err){
+        if (err.code == 'EADDRINUSE'){
+          handledErr = new Error("webserver_port_in_use")
+          handledErr.error = err;
+          log.warn('main.js:  [ERROR] Port 8888 is in use but required by dayjob to authorise with Spotify.  Ensure port is free and start dayjob again.  Error:  \n\n' + String(err.message));
+          logAndDisplayError(handledErr)
+          spotifyServer.stopWebServer()
+        }
+        else {
+          handledErr = new Error("webserver_general_error")
+          handledErr.error = err;
+          logAndDisplayError(handledErr)
+          spotifyServer.stopWebServer()
+        }
       })
+  });  
 });
 
 ipcMain.on('connect_api', function (event) {

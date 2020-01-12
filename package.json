@@ -1,6 +1,6 @@
 {
   "name": "dayjob",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Make great Spotify playlists while you work.",
   "author": "Simon Metcalfe",
   "keywords": [
@@ -31,7 +31,8 @@
     "menubar": "5.2.3",
     "popper.js": "1.14.7",
     "spotify-web-api-node": "4.0.0",
-    "tether": "1.4.5"
+    "tether": "1.4.5",
+    "v8-compile-cache": "^2.1.0"
   },
   "devDependencies": {
     "electron": "7.1.7",

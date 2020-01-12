@@ -123,16 +123,18 @@ function startWebServer(){
             response.writeHead(200, { "Content-Type": "text/plain" });
             response.write("Problem with redirect URL when authorising dayjob with Spotify.  No authorisation code was received in the URL.  Please try again.");
             log.warn('spotify-server.js: [ERROR] Problem with authorisation code received in the URL, code is ' + queryAsObject.code);
+            authEvents.emit('auth_code_grant_error',err)
         }
         else if (queryAsObject.state != state) {
             response.writeHead(200, { "Content-Type": "text/plain" });
             response.write("Problem with redirect URL when authorising dayjob with Spotify.  State code missing or invalid.  Dayjob has ignored the authorisation request.  Please try again.");
             log.warn('spotify-server.js: [ERROR] Problem/mismatched state received in the URL, state is ' + queryAsObject.state);
+            authEvents.emit('auth_code_grant_error',err)
         }
         else {
             response.writeHead(200, { "Content-Type": "text/plain" });
-            response.write("Thanks for authorising dayjob.  You can close this web page.");
-            log.warn('spotify-server.js:  Successfully received authorization code ' + queryAsObject.code);
+            response.write("dayjob has received an auth request.  Please close this web page and folow the prompts in the dayjob app.");
+            log.warn('spotify-server.js:  Webserver received authorization code.  Will attempt to grant access with code...' + queryAsObject.code);
             prefsLocal.setPref('spotify-server_authorizationCode', queryAsObject.code);
             authCodeGrant()
                 .then(function(result){
@@ -142,7 +144,24 @@ function startWebServer(){
                 })
         }
         response.end();
-    }).listen(8888);
+    }).listen(8888, function(){
+        log.warn('spotify-servers.js:  Webserver initialised and listening for Spotify authentication requests.');
+        authEvents.emit('ready')
+    })
+}
+
+module.exports.stopWebServer = function(){
+    return stopWebServer();
+}
+
+function stopWebServer(){
+    log.warn('spotify-server.js:  Attempting to stop the web server.');
+    webServer
+        .close() // Won't accept new connection
+        .once('close', () => {
+            log.warn('spotify-server.js:  The web server has stopped.')
+            webServer = undefined
+    });
 }
 
 
