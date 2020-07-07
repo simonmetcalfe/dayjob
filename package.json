@@ -35,7 +35,7 @@
     "v8-compile-cache": "^2.1.0"
   },
   "devDependencies": {
-    "electron": "7.1.7",
+    "electron": "7.2.4",
     "electron-installer-dmg": "latest",
     "electron-installer-windows": "latest",
     "electron-packager": "14.1.1"
