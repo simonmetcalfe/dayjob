@@ -235,7 +235,7 @@ function checkApiConnection() {
             return spotifyApi.getMe()
             .then(function(result){
                 // Log the result of .getMe and store the users name and ID 
-                log.warn('spotify-server.js:  Retrieved user data JSON: ' + JSON.stringify(result.body));
+                log.warn('spotify-server.js:  Retrieved user data JSON: ' + JSON.stringify(result.body) + '\n');
                 spotifyDisplayName = result.body.display_name;
                 spotifyUserId = result.body.id;
                 Promise.resolve('ready');
@@ -721,13 +721,22 @@ function movePlayingTrackToPlaylist(destPlaylistId, destPlaylistName){
  * -----------------------------------------------------------------
  */
 
-module.exports.getPlaylistIdFromUri = function(uri){
-    return getPlaylistIdFromUri(uri);
+module.exports.getPlaylistIdFromUriOrUrl = function(value){
+    return getPlaylistIdFromUriOrUrl(value);
 }
 
-function getPlaylistIdFromUri(uri){
-    // Playlist URI format (old client) spotify:playlist:7wc5E787OhRM7eYwPQ1jia
-    // Playlist URI format (mid-2021 client) spotify:user:g0rak:playlist:1U9jrEDaH36sapAbJf21N2"
-
-    return uri.split(':')[2];
+function getPlaylistIdFromUriOrUrl(value){
+    var playlistId = '';
+    if (value.includes('spotify:playlist:')){
+        // Playlist URI format (no longer supported on new clients): spotify:playlist:7wc5E787OhRM7eYwPQ1jia 
+        playlistId = value.split(':')[2];
+    } else if (value.includes('open.spotify.com/user/') || value.includes('open.spotify.com/playlist/')){
+        // Old playlist URL format: https://open.spotify.com/user/g0rak/playlist/2E6HFwtDrcilU3tulHIvEB?si=pDgElZD1T_OJhpSXu33gvg
+        // New playlist URL format: https://open.spotify.com/playlist/2E6HFwtDrcilU3tulHIvEB?si=a77d9b726ebc418a
+        playlistId = value.split('/')[value.split('/').length - 1].split('?')[0];
+    } else {
+        // TODO - need some proper error handling!
+    }
+    log.warn('spotify-server.js:  playlist ID ' + playlistId + ' retrieved from URI/URL ' + value);
+    return playlistId;
 }

@@ -429,7 +429,7 @@ function keyPressed(key){
       if (prefsLocal.getPref('dayjob_always_move_tracks') == 1 && !key.modifiers.includes('Shift')){move = 1}
       log.warn('main.js:  Add/move track to playlist in slot shortcut pressed:  Slot: ' + key.key + ' Move: ' + move);
       // Add the current track 
-      return spotifyServer.copyOrMovePlayingTrackToPlaylist(spotifyServer.getPlaylistIdFromUri(playlists[key.key].playlistUri),playlists[key.key].playlistName, move)
+      return spotifyServer.copyOrMovePlayingTrackToPlaylist(spotifyServer.getPlaylistIdFromUriOrUrl(playlists[key.key].playlistUri),playlists[key.key].playlistName, move)
     }).then(function (result) {
       // We're done, skip track, log and show notification
       if (move == 0){
