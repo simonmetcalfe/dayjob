@@ -484,7 +484,7 @@ function logError(err){
     
     // Check if the error was caused by an external module and log it     
     if (err.hasOwnProperty("error")){
-      log.warn('main.js:  [ERROR] in eternal module has occurred:  ' + err.error + '\n' + 
+      log.warn('main.js:  [ERROR] in external module has occurred:  ' + err.error + '\n' + 
       'Object:  ' + JSON.stringify(err.error) + '\n' + 
       'Stack :   ' + err.error.stack)
     }

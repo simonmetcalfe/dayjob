@@ -447,7 +447,7 @@ function getPlaylist(playlistId) {
     // Directly exports the result of the spotify-web-api-node function
     return spotifyApi.getPlaylist(playlistId)
         .then(function (result){
-            //log.warn('spotify-server.js:  Retrieved playlist \'' + playlistId + ', JSON: ' + JSON.stringify(result));
+            log.warn('spotify-server.js:  Get playlist \'' + playlistId + ', JSON: ' + JSON.stringify(result) + "\n");
             return Promise.resolve(result);
         },function (err){
             // TODO - Replace with catch?
@@ -525,23 +525,42 @@ function parsePlayingTrackInfo(playingTrackJson){
             trackInfo.context.readOnly = true;
             trackInfo.context.sourcePlaylistId = null;
             trackInfo.context.sourcePlaylistName = null;
+            trackInfo.context.sourcePlaylistOwner = null;
+            // Get playlist info (needed to determine context as playing from mid-2021 Spotify client no longer gives the user ID in the URI when calling getMyCurrentPlayingTrack)
+            if (playingTrackJson.body.context != null && playingTrackJson.body.context.type == "playlist"){
+                if (playingTrackJson.body.context.uri.split(':').length == 5) {
+                    // Legacy client playing music with URI in format spotify:user:g0rak:playlist:1U9jrEDaH36sapAbJf21N2 
+                    log.warn('spotify-server.js:  LEGACY Spotify client detected with old URI format.');
+                    trackInfo.context.sourcePlaylistId = playingTrackJson.body.context.uri.split(':')[4];
+                } else if (playingTrackJson.body.context != null && playingTrackJson.body.context.type == "playlist" && playingTrackJson.body.context.uri.split(':').length == 3) {
+                    // New client with URI in format spotify:playlist:1U9jrEDaH36sapAbJf21N2
+                    trackInfo.context.sourcePlaylistId = playingTrackJson.body.context.uri.split(':')[2];
+                }
+                log.warn('spotify-server.js:  Getting playlist name for playlist ID... ' + trackInfo.context.sourcePlaylistId);
+                return getPlaylist(trackInfo.context.sourcePlaylistId);
+            } else {
+                return Promise.resolve('ready');  
+            }
+        }).then(function(result){ 
             // Determine context
             if      (playingTrackJson.body.item.is_local)               {trackInfo.context.name = "Local file" }  
             else if (playingTrackJson.body.context == null)             {trackInfo.context.name = "Liked or Recommended" }         
             else if (playingTrackJson.body.context.type == "artist")    {trackInfo.context.name = "Artist"}                       
             else if (playingTrackJson.body.context.type == "album")     {trackInfo.context.name = "Album"}             
-            else if (playingTrackJson.body.context.type == "playlist" && playingTrackJson.body.context.uri.split(':').length == 3) {trackInfo.context.name = "Radio"} // When radio tracks played from radio thumbnail         
-            else if (playingTrackJson.body.context.type == "playlist" && playingTrackJson.body.context.uri.split(':').length == 5) {
-                if (playingTrackJson.body.context.uri.split(':')[2] == spotifyUserId){
+            else if (playingTrackJson.body.context.type == "playlist"){ 
+                trackInfo.context.sourcePlaylistName = result.body.name; // Utilise the info from getPlaylist
+                trackInfo.context.sourcePlaylistOwner = result.body.owner.id;
+                if (trackInfo.context.sourcePlaylistOwner == spotifyUserId){
                     trackInfo.context.readOnly=false;
-                    trackInfo.context.name = "Playlist"    
-                }    
-                else {trackInfo.context.name = "Shared playlist / Radio";}  // Radio tracks are indistinguisable from shared playlists if tracks are played from the list screen
-                trackInfo.context.sourcePlaylistId = playingTrackJson.body.context.uri.split(':')[4];
-                log.warn('spotify-server.js:  Getting playlist name for playlist ID... ' + trackInfo.context.sourcePlaylistId)
-                return getPlaylistName(trackInfo.context.sourcePlaylistId)
+                    trackInfo.context.name = "Playlist"
+                } else if (trackInfo.context.sourcePlaylistOwner == 'spotify'){
+                    trackInfo.context.name = "Radio"; // When played from radio thumbnail
+                } else {
+                    trackInfo.context.name = "Shared playlist / Radio"; // Assume any other type of playist is non-user or radio
+                }
+            } else {
+                trackInfo.context.name = "Unknown source";
             }
-            else {trackInfo.context.name = "Unknown source";}
             return Promise.resolve('ready')
         }).catch(function (err){
             // Catch any errors we might have parsing the JSON
@@ -550,11 +569,7 @@ function parsePlayingTrackInfo(playingTrackJson){
             return Promise.reject(handledErr);
         })
     }).then(function(result){
-        if (result != 'ready'){
-            // Set the source playlist name
-            trackInfo.context.sourcePlaylistName = result
-        }
-        return Promise.resolve(trackInfo)
+        return Promise.resolve(trackInfo);
     })
 }
 
@@ -573,15 +588,12 @@ module.exports.getPlayingTrackInfo = function() {
 }
 
 function getPlayingTrackInfo(){
-    trackInfo = {
-        context:{}
-    }
     return checkApiConnection()
         .then(function (result) {
             log.warn('spotify-server.js:  Check API connection succeeded, now getting currently playing track info...');
             return getMyCurrentPlayingTrack()
         }).then(function (result) {
-            log.warn('spotify-server.js:  Got current track JSON: ' + JSON.stringify(result));
+            log.warn('spotify-server.js:  Got current track JSON: ' + JSON.stringify(result) + "\n");
             return parsePlayingTrackInfo(result)
         })
 }
@@ -714,6 +726,8 @@ module.exports.getPlaylistIdFromUri = function(uri){
 }
 
 function getPlaylistIdFromUri(uri){
-    // Playlist URI format is spotify:playlist:7wc5E787OhRM7eYwPQ1jia
+    // Playlist URI format (old client) spotify:playlist:7wc5E787OhRM7eYwPQ1jia
+    // Playlist URI format (mid-2021 client) spotify:user:g0rak:playlist:1U9jrEDaH36sapAbJf21N2"
+
     return uri.split(':')[2];
 }
