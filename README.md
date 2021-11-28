@@ -18,8 +18,8 @@ Before downloading please read the [disclaimer](https://opensource.org/licenses/
 
 |Mac|Windows|Linux|
 |:-----:|:-----:|:-----:|
-|[dayjob.dmg](https://github.com/simonmetcalfe/dayjob/releases/download/v1.0.1/dayjob.dmg)|[dayjob-win32-x64.zip](https://github.com/simonmetcalfe/dayjob/releases/download/v1.0.1/dayjob-win32-x64.zip)|Coming soon!|
-|v1.0.1|v1.0.1*|Register your interest [here](https://github.com/simonmetcalfe/dayjob/issues/2)|
+|[dayjob-1.1.1.dmg](https://github.com/simonmetcalfe/dayjob/releases/download/v1.1.1/dayjob-1.1.1.dmg)|[dayjob-win32-x64_1.1.1.zip](https://github.com/simonmetcalfe/dayjob/releases/download/v1.1.1/dayjob-win32-x64_1.1.1.zip)|Coming soon!|
+|v1.1.1|v1.1.1*|Register your interest [here](https://github.com/simonmetcalfe/dayjob/issues/2)|
 
 \* No installer for Windows version yet - drag the 'dayjob-win32-x64' folder from inside the ZIP file into your Users folder, and run dayjob.exe
 
