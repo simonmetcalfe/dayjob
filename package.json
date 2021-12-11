@@ -33,7 +33,7 @@
     "spotify-web-api-node": "4.0.0",
     "tether": "1.4.5",
     "v8-compile-cache": "^2.1.0",
-    "iohook": "https://github.com/wurikiji/iohook.git"
+    "iohook": "https://github.com/theicfire/iohook.git#f2e1e14c079e175cc97f314dfcf2203cc1467508"
   },
   "devDependencies": {
     "electron": "7.1.7",
