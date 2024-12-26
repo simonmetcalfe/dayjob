@@ -1,0 +1,56 @@
+{
+    "name": "dayjob",
+    "version": "1.2.0",
+    "description": "Make great Spotify playlists while you work.",
+    "author": "Simon Metcalfe",
+    "keywords": [
+      "Spotify",
+      "playlist",
+      "playlists",
+      "dj",
+      "music",
+      "discovery",
+      "keyboard",
+      "shortcut",
+      "shortcuts",
+      "automation",
+      "electron"
+    ],
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/simonmetcalfe/dayjob.git"
+    },
+    "license": "MIT",
+    "type": "module",
+    
+    "exports": "./src/index.js",
+    "engines": {
+      "node": ">=23.5.0"
+    },
+    "dependencies": {
+      "bootstrap": "4.3.1",
+      "electron-log": "5.2.4",
+      "electron-store": "10.0.0",
+      "font-awesome": "4.6.1",
+      "jquery": "3.4.0",
+      "menubar": "5.2.3",
+      "popper.js": "1.14.7",
+      "spotify-web-api-node": "5.0.2",
+      "tether": "1.4.5",
+      "v8-compile-cache": "2.4.0"
+    },
+    "devDependencies": {
+      "electron": "33.2.1",
+      "electron-installer-dmg": "3.0.0",
+      "electron-installer-windows": "2.0.0",
+      "electron-packager": "14.1.1"
+    },
+    "scripts": {
+      "start": "electron .",
+      "build-mac": "electron-packager . --platform=darwin --arch=x64 --overwrite --out=installers/_build-temp --ignore=/installers --ignore/assets_readme",
+      "build-win": "electron-packager . --platform=win32 --arch=x64 --overwrite --out=installers/_build-temp --ignore=/installers --ignore/assets_readme",
+      "package-mac": "electron-installer-dmg --overwrite ./installers/_build-temp/dayjob-darwin-x64/dayjob.app ./installers/osx/dayjob",
+      "package-win": "electron-installer-windows --src build-temp/dayjob-win32-x64/ --dest installers/windows/dayjob"
+    }
+  }
+  

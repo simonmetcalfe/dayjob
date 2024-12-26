@@ -26,7 +26,13 @@ log.warn('spotify-server.js:  Script has started.')
 var SpotifyWebApi = require('spotify-web-api-node');
 var http = require("http");
 var url = require("url");
-const prefsLocal = require('./prefs.js');
+
+// const prefsLocal = require('./prefs.js');
+let prefsLocal;
+(async () => {
+    prefsLocal = await import('./prefs.js');
+})();
+
 var events = require('events');
 
 /**

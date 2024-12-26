@@ -79,7 +79,12 @@ I created this app because I love discovering new music when at work, but wanted
 
 ## Development
 
-I'm not a developer by profession so apologise for any bugs and poor coding practices!  dayjob is a simple project and should be easy to maintain.  After cloning use *npm install* to install.
+I'm not a developer by profession so apologise for any bugs and poor coding practices!  dayjob is a simple project and should be easy to maintain.  
+
+* Clonse repo 
+* *npm install* to install
+* *npm start* to run
+* Dev evironment uses the same Preferences file as production builds
 
 A list of known issues and tech debt is maintained in GitHub which I might get round to some day.  
 

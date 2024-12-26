@@ -5,7 +5,7 @@
  * -----------------------------------------------------------------
  */
 
-const electron = require('electron');
+const electron = import('electron');
 const ipcRenderer = electron.ipcRenderer;
 var log = require('electron-log');
 

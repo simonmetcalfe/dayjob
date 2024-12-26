@@ -1,6 +1,6 @@
-const {app, BrowserWindow, globalShortcut, ipcMain, dialog} = require('electron');  //globalShortcut must be defined with app or it does not work
-const electron = require('electron');
-require('v8-compile-cache');
+const {app, BrowserWindow, globalShortcut, ipcMain, dialog} = import('electron');  //globalShortcut must be defined with app or it does not work
+const electron = import('electron');
+import('v8-compile-cache');
 
 /**
  * -----------------------------------------------------------------
@@ -8,7 +8,7 @@ require('v8-compile-cache');
  * -----------------------------------------------------------------
  */
 
-var log = require('electron-log');
+var log = import('electron-log');
 
 log.warn('main.js:  Starting application\n\n' +
          '*********************************\n' + 
@@ -20,17 +20,58 @@ log.warn('main.js:  \'app.getAppPath\' path is reported as: ' + app.getAppPath()
 
 /**
  * -----------------------------------------------------------------
+ * Initialisation of preferences (before anything else)
+ * -----------------------------------------------------------------
+ */
+
+// const prefsLocal = require('./prefs.js');
+/*
+let prefsLocal;
+(async () => {
+    prefsLocal = await import('./prefs.js');
+})();
+*/
+
+// Initialize prefsLocal at module scope
+let prefsLocal = { getPref: () => undefined, setPref: () => undefined, deletePref: () => undefined };
+
+// Import and initialize the prefs module
+(async function initPrefs() {
+    try {
+        const prefsModule = await import('./prefs.js');
+        prefsLocal = prefsModule.default || prefsModule;
+        log.warn('main.js: Successfully initialized prefs module');
+        
+        // Move preference initialization here
+        initializeDefaultPreferences();
+        await initializePlaylistStorage();
+    } catch (err) {
+        log.warn('main.js: Failed to initialize prefs module:', err);
+        dialog.showMessageBox(null, {
+            message: 'Failed to initialize preferences module. Some features may not work correctly.\n\n' + err.message
+        });
+    }
+})();
+
+
+
+/**
+ * -----------------------------------------------------------------
  * Modules
  * -----------------------------------------------------------------
  */
 
-var shell = require('electron').shell;
-const menubar = require('menubar');
-const spotifyServer = require('./spotify-server.js');
-const prefsLocal = require('./prefs.js');
-const fs = require ('fs');
-const path = require('path') // For constructing URLs
-const url = require('url')
+var shell = import('electron').shell;
+const menubar = import('menubar');
+const spotifyServer = import('./spotify-server.cjs');
+
+
+
+
+
+const fs = import ('fs');
+const path = import('path') // For constructing URLs
+const url = import('url')
 
 /**
  * -----------------------------------------------------------------
@@ -60,9 +101,22 @@ log.warn('main.js:  Loaded notification/error handling database')
  * -----------------------------------------------------------------
  */
 
+/*
 // Any variables that should have a default should be specified here
 if (prefsLocal.getPref('dayjob_always_move_tracks') == undefined){prefsLocal.setPref('dayjob_always_move_tracks',false)}
 if (prefsLocal.getPref('dayjob_always_skip_tracks') == undefined){prefsLocal.setPref('dayjob_always_skip_tracks',false)}
+*/
+
+// Function to initialize default preferences
+function initializeDefaultPreferences() {
+  log.warn('PREFS INITD');
+  if (prefsLocal.getPref('dayjob_always_move_tracks') === undefined) {
+      prefsLocal.setPref('dayjob_always_move_tracks', false);
+  }
+  if (prefsLocal.getPref('dayjob_always_skip_tracks') === undefined) {
+      prefsLocal.setPref('dayjob_always_skip_tracks', false);
+  }
+}
 
 /**
  * -----------------------------------------------------------------
@@ -72,6 +126,7 @@ if (prefsLocal.getPref('dayjob_always_skip_tracks') == undefined){prefsLocal.set
 
 var playlists = {};
 
+/*
 // v1 playlist storage is an 10 object multimensional array (0 to 9), representing the keyboard keys 1234567890 in order
 if (prefsLocal.getPref('dayjob_playlists_v1') == undefined){
   // No playlists stored, create a blank array
@@ -90,10 +145,32 @@ if (prefsLocal.getPref('dayjob_playlists_v1') == undefined){
     }
   prefsLocal.setPref('dayjob_playlists_v1',playlists);
 }
-
 else {
   // Load stored playlists
   playlists = prefsLocal.getPref('dayjob_playlists_v1');
+}
+*/
+
+// Function to initialize playlist storage
+async function initializePlaylistStorage() {
+  if (prefsLocal.getPref('dayjob_playlists_v1') === undefined) {
+      const emptyPlaylists = {
+          "1": {playlistUri: "", playlistName:""},
+          "2": {playlistUri: "", playlistName:""},
+          "3": {playlistUri: "", playlistName:""},
+          "4": {playlistUri: "", playlistName:""},
+          "5": {playlistUri: "", playlistName:""},
+          "6": {playlistUri: "", playlistName:""},
+          "7": {playlistUri: "", playlistName:""},
+          "8": {playlistUri: "", playlistName:""},
+          "9": {playlistUri: "", playlistName:""},
+          "0": {playlistUri: "", playlistName:""},
+      };
+      await prefsLocal.setPref('dayjob_playlists_v1', emptyPlaylists);
+      playlists = emptyPlaylists;
+  } else {
+      playlists = await prefsLocal.getPref('dayjob_playlists_v1');
+  }
 }
 
 /**

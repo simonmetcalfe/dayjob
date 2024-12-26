@@ -14,8 +14,9 @@
  * -----------------------------------------------------------------
  */
 
-const Store = require('electron-store');
-var log = require('electron-log');
+const log = import('electron-log');
+let Store;
+let prefs_local;
 
 /**
  * -----------------------------------------------------------------
@@ -23,14 +24,20 @@ var log = require('electron-log');
  * -----------------------------------------------------------------
  */
 
-const prefs_local = new Store({
-    name : 'dayjob_prefs_local',
-  });
+// Initialize store using async IIFE
+(async () => {
+    const { default: ElectronStore } = await import('electron-store');
+    Store = ElectronStore;
+    prefs_local = new Store({
+        name: 'dayjob_prefs_local',
+    });
 
-// Test read and write
-log.warn('prefs.js:  Loaded preferences module, last initialised on ' + prefs_local.get('date_last_init'));
-prefs_local.set('date_last_init', Date.now());
-log.warn('prefs.js:  Updated last initalised date to ' + prefs_local.get('date_last_init'));
+
+    // Test read and write
+    log.warn('prefs.js:  Loaded preferences module, last initialised on ' + prefs_local.get('date_last_init'));
+    prefs_local.set('date_last_init', Date.now());
+    log.warn('prefs.js:  Updated last initalised date to ' + prefs_local.get('date_last_init'));
+})();
 
 /**
  * -----------------------------------------------------------------
@@ -38,8 +45,17 @@ log.warn('prefs.js:  Updated last initalised date to ' + prefs_local.get('date_l
  * -----------------------------------------------------------------
  */
 
-module.exports.setPref = function(key, val){
-    log.warn('prefs.js:  Updated preference: ' + key) // + ':' + prefs_local.get(key) + ' to ' + val) ;
+module.exports.setPref = async function(key, val) {
+    // Ensure store is initialized
+    if (!prefs_local) {
+        const { default: ElectronStore } = await import('electron-store');
+        Store = ElectronStore;
+        prefs_local = new Store({
+            name: 'dayjob_prefs_local',
+        });
+    }
+    
+    log.warn('prefs.js:  Updated preference: ' + key);
     prefs_local.set(key, val);
 }
 
@@ -49,25 +65,43 @@ module.exports.setPref = function(key, val){
  * -----------------------------------------------------------------
  */
 
-module.exports.getPref  = function(key){
-    if (prefs_local.has(key)){
-        var val = prefs_local.get(key);
-        log.warn('prefs.js:  Retrieved preference: ' + key) // + ':' + val);
-        return val; 
-    }
-    else {
-        log.warn('prefs.js:  Requested key not found: ' + key) 
-        return undefined;
+module.exports.getPref = async function(key) {
+    // Ensure store is initialized
+    if (!prefs_local) {
+        const { default: ElectronStore } = await import('electron-store');
+        Store = ElectronStore;
+        prefs_local = new Store({
+            name: 'dayjob_prefs_local',
+        });
     }
 
+    if (prefs_local.has(key)) {
+        var val = prefs_local.get(key);
+        log.warn('prefs.js:  Retrieved preference: ' + key);
+        return val;
+    }
+    else {
+        log.warn('prefs.js:  Requested key not found: ' + key);
+        return undefined;
+    }
 }
+
 /**
  * -----------------------------------------------------------------
  *  Delete preferences
  * -----------------------------------------------------------------
  */
     
-module.exports.deletePref = function(key){
+module.exports.deletePref = async function(key) {
+    // Ensure store is initialized
+    if (!prefs_local) {
+        const { default: ElectronStore } = await import('electron-store');
+        Store = ElectronStore;
+        prefs_local = new Store({
+            name: 'dayjob_prefs_local',
+        });
+    }
+
     prefs_local.delete(key);
     log.warn('prefs.js:  Deleted preference: ' + key);
 }
