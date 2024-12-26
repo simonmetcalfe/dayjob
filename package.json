@@ -28,14 +28,14 @@
     "electron-store": "5.1.0",
     "font-awesome": "^4.7.0",
     "jquery": "^3.7.1",
-    "menubar": "5.2.3",
+    "menubar": "9.5.1",
     "popper.js": "^1.16.1",
     "spotify-web-api-node": "^5.0.2",
     "tether": "^2.0.0",
     "v8-compile-cache": "^2.4.0"
   },
   "devDependencies": {
-    "electron": "^33.2.1",
+    "electron": "32.0.0",
     "electron-installer-dmg": "^5.0.1",
     "electron-installer-windows": "^3.0.0",
     "electron-packager": "^17.1.2"
