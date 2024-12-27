@@ -10,10 +10,13 @@
  */
 
 export class MyView {
+    
     constructor() {
         // Bind the callback to the class instance
         window.myApi.onUpdateCounter((value) => this.onUpdateCounter(value));
+        window.myApi.onUpdateUi((value) => this.onUpdateUi(value));
     }
+    
 
 
     // Create an object for each interactive HTML element
@@ -87,7 +90,7 @@ export class MyView {
 
     onUpdateUi(uiData){
         this.resetUi();
-        log.warn('Notification.js:  updateUI has received the following uiData JSON: ' + JSON.stringify(uiData));
+        //TODO:  log.warn('Notification.js:  updateUI has received the following uiData JSON: ' + JSON.stringify(uiData));
         if (uiData.hasOwnProperty('title') && !uiData.hasOwnProperty('errorType')){
             title.innerHTML = uiData.title;
             title.style.display = 'block';
