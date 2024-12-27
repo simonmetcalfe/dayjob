@@ -25,7 +25,7 @@ log.warn('main.js:  \'app.getAppPath\' path is reported as: ' + app.getAppPath()
  */
 
 var shell = require('electron').shell;
-const menubar = require('menubar');
+const { menubar } = require('menubar');
 const spotifyServer = require('./spotify-server.js');
 const prefsLocal = require('./prefs.js');
 const fs = require ('fs');
@@ -123,6 +123,7 @@ const contextMenu = Menu.buildFromTemplate([
  */
 
 // Menubar v5.2.3 initalisation - reverted back to v5.2.3 due to menubar bug https://github.com/maxogden/menubar/issues/260
+/*
 const mb = menubar({webPreferences: {nodeIntegration: true}});
 mb.setOption('preload-window', true);
 mb.setOption('height', 200);
@@ -133,8 +134,8 @@ mb.setOption('index', url.format({ // Set the initial page
   protocol: 'file:',
   slashes: true
 }))
+*/
 
-/*
 // Menubar v7.1.0 initalisation
  const mb = menubar({preloadWindow: true,
                      browserWindow:{
@@ -149,7 +150,7 @@ mb.setOption('index', url.format({ // Set the initial page
                        slashes: true
                      })
 });
-*/
+
 
 
 /**
