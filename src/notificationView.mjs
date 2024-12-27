@@ -12,13 +12,10 @@
 export class MyView {
     
     constructor() {
-        // Bind the callback to the class instance
-        window.myApi.onUpdateCounter((value) => this.onUpdateCounter(value));
+        // Bind the local functins to the API calls which they are triggered by 
         window.myApi.onUpdateUi((value) => this.onUpdateUi(value));
     }
     
-
-
     // Create an object for each interactive HTML element
     title;
     description;
@@ -52,7 +49,7 @@ export class MyView {
         this.pingResultSpan = document.getElementById('pingResultSpan'); //TODO: Delete me
         
         // Add event listeners for buttons
-        this.buttonCta.addEventListener("click", () => this.pingNoResponse());
+        this.buttonCta.addEventListener("click", () => this.ping());
 
         // Log if binding was not successful
         console.assert(this.title);
@@ -80,13 +77,6 @@ export class MyView {
         subDescription.style.display = 'none';
         //buttonCta.style.display = 'none';
     }
-
-    /*
-    changeBackgroundColor() {
-        console.log("MyView: Change background button clicked.");
-        document.body.style.setProperty("background", "green");
-    }
-    */
 
     onUpdateUi(uiData){
         this.resetUi();
@@ -140,34 +130,10 @@ export class MyView {
         window.myApi.ping("Ping", (result) => this.onPing(result));
     }
 
-    pingNoResponse() {
-        console.log("MyView: Ping button clicked.");
-        window.myApi.pingNoResponse("Ping");
-    }
-    
-
     onPing(result) {
         console.log("MyView: Received result from API: " + result);
         this.pingResultSpan.textContent = result;
     }
-
-    onPingInwards(result) {
-        console.log("MyView: Received INWARDS PING result from API: " + result);
-        this.pingResultSpan.textContent = result;
-    }
-
-    onUpdateCounter(value) {
-        console.log("MyView: Received ON UPDATE COUNTER: " + value);
-        this.pingResultSpan.textContent = value;
-    }
-
     
 }
-
-/*
-window.myApi.onUpdateCounter((value) => {
-    console.log("MyView: Received ON UPDATE COUNTER: " + value);
-    //this.pingResultSpan.textContent = value;
-})
-*/
 

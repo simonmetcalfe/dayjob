@@ -10,9 +10,9 @@
         <h4>Environment</h4>
         </div>
         <div id="list">
-            <span>Node.js <script>document.write(process.versions.node)</script></span></span><br>
-            <span>Chromium <script>document.write(process.versions.chrome)</script></span><br>
-            <span>Electron <script>document.write(process.versions.electron)</script></span><br>
+            <span>Node.js <span id='versionNode'></span></span><br>
+            <span>Chromium <span id='versionChrome'></span></span><br>
+            <span>Electron <span id='versionElectron'></span></span><br>
         </div>
         <h4>With thanks to the following</h4>
         <div id="credits">
@@ -28,14 +28,6 @@
             <a href="#" onclick="openExternal('https://github.com/electron-userland/electron-installer-windows');">electron-installer-windows</a><br>
         </div>
     </body>
-    <script type="text/javascript">
-        /* Handle opening of links in the Shell */
-        var shell = require('electron').shell;
-        function openExternal(url) {
-            shell.openExternal(url);
-        }
-        /* Retrieve version info from package.json */
-        document.getElementById('version').innerHTML = ' ' + require('../package.json').version;
-        document.getElementById('electron-version').innerHTML = ' v' + process.versions.electron;
-    </script>
+    <script src="./aboutRenderer.mjs" type="module"></script>
+
 </html>

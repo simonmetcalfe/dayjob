@@ -33,6 +33,18 @@ const path = require('path') // For constructing URLs
 const url = require('url')
 
 /**
+ * -------------------------------------------------------------------------------------------------
+ * Content Security Policy
+ * 
+ * Requried to prevent security warnings in the Chrome console(s).
+ * Applied using mainWindow.webContents.session.webRequest.onHeadersReceived
+ * -------------------------------------------------------------------------------------------------
+ */
+
+const CSP = "default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none';";
+
+
+/**
  * -----------------------------------------------------------------
  *  Unhandled Promise rejection handling
  * -----------------------------------------------------------------
@@ -141,24 +153,38 @@ mb.setOption('index', url.format({ // Set the initial page
 //prefsWindow = new BrowserWindow({ maxWidth: 1024, maxHeight: 768, show: false, webPreferences: {nodeIntegration: true, contextIsolation: false, enableRemoteModule: true}});
  
 const mb = menubar({preloadWindow: true,
-                     browserWindow:{
-                       webPreferences: {nodeIntegration: true, contextIsolation: true, nodeIntegrationInWorker: true, nodeIntegrationInSubFrames: true, sandbox: false, preload: path.resolve("./src/notificationPreload.mjs")},
-                       height:200,
-                     },
-                     alwaysOnTop:true,
-                     icon: app.getAppPath() + '/assets/IconTemplate.png',
-                     index: url.format({
-                       pathname: path.join(app.getAppPath(), '/src/notification.html'),
-                       protocol: 'file:',
-                       slashes: true
-                     })
+                    alwaysOnTop:true,
+                    browserWindow:{
+                      height:200,
+                      webPreferences: {
+                        nodeIntegration: true, 
+                        contextIsolation: true, 
+                        nodeIntegrationInWorker: true, 
+                        nodeIntegrationInSubFrames: true, 
+                        sandbox: false, 
+                        preload: path.resolve("./src/notificationPreload.mjs")
+                      },
+                    },
+                    icon: app.getAppPath() + '/assets/IconTemplate.png',
+                    index: 'about:blank' // Web page is loaded after menubar initialises and 
 });
+
+
+
+
+/*
+mb.window.loadURL(url.format({
+  pathname: path.join(app.getAppPath(), '/src/notification.html'),
+  protocol: 'file:',
+  slashes: true
+}))
+  */
 
 
 
 /**
  * -----------------------------------------------------------------
- * Main window handler
+ * Preferences window handler
  * -----------------------------------------------------------------
  */
 
@@ -194,13 +220,31 @@ function openPrefsWindow() {
 let aboutWindow;  // Prevent window closure on garbage collection
 
 function openAbout() {
-  aboutWindow = new BrowserWindow({ width: 400, height: 410, maxWidth: 400, maxHeight: 350, show: false, webPreferences: {nodeIntegration: true}});
+  aboutWindow = new BrowserWindow({ width: 400, 
+                                    height: 450, 
+                                    maxWidth: 400, 
+                                    maxHeight: 450, 
+                                    show: false, 
+                                    webPreferences: {
+                                      nodeIntegration: true, 
+                                      contextIsolation: true,
+                                      nodeIntegrationInWorker: true,
+                                      nodeIntegrationInSubFrames: true,
+                                      sandbox: false, 
+                                      preload: path.resolve("./src/aboutPreload.mjs")
+                                    }
+  });
 
-  aboutWindow.loadURL(url.format({
-    pathname: path.join(app.getAppPath(), '/src/about.html'),
-    protocol: 'file:',
-    slashes: true
-  }))
+  aboutWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+        responseHeaders: {
+            ...details.responseHeaders,
+            'Content-Security-Policy': [CSP],
+        },
+    });
+  });
+  
+  aboutWindow.loadFile("./src/about.html");
 
   aboutWindow.once('ready-to-show', () => {
     aboutWindow.show()
@@ -276,6 +320,20 @@ app.on('ready', () => {
 // When menubar is loaded open the notification window to initialise it
 mb.on('ready', function ready() {
   log.warn('main.js:  mb.on ready event occurred...');
+
+  // Load content security policy
+  mb.window.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+        responseHeaders: {
+            ...details.responseHeaders,
+            'Content-Security-Policy': [CSP],
+        },
+    });
+  });
+  
+  // Load UI (Unlike ordinary BrowserWindows, MenuBar must be initialised before URL can be set via window object)
+  mb.window.loadFile("./src/notification.html");
+
   mb.showWindow();  // Trigger menubar notification window to align it to the toolbar
 
   mb.tray.on('click', function () {
