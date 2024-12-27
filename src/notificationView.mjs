@@ -127,7 +127,7 @@ export class MyView {
     
     ping() {
         console.log("MyView: Ping button clicked.");
-        window.myApi.ping("Ping", (result) => this.onPing(result));
+        window.myApi.ping("Ping", (result) => {this.pingResultSpan.textContent = result});
     }
 
     onPing(result) {
