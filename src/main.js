@@ -42,7 +42,7 @@ const url = require('url')
 process.on('unhandledRejection', err => {
   log.warn('main.js:  [ERROR]  Unhandled promise rejection.  This should be logged as a bug on the dayjob GitHub page.  Error:  \n\n' + String(err.message) + '\n' + 
   'Stack:   ' + err.stack);
-  dialog.showMessageBox(null, {message: 'dayjob encountered an error \n\nUnhandled promise rejection.  This should be logged as a bug on the dayjob GitHub page.\n\n' + err.message});
+  dialog.showMessageBox(null, {message: 'dayjob encountered an error \n\nUnhandled promise rejection.  Please log a bug on the dayjob GitHub page.\n\n' + err.message});
 });
 
 /**
@@ -137,9 +137,12 @@ mb.setOption('index', url.format({ // Set the initial page
 */
 
 // Menubar v7.1.0 initalisation
- const mb = menubar({preloadWindow: true,
+
+//prefsWindow = new BrowserWindow({ maxWidth: 1024, maxHeight: 768, show: false, webPreferences: {nodeIntegration: true, contextIsolation: false, enableRemoteModule: true}});
+ 
+const mb = menubar({preloadWindow: true,
                      browserWindow:{
-                       webPreferences: {nodeIntegration: true},
+                       webPreferences: {nodeIntegration: true, contextIsolation: true, nodeIntegrationInWorker: true, nodeIntegrationInSubFrames: true, sandbox: false, preload: path.resolve("./src/notificationPreload.mjs")},
                        height:200,
                      },
                      alwaysOnTop:true,
@@ -464,7 +467,10 @@ function keyPressed(key){
  */
 
 function showNotification(uiData) {
-  mb.window.webContents.send('updateUi', uiData)
+  log.warn("show not ran");
+  mb.window.webContents.send('pingNoResponse', 'testttt');
+  mb.window.webContents.send('onPingInwards', 'testXXXXXX');
+  mb.window.webContents.send('updateUi', uiData);
   //mb.showWindow();
   mb.window.showInactive();
   // When a notification occurs, close the window briefly after
@@ -535,6 +541,35 @@ function logAndDisplayError(err) {
 
 //TODO - For consistency the old ipcMain.on functions could updated to ipcMain.handle 
 
+/*
+ipcMain.on("setTitle", (event, title) => this.onSetTitle(title));
+onSetTitle(title) {
+  console.log("MyApp: New title: " + title);
+  this.browserWindow.setTitle(title);
+};
+
+ipcMain.handle("ping", (event, data) => this.onPing(data));
+onPing(data) {
+  console.log("MyApp: Received ping with data: " + data);
+  let result = "Pong";
+  console.log("MyApp: Replying with result data: " + result);
+  return result;
+};
+*/
+
+ipcMain.handle('ping', async (event, value) => {
+  // TODO - The implementation in ui-preferences.js means a disk write occurs after every single keystroke - a delay should be imposed to save n seconds after the last change
+  log.warn('main.js:  Received a ping with value: ' + value);
+  return "pong";
+});
+
+ipcMain.handle('pingNoResponse', async (event, value) => {
+  // TODO - The implementation in ui-preferences.js means a disk write occurs after every single keystroke - a delay should be imposed to save n seconds after the last change
+  log.warn('main.js:  Received a ping NO RESPONSE with value: ' + value);
+});
+
+
+
 ipcMain.on('btnOpenDashboard', function (event) {
   log.warn('main.js:  Event btnOpenDashboard received by main process.');
   shell.openExternal('https://developer.spotify.com/dashboard/login');
@@ -552,7 +587,7 @@ ipcMain.on('authorise_dayjob', function (event) {
     spotifyServer.startWebServer()  // Start the web server if not already started
   }
 
-  // Monitor the web server for errors)
+  // Monitor the web server for errors
   spotifyServer.getWebServer().on('error', function (err) {
     log.warn('main.js:  An error occurred with the spotify-server web server: ' + JSON.stringify(err))
     return Promise.reject(err)
