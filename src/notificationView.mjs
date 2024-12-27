@@ -10,6 +10,12 @@
  */
 
 export class MyView {
+    constructor() {
+        // Bind the callback to the class instance
+        window.myApi.onUpdateCounter((value) => this.onUpdateCounter(value));
+    }
+
+
     // Create an object for each interactive HTML element
     title;
     description;
@@ -146,4 +152,19 @@ export class MyView {
         console.log("MyView: Received INWARDS PING result from API: " + result);
         this.pingResultSpan.textContent = result;
     }
+
+    onUpdateCounter(value) {
+        console.log("MyView: Received ON UPDATE COUNTER: " + value);
+        this.pingResultSpan.textContent = value;
+    }
+
+    
 }
+
+/*
+window.myApi.onUpdateCounter((value) => {
+    console.log("MyView: Received ON UPDATE COUNTER: " + value);
+    //this.pingResultSpan.textContent = value;
+})
+*/
+

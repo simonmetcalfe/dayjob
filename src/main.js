@@ -467,10 +467,12 @@ function keyPressed(key){
  */
 
 function showNotification(uiData) {
-  log.warn("show not ran");
+  log.warn("sending web contents");
+  mb.window.webContents.send('update-counter', 1);
   mb.window.webContents.send('pingNoResponse', 'testttt');
   mb.window.webContents.send('onPingInwards', 'testXXXXXX');
   mb.window.webContents.send('updateUi', uiData);
+  log.warn("done sending");
   //mb.showWindow();
   mb.window.showInactive();
   // When a notification occurs, close the window briefly after
