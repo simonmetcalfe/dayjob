@@ -12,7 +12,7 @@ export class MyApi {
     expose() {
         let api = {
             onUpdateUi: (data) => this.onUpdateUi(data),
-            ping: (data, pingCallback) => this.ping(data, pingCallback)
+            buttonPress: (data) => this.buttonPress(data)
         };
         contextBridge.exposeInMainWorld("myApi", api);
     }
@@ -24,9 +24,8 @@ export class MyApi {
         });
     }
 
-    ping(data, pingCallback) {
-        console.log("MyApi: Invoking 'ping' event on ipcRenderer with data: " + data);
-        ipcRenderer.invoke('ping', data)
-            .then((result) => pingCallback(result));
+    buttonPress(data) {
+        console.log("MyApi: Invoking 'buttonPress' event on ipcRenderer with data: " + data);
+        ipcRenderer.send('buttonPress', data);
     }
 }

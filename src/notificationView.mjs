@@ -9,13 +9,36 @@
  * -------------------------------------------------------------------------------------------------
  */
 
+/**
+ * -----------------------------------------------------------------
+ * Example uiData JSON Object
+ * -----------------------------------------------------------------
+ */
+
+/*
+uiData = {
+    title: 'The title',
+    description: 'The dialog box message',
+    subDescription: 'The small text',
+    actionAdd:'Adding this track', 
+    actionRemove:'Removing this track', 
+    actionWarning:'This is a warning',
+    actionError:'This is an error',
+    buttonCta: {
+        title: 'The button title',
+        action: 'the_button_action'
+    },
+    errorType: 'error'
+}
+*/ 
+
 export class MyView {
-    
     constructor() {
         // Bind the local functins to the API calls which they are triggered by 
         window.myApi.onUpdateUi((value) => this.onUpdateUi(value));
     }
-    
+
+    uiData;
     // Create an object for each interactive HTML element
     title;
     description;
@@ -30,7 +53,7 @@ export class MyView {
     pingResultSpan; //TODO: delete me
     
     start() {
-        console.log("MyView: Start");
+        console.log("notificationView.mjs: Start");
         this.bindElements();
         this.resetUi(); // Reset the UI on startup (saves hiding everything in CSS)
     }
@@ -46,10 +69,9 @@ export class MyView {
         this.actionError = document.getElementById('actionError');
         this.subDescription = document.getElementById('subDescription');        
         this.buttonCta = document.getElementById('buttonCta');
-        this.pingResultSpan = document.getElementById('pingResultSpan'); //TODO: Delete me
         
         // Add event listeners for buttons
-        this.buttonCta.addEventListener("click", () => this.ping());
+        this.buttonCta.addEventListener("click", (event) => this.dynamicButtonPress());
 
         // Log if binding was not successful
         console.assert(this.title);
@@ -61,8 +83,7 @@ export class MyView {
         console.assert(this.actionWarning);
         console.assert(this.actionError);
         console.assert(this.subDescription);
-        console.assert(this.buttonCta);
-        console.assert(this.pingResultSpan); //TODO: Delete me        
+        console.assert(this.buttonCta);     
     }
 
     resetUi(){
@@ -75,65 +96,62 @@ export class MyView {
         actionWarning.style.display = 'none';
         actionError.style.display = 'none';
         subDescription.style.display = 'none';
-        //buttonCta.style.display = 'none';
+        buttonCta.style.display = 'none';
     }
 
     onUpdateUi(uiData){
         this.resetUi();
+        this.uiData = uiData; //Store so it is accessible by dynamicButtonPress
         //TODO:  log.warn('Notification.js:  updateUI has received the following uiData JSON: ' + JSON.stringify(uiData));
         if (uiData.hasOwnProperty('title') && !uiData.hasOwnProperty('errorType')){
-            title.innerHTML = uiData.title;
-            title.style.display = 'block';
+            this.title.innerHTML = uiData.title;
+            this.title.style.display = 'block';
             // Title is never hidden, so calling .style.display is not required
         }
         if (uiData.hasOwnProperty('title') && uiData.hasOwnProperty('errorType') && uiData.errorType == 'warning' ){
-            warning.innerHTML = uiData.title;
-            warning.style.display = 'block';
+            this.warning.innerHTML = uiData.title;
+            this.warning.style.display = 'block';
         }
         if (uiData.hasOwnProperty('title') && uiData.hasOwnProperty('errorType') && uiData.errorType == 'error' ){
-            error.innerHTML = uiData.title;
-            error.style.display = 'block';
+            this.error.innerHTML = uiData.title;
+            this.error.style.display = 'block';
         }
         if (uiData.hasOwnProperty('description')){
-            description.innerHTML = uiData.description;
-            description.style.display = 'block';
+            this.description.innerHTML = uiData.description;
+            this.description.style.display = 'block';
         }    
         if (uiData.hasOwnProperty('actionAdd')){
-            actionAdd.innerHTML = uiData.actionAdd;
-            actionAdd.style.display = 'block';
+            this.actionAdd.innerHTML = uiData.actionAdd;
+            this.actionAdd.style.display = 'block';
         }
         if (uiData.hasOwnProperty('actionRemove')){
-            actionRemove.innerHTML = uiData.actionRemove;
-            actionRemove.style.display = 'block';
+            this.actionRemove.innerHTML = uiData.actionRemove;
+            this.actionRemove.style.display = 'block';
         }
         if (uiData.hasOwnProperty('actionWarning')){
-            actionWarning.innerHTML = uiData.actionWarning;
-            actionWarning.style.display = 'block';
+            this.actionWarning.innerHTML = uiData.actionWarning;
+            this.actionWarning.style.display = 'block';
         }
         if (uiData.hasOwnProperty('actionError')){
-            actionError.innerHTML = uiData.actionError;
-            actionError.style.display = 'block';
+            this.actionError.innerHTML = uiData.actionError;
+            this.actionError.style.display = 'block';
         }
         if (uiData.hasOwnProperty('subDescription')){
-            subDescription.innerHTML = uiData.subDescription;
-            subDescription.style.display = 'block';
+            this.subDescription.innerHTML = uiData.subDescription;
+            this.subDescription.style.display = 'block';
         }   
         if (uiData.hasOwnProperty('buttonCta') && !uiData.buttonCta.action == ''){
-            buttonCta.innerHTML = uiData.buttonCta.title;
-            buttonCta.style.display = 'inline-block';
+            this.buttonCta.innerHTML = uiData.buttonCta.title;
+            this.buttonCta.style.display = 'inline-block';
         }
     }
-
     
-    ping() {
-        console.log("MyView: Ping button clicked.");
-        window.myApi.ping("Ping", (result) => {this.pingResultSpan.textContent = result});
-    }
-
-    onPing(result) {
-        console.log("MyView: Received result from API: " + result);
-        this.pingResultSpan.textContent = result;
-    }
-    
+    dynamicButtonPress(data) {
+        if (this.uiData.buttonCta != undefined && this.uiData.buttonCta != null){
+            let dynamicAction = this.uiData.buttonCta.action; // Look up the button's current action in uiData
+            console.log("MyView: Dynamic button pressed with action: " + dynamicAction);
+            window.myApi.buttonPress(dynamicAction); 
+        }
+    }    
 }
 

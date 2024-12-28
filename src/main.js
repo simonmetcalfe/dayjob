@@ -193,13 +193,27 @@ let prefsWindow;  // Prevent window closure on garbage collection
 function openPrefsWindow() {
   log.warn('main.js:  Opening preferences window... ');
   // To get a frameless window, add 'frame:false'
-  prefsWindow = new BrowserWindow({ maxWidth: 1024, maxHeight: 768, show: false, webPreferences: {nodeIntegration: true}});
+  prefsWindow = new BrowserWindow({ maxWidth: 1024, 
+                                    maxHeight: 768, 
+                                    show: false, 
+                                    webPreferences: {
+                                      nodeIntegration: true,
+                                      contextIsolation: true,
+                                      nodeIntegrationInWorker: true,
+                                      nodeIntegrationInSubFrames: true,
+                                      sandbox: false, 
+                                      preload: path.resolve("./src/ui-preferencesPreload.mjs")}});
 
-  prefsWindow.loadURL(url.format({
-    pathname: path.join(app.getAppPath(), '/src/ui-preferences.html'),
-    protocol: 'file:',
-    slashes: true
-  }))
+  prefsWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+        responseHeaders: {
+            ...details.responseHeaders,
+            'Content-Security-Policy': [CSP],
+        },
+    });
+  });
+
+  prefsWindow.loadFile("./src/ui-preferences.html");
 
   prefsWindow.once('ready-to-show', () => {
     prefsWindow.show()
@@ -640,26 +654,34 @@ ipcMain.handle('getVersionInfo', async () => {
   }
 });
 
-ipcMain.handle('pingNoResponse', async (event, value) => {
-  // TODO - The implementation in ui-preferences.js means a disk write occurs after every single keystroke - a delay should be imposed to save n seconds after the last change
-  log.warn('main.js:  Received a ping NO RESPONSE with value: ' + value);
+ipcMain.on('buttonPress', function (event, data) {
+  log.warn('main.js:  Button press received with ID "' + data + '"');
+  switch (data){
+      case "btnOpenDashboard":      // Preferences dialog
+        shell.openExternal('https://developer.spotify.com/dashboard/login');
+        break;
+      case "btnConnectToSpotify":   // Preferences dialog
+        connectApi();
+        break; 
+      case "check_api_connection":  // Event raised by dynamic 'buttonCta' in notification window
+        openPrefsWindow();
+        break;
+      case "authorise_dayjob":      // Event raised by dynamic 'buttonCta' in notification window
+        log.warn('main.js:  Event authorise_dayjob received by main process.');
+        authoriseDayjob();
+        break;
+      case "connect_api":           // Event raised by dynamic 'buttonCta' in notification window
+        log.warn('main.js:  Event connect_api received by main process.');
+        connectApi();
+        break;
+      case "playlist_settings":     // Event raised by dynamic 'buttonCta' in notification window
+        log.warn('main.js:  Event playlist_settings received by main process.');
+        openPrefsWindow();
+        break;
+  }
 });
 
-
-
-ipcMain.on('btnOpenDashboard', function (event) {
-  log.warn('main.js:  Event btnOpenDashboard received by main process.');
-  shell.openExternal('https://developer.spotify.com/dashboard/login');
-});
-
-ipcMain.on('check_api_connection', function (event) {
-  log.warn('main.js:  Event check_api_connection received by main process.');
-  openPrefsWindow();
-});
-
-ipcMain.on('authorise_dayjob', function (event) {
-  log.warn('main.js:  Event authorise_dayjob received by main process.');
-  
+function authoriseDayjob(){
   if (spotifyServer.getWebServer() == undefined){
     spotifyServer.startWebServer()  // Start the web server if not already started
   }
@@ -684,17 +706,7 @@ ipcMain.on('authorise_dayjob', function (event) {
         }
       })
   });  
-});
-
-ipcMain.on('connect_api', function (event) {
-  log.warn('main.js:  Event connect_api received by main process.');
-  connectApi();
-});
-
-ipcMain.on('playlist_settings', function (event) {
-  log.warn('main.js:  Event playlist_settings received by main process.');
-  openPrefsWindow();
-});
+}
 
 ipcMain.handle('getPref', async (event, pref) => {
   return prefsLocal.getPref(pref);
