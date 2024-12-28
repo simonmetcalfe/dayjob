@@ -1,29 +1,30 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
     <head>
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
-        <!-- <link rel="stylesheet" href="dashboard.css"> -->
         <title>Dayjob Preferences</title>
         <!-- Bootstrap -->
-        <link rel="stylesheet" href="./bootstrap.css">
+        <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.css">
+        <link rel="stylesheet" href="ui-preferences.css">
     </head>
     <body>
+      <script src="../node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
       <div class="container m-3">
         <!---------------------------------------------------------------->
         <!-- Tab definitions -->
         <!---------------------------------------------------------------->
         <ul class="nav nav-tabs" id="myTab" role="tablist">
-          <li class="nav-item">
-            <a class="nav-link active" id="home-tab" data-toggle="tab" href="#spotify-connection" role="tab" aria-controls="spotify-connection" aria-selected="true">Spotify Connection</a>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="home-tab" data-bs-toggle="tab" data-bs-target="#spotify-connection" type="button" role="tab" aria-controls="spotify-connection" aria-selected="true">Spotify Connection</button>
           </li>
-          <li class="nav-item">
-            <a class="nav-link" id="playlists-tab" data-toggle="tab" href="#playlists" role="tab" aria-controls="playlists" aria-selected="false">Playlists</a>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="playlists-tab" data-bs-toggle="tab" data-bs-target="#playlists" type="button" role="tab" aria-controls="playlists" aria-selected="false">Playlists</button>
           </li>
-          <li class="nav-item">
-            <a class="nav-link" id="general-tab" data-toggle="tab" href="#advanced" role="tab" aria-controls="advanced" aria-selected="false">Advanced</a>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="general-tab" data-bs-toggle="tab" data-bs-target="#advanced" type="button" role="tab" aria-controls="advanced" aria-selected="false">Advanced</button>
           </li>
         </ul>
         <div class="tab-content" id="myTabContent">
@@ -34,7 +35,7 @@
             <div class="container m-3">
               <div class="row mb-3">
                 <div class="col">
-                  <label for="basic-url"><span class="badge badge-success mr-2">1</span>Create a Client ID for dayjob in your Spotify developer dashboard using the following settings.</label>
+                  <label for="basic-url"><span class="badge badge-success mr-2">1</span>&nbsp;Create a Client ID for dayjob in your Spotify developer dashboard using the following settings.</label>
                   <table class="table table-bordered m-3">
                     <tr>
                         <td>Application name</td>
@@ -64,7 +65,7 @@
             
               <div class="row mb-3">
                 <div class="col">
-                  <label for="basic-url"><span class="badge badge-success mr-2">2</span>Copy and paste the Client ID and Client secret provided by the dashboard into dayjob.</label>
+                  <label for="basic-url"><span class="badge badge-success mr-2">2</span>&nbsp;Copy and paste the Client ID and Client secret provided by the dashboard into dayjob.</label>
                   <div class="input-group m-3">
                       <div class="input-group-prepend">
                         <span class="input-group-text">Client ID</span>
@@ -81,7 +82,7 @@
               </div>
               <div class="row mb-3">
                 <div class="col">
-                  <label for="basic-url"><span class="badge badge-success mr-2">3</span>Hit 'Connect to Spotify' and follow the prompts to authorise dayjob.</label>
+                  <label for="basic-url"><span class="badge badge-success mr-2">3</span>&nbsp;Hit 'Connect to Spotify' and follow the prompts to authorise dayjob.</label>
                   <br/>
                   <button type="button" id="btnConnectToSpotify" class="btn btn-primary">
                       Connect to Spotify
@@ -397,11 +398,4 @@
     </body>
 
   <script src="./ui-preferencesRenderer.mjs" type="module"></script>
-
-    <!---->
-    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-    <!-- <script src="./../node_modules/jquery/dist/jquery.min.js"></script> -->
-    <!-- Include all compiled plugins (below), or include individual files as needed -->
-    <!--<script src="./../node_modules/bootstrap/dist/js/bootstrap.min.js"></script> -->
-
 </html>

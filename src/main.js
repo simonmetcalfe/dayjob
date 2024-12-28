@@ -155,7 +155,7 @@ mb.setOption('index', url.format({ // Set the initial page
 const mb = menubar({preloadWindow: true,
                     alwaysOnTop:true,
                     browserWindow:{
-                      height:200,
+                      height:230,
                       webPreferences: {
                         nodeIntegration: true, 
                         contextIsolation: true, 
