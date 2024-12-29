@@ -4,7 +4,7 @@ require('v8-compile-cache');
 
 /**
  * -------------------------------------------------------------------------------------------------
- *  Logging & app start
+ * Logging & app start
  * -------------------------------------------------------------------------------------------------
  */
 
@@ -46,7 +46,7 @@ const CSP = "default-src 'self'; script-src 'self'; style-src 'self'; object-src
 
 /**
  * -------------------------------------------------------------------------------------------------
- *  Unhandled Promise rejection handling
+ * Unhandled Promise rejection handling
  * -------------------------------------------------------------------------------------------------
  */
 
@@ -59,7 +59,7 @@ process.on('unhandledRejection', err => {
 
 /**
  * -------------------------------------------------------------------------------------------------
- *  Load error message db
+ * Load notification/error message db
  * -------------------------------------------------------------------------------------------------
  */
 
@@ -68,23 +68,29 @@ log.warn('main.js:  Loaded notification/error handling database')
 
 /**
  * -------------------------------------------------------------------------------------------------
- *  Load application defaults
+ * Load application defaults
+ * 
+ * Any variables that should have a default should be specified here
  * -------------------------------------------------------------------------------------------------
  */
 
-// Any variables that should have a default should be specified here
 if (prefsLocal.getPref('dayjob_always_move_tracks') == undefined){prefsLocal.setPref('dayjob_always_move_tracks',false)}
 if (prefsLocal.getPref('dayjob_always_skip_tracks') == undefined){prefsLocal.setPref('dayjob_always_skip_tracks',false)}
 
 /**
  * -------------------------------------------------------------------------------------------------
- *  Load saved playlist array
+ * Load saved playlist array
+ * 
+ * v1 playlist storage is an 10 object multimensional array (0 to 9), representing the 
+ * keyboard keys 1234567890 in order
+ * 
+ * Array item 0 is keyboard button 1
  * -------------------------------------------------------------------------------------------------
  */
 
 var playlists = {};
 
-// v1 playlist storage is an 10 object multimensional array (0 to 9), representing the keyboard keys 1234567890 in order
+// 
 if (prefsLocal.getPref('dayjob_playlists_v1') == undefined){
   // No playlists stored, create a blank array
   playlists = 
@@ -130,7 +136,7 @@ const contextMenu = Menu.buildFromTemplate([
 
 /**
  * -------------------------------------------------------------------------------------------------
- *  Menu bar module
+ * Menu bar module and window handler
  * -------------------------------------------------------------------------------------------------
  */
 
@@ -148,7 +154,7 @@ const mb = menubar({preloadWindow: true,
                       },
                     },
                     icon: app.getAppPath() + '/assets/IconTemplate.png',
-                    index: 'about:blank' // Web page is loaded after menubar initialises and 
+                    index: 'about:blank' // The preload, CSP and web page is loaded after menubar initialises
 });
 
 
@@ -174,6 +180,7 @@ function openPrefsWindow() {
                                       sandbox: false, 
                                       preload: path.resolve("./src/ui-preferencesPreload.mjs")}});
 
+  // Content security policy
   prefsWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
     callback({
         responseHeaders: {
@@ -219,6 +226,7 @@ function openAbout() {
                                     }
   });
 
+  // Content security policy
   aboutWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
     callback({
         responseHeaders: {
@@ -248,13 +256,69 @@ function openAbout() {
 function connectApi(){
   log.warn('main.js:  Attempting to connect to the Spotify API...');
   spotifyServer.checkApiConnection()
-    .then(function (result) {
+    .then(result => {
       showNotification({title: 'Connected to Spotify as ' + spotifyServer.getspotifyDisplayName(), description: 'Start making awesome playlists!'})
 
-      // TODO - If the user has no saved playlists, reject with an error asking the user to create some playlists first
-    }).catch(function (err) {
+      //TODO - If the user has no saved playlists, reject with an error asking the user to create some playlists first
+    }).catch(err => {
       logAndDisplayError(err)
     })
+}
+
+function authoriseDayjob(){
+  
+  if (spotifyServer.getWebServer() == undefined){
+    // Start the web server if not already started
+    spotifyServer.startWebServer();  
+    
+    // Monitor the web server for errors
+    spotifyServer.getWebServer().on('error', function (err) { //TODO:  Should this be replaced with  catch?
+      log.warn('main.js:  An error occurred with the spotify-server web server: ' + JSON.stringify(err))
+      return Promise.reject(err)
+        .catch(err => {
+          if (err.code == 'EADDRINUSE'){
+            const handledErr = new Error("webserver_port_in_use")
+            handledErr.error = err;
+            log.warn('main.js:  [ERROR] Port 8888 is in use but required by dayjob to authorise with Spotify.  Ensure port is free and start dayjob again.  Error:  \n\n' + String(err.message));
+            logAndDisplayError(handledErr)
+            spotifyServer.stopWebServer();
+          }
+          else {
+            const handledErr = new Error("webserver_general_error")
+            handledErr.error = err;
+            logAndDisplayError(handledErr);
+            spotifyServer.stopWebServer();
+          }
+        })
+    });
+  }
+  else {
+    log.warn('main.js:  The web server is already running.');
+  }
+
+  /*
+  // Ensure the web server has started
+  (async () => {
+    try {
+      console.log("ASYNC IS RUNNING");
+      // Wait for the server to start
+      const message = await spotifyServer.checkIfWebServerReady();
+      console.log(message);
+      
+      // Launch the auth URL
+      console.log('Now launching the next event...');
+      spotifyServer.getAuthUrl()
+        .then(function (result) {
+          shell.openExternal(result);
+        }).catch(function (err) {
+          logAndDisplayError(err)
+        })  
+
+    } catch (error) {
+      console.error(error);
+    }
+  })();
+  */
 }
 
 
@@ -266,29 +330,30 @@ function connectApi(){
  * Spotify can authorise dayjob
  */
 
-spotifyServer.getAuthEvents().on('auth_code_grant_error', function (err){
+spotifyServer.getAuthEvents().on('auth_code_grant_error', function (err){ //TODO: Should this be replaced with catch
   spotifyServer.stopWebServer();
-  console.log('Main.js:  An auth event \'auth_code_grant_error\' has been raised by spotify-server.js, reporting the error.... ' +  err)
-  handledErr = new Error('error_authorising')
+  console.log('Main.js:  Auth event \'auth_code_grant_error\' has been raised by spotify-server.js, reporting the error.... ' +  err);
+  const handledErr = new Error('error_authorising')
   handledErr.error = err;
   logAndDisplayError(handledErr)
 })
-spotifyServer.getAuthEvents().on('auth_code_grant_success', function (result){
+
+spotifyServer.getAuthEvents().on('auth_code_grant_success', function (result){ //TODO: function result
   spotifyServer.stopWebServer();
-  console.log('Main.js:  Auth event \'auth_code_grant_success\' has been raised by spotify-server.js, now connecting API... ' +  result)
+  console.log('Main.js:  Auth event \'auth_code_grant_success\' has been raised by spotify-server.js, now connecting API... ' +  result);
   connectApi();
 })
 
-spotifyServer.getAuthEvents().on('ready', function (result){
-  log.warn('Main.js:  Auth event \'ready\' has been raised by spotify-server.js, launching auth URL...')
+spotifyServer.getAuthEvents().on('ready', function (result){   //TODO: function result
+  // This is for information only, and the fuction checkIfWebServerReady() is now used to check if the web server is ready
+  log.warn('Main.js:  Auth event \'ready\' has been raised by spotify-server.js.');
+})  
 
-  spotifyServer.getAuthUrl()
-    .then(function (result) {
-      shell.openExternal(result);
-    }).catch(function (err) {
-      logAndDisplayError(err)
-    })
-})
+spotifyServer.getAuthEvents().on('server_stopped', function (result){  //TODO: function result
+  // Information only
+  log.warn('Main.js:  Auth event \'server_stopped\' has been raised by spotify-server.js.');
+})  
+
 
 /**
  * -------------------------------------------------------------------------------------------------
@@ -318,7 +383,8 @@ mb.on('ready', function ready() {
   // Load UI (Unlike ordinary BrowserWindows, MenuBar must be initialised before URL can be set via window object)
   mb.window.loadFile("./src/notification.html");
 
-  mb.showWindow();  // Trigger menubar notification window to align it to the toolbar
+  // Trigger menubar notification window to align it to the toolbar
+  mb.showWindow();  
 
   mb.tray.on('click', function () {
     log.warn('main.js:  mb.tray.on click event occurred...');
@@ -331,21 +397,33 @@ mb.on('ready', function ready() {
   });
 })
 
-
 // Actions after the window has first been rendered
 mb.on('after-create-window', function ready() {
   log.warn('main.js:  mb.on after-create-window event occurred...');
 
+  // Menubar requires the window to be fully loaded before we can send data to it
+  mb.window.webContents.on('did-finish-load', function () {
+    log.warn('main.js:  mb.window.webContents.on did-finish-load event occurred...');
+    // Try connecting to Spotify on start-up and show welcome message or error status to user
+    registerKeyboardShortcuts();
+    connectApi();
+  })
+});
+
+
 /**
-   * Keyboard shortcuts
-   * -----------------------------------------------------------------
-   * There appears to be a bug with globalShortcut.registerAll so 
-   * every key / modifier combination must be assigned separately
-   * 
-   * All shortcuts call keyPressed() and pass a JSON object with 
-   * keys: "modifiers" and "key" 
+ * -------------------------------------------------------------------------------------------------
+ * SETUP KEYBOARD SHORTCUTS
+ * 
+ * There appears to be a bug with globalShortcut.registerAll so every key / modifier 
+ * combination must be assigned separately
+ * 
+ * All shortcuts call keyPressed() and pass a JSON object with keys: "modifiers" and "key" 
+ * 
+ * -------------------------------------------------------------------------------------------------
  */
 
+function registerKeyboardShortcuts(){
   // Register CRTL + ALT shortcuts
   const ctrlAlt1 = globalShortcut.register('Control+Alt+1', () =>          {keyPressed({modifiers: ["Control","Alt"],key: "1"})});
   const ctrlAlt2 = globalShortcut.register('Control+Alt+2', () =>          {keyPressed({modifiers: ["Control","Alt"],key: "2"})});
@@ -359,6 +437,7 @@ mb.on('after-create-window', function ready() {
   const ctrlAlt0 = globalShortcut.register('Control+Alt+0', () =>          {keyPressed({modifiers: ["Control","Alt"],key: "0"})});
   const ctrlAltMinus = globalShortcut.register('Control+Alt+-', () =>      {keyPressed({modifiers: ["Control","Alt"],key: "-"})});
   const ctrlAltPlus = globalShortcut.register('Control+Alt+=', () =>       {keyPressed({modifiers: ["Control","Alt"],key: "="})});
+  
   // Register CRTL + ALT + SHIFT shortcuts
   const ctrlAltShf1 = globalShortcut.register('Control+Alt+Shift+1', () =>          {keyPressed({modifiers: ["Control","Alt","Shift"],key: "1"})});
   const ctrlAltShf2 = globalShortcut.register('Control+Alt+Shift+2', () =>          {keyPressed({modifiers: ["Control","Alt","Shift"],key: "2"})});
@@ -372,8 +451,9 @@ mb.on('after-create-window', function ready() {
   const ctrlAltShf0 = globalShortcut.register('Control+Alt+Shift+0', () =>          {keyPressed({modifiers: ["Control","Alt","Shift"],key: "0"})});
   const ctrlAltShfMinus = globalShortcut.register('Control+Alt+Shift+-', () =>      {keyPressed({modifiers: ["Control","Alt","Shift"],key: "-"})});
   const ctrlAltShfPlus = globalShortcut.register('Control+Alt+Shift+=', () =>       {keyPressed({modifiers: ["Control","Alt","Shift"],key: "="})});
+  
   // Warn if registration of CRTL + ALT shortcuts fail
-  // TODO - Should alert the user if a keuyboard shortcut fails
+  //TODO: Should alert the user if a keuyboard shortcut fails
   if (!ctrlAlt1) {log.warn('main.js:  registration failed of: ctrlAlt1 (Control+Alt+1)')};
   if (!ctrlAlt2) {log.warn('main.js:  registration failed of: ctrlAlt2 (Control+Alt+2)')};
   if (!ctrlAlt3) {log.warn('main.js:  registration failed of: ctrlAlt3 (Control+Alt+3)')};
@@ -387,7 +467,7 @@ mb.on('after-create-window', function ready() {
   if (!ctrlAltMinus) {log.warn('main.js:  registration failed of: ctrlAltMinus (Control+Alt+-)')};
   if (!ctrlAltPlus) {log.warn('main.js:  registration failed of: ctrlAltPlus (Control+Alt+=)')};
   // Warn if registration of CRTL + ALT + SHIFT shortcuts fail
-  // TODO - Should alert  the user if a keuyboard shortcut fails
+  //TODO: Should alert  the user if a keuyboard shortcut fails
   if (!ctrlAltShf1) {log.warn('main.js:  registration failed of: ctrlAlt1 (Control+Alt+Shift+1)')};
   if (!ctrlAltShf2) {log.warn('main.js:  registration failed of: ctrlAlt2 (Control+Alt+Shift+2)')};
   if (!ctrlAltShf3) {log.warn('main.js:  registration failed of: ctrlAlt3 (Control+Alt+Shift+3)')};
@@ -403,14 +483,7 @@ mb.on('after-create-window', function ready() {
 
   // Check whether a shortcut is registered.
   //log.warn(globalShortcut.isRegistered('CommandOrControl+X'))
-
-  // Menubar 5.2.3 requires the window to be fully loaded before we can send data to it
-  mb.window.webContents.on('did-finish-load', function () {
-    log.warn('main.js:  mb.window.webContents.on did-finish-load event occurred...');
-    // Try connecting to Spotify on start-up and show welcome message or error status to user
-    connectApi();
-  })
-});
+}
 
 
 /**
@@ -422,10 +495,11 @@ mb.on('after-create-window', function ready() {
 function keyPressed(key){
   log.warn('main.js:  Keyboard shortcut pressed: ' + JSON.stringify(key.modifiers) + ' AND ' + key.key);
 
-  /**
-   * Remove track
-   * -----------------------------------------------------------------
-   */
+/**
+ * -------------------------------------------------------------------------------------------------
+ * Remove track
+ * -------------------------------------------------------------------------------------------------
+ */
   
   if (key.modifiers.includes('Control') && key.modifiers.includes('Alt') && key.key == '-'){
     var skip = 0; // Determine if track should be skipped as well as moved
@@ -433,20 +507,23 @@ function keyPressed(key){
     if (prefsLocal.getPref('dayjob_always_skip_tracks') == 1 && !key.modifiers.includes('Shift')){skip = 1}
     log.warn('main.js:  Remove track keyboard shortcut pressed...');
     spotifyServer.removePlayingTrackFromPlaylist()
-      .then(function (result) {
+      .then(result => {
         // We're done, skip track, log and show notification
         showNotification({title: result.artistName + ' - ' + result.name, actionRemove: 'Removed from playlist \'' + result.context.sourcePlaylistName +'\''})
         if (skip == 1) {return spotifyServer.skipToNext()}
-        else {return Promise.resolve('ready')} 
-      }).catch(function (err) {
+        else {return 'ready'} 
+      }).catch(err => {
         logAndDisplayError(err)
       })
   }
 
-  /**
-     * Add or move track to specifed playlist (+) 
-     * -----------------------------------------------------------------
-   */
+
+/**
+ * -------------------------------------------------------------------------------------------------
+ * Add or move track to specifed playlist (+) 
+ * -------------------------------------------------------------------------------------------------
+ */
+
 
   if (key.modifiers.includes('Control') && key.modifiers.includes('Alt') && key.key == '='){
     log.warn('main.js:  Add/move track to specified playlist (+) shortcut pressed... THIS FEATURE ISN\'T SUPPORTED YET SORRY!');
@@ -454,29 +531,31 @@ function keyPressed(key){
     // Feature not supported yet, coming!
   }
 
-  /**
-     * Add or more track to playlist in slot #
-     * -----------------------------------------------------------------
-   */
+
+/**
+ * -------------------------------------------------------------------------------------------------
+ * Add or more track to playlist in slot #
+ * -------------------------------------------------------------------------------------------------
+ */
   
   if (key.modifiers.includes('Control') && key.modifiers.includes('Alt') && ['1','2','3','4','5','6','7','8','9','0'].includes(key.key)){
     var move = 0;
-    return Promise.resolve().then(function () {
+    return Promise.resolve().then(result => {
       // Check if a playlist is assigned to the slot
       if (playlists[key.key].playlistUri == ''){        
-        handledErr = new Error("no_playlist_assigned")
+        const handledErr = new Error("no_playlist_assigned")
         handledErr.error = 'shortcut ' + key.key;
         return Promise.reject(handledErr);
       }
-      return Promise.resolve('ready')
-    }).then(function (result){
+      return 'ready';
+    }).then(result => {
       // Determine if track should be added or moved
       if (prefsLocal.getPref('dayjob_always_move_tracks') == 0 && key.modifiers.includes('Shift')) {move = 1} 
       if (prefsLocal.getPref('dayjob_always_move_tracks') == 1 && !key.modifiers.includes('Shift')){move = 1}
       log.warn('main.js:  Add/move track to playlist in slot shortcut pressed:  Slot: ' + key.key + ' Move: ' + move);
       // Add the current track 
       return spotifyServer.copyOrMovePlayingTrackToPlaylist(spotifyServer.getPlaylistIdFromUriOrUrl(playlists[key.key].playlistUri),playlists[key.key].playlistName, move)
-    }).then(function (result) {
+    }).then(result => {
       // We're done, skip track, log and show notification
       if (move == 0){
         // Track copied only
@@ -503,9 +582,11 @@ function keyPressed(key){
 /**
  * -------------------------------------------------------------------------------------------------
  * Notifications display
- * -------------------------------------------------------------------------------------------------
+ * 
  * An example version of how the uiData object should be formatted
  * is defined in notifications.js
+ * 
+ * -------------------------------------------------------------------------------------------------
  */
 
 function showNotification(uiData) {
@@ -580,7 +661,7 @@ function logAndDisplayError(err) {
 
 //TODO - For consistency the old ipcMain.on functions could updated to ipcMain.handle 
 
-ipcMain.handle('getVersionInfo', async () => {
+ipcMain.handle('getVersionInfo', async () => { //TODO: Async and not consistent with other IPC handlers
   try {
       const packageJsonPath = path.join(__dirname, '../package.json');
       const packageJson = JSON.parse(await fs.promises.readFile(packageJsonPath, 'utf8'));
@@ -618,33 +699,6 @@ ipcMain.on('buttonPress', function (event, data) {
         break;
   }
 });
-
-function authoriseDayjob(){
-  if (spotifyServer.getWebServer() == undefined){
-    spotifyServer.startWebServer()  // Start the web server if not already started
-  }
-
-  // Monitor the web server for errors
-  spotifyServer.getWebServer().on('error', function (err) {
-    log.warn('main.js:  An error occurred with the spotify-server web server: ' + JSON.stringify(err))
-    return Promise.reject(err)
-      .catch(function (err){
-        if (err.code == 'EADDRINUSE'){
-          handledErr = new Error("webserver_port_in_use")
-          handledErr.error = err;
-          log.warn('main.js:  [ERROR] Port 8888 is in use but required by dayjob to authorise with Spotify.  Ensure port is free and start dayjob again.  Error:  \n\n' + String(err.message));
-          logAndDisplayError(handledErr)
-          spotifyServer.stopWebServer()
-        }
-        else {
-          handledErr = new Error("webserver_general_error")
-          handledErr.error = err;
-          logAndDisplayError(handledErr)
-          spotifyServer.stopWebServer()
-        }
-      })
-  });  
-}
 
 ipcMain.handle('getPref', async (event, pref) => {
   return prefsLocal.getPref(pref);

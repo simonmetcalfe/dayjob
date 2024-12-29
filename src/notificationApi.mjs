@@ -2,7 +2,7 @@
  * -------------------------------------------------------------------------------------------------
  * API
  * 
- * - Exposes the necessary Node, Chrome, Electron and IPC functions for the UI component
+ * Exposes the necessary Node, Chrome, Electron and IPC functions for the UI component
  * 
  * -------------------------------------------------------------------------------------------------
  */
