@@ -10,25 +10,27 @@
  */
 
 export class MyView {
-    
     constructor() {
         // Bind the local functins to the API calls which they are triggered by 
-
+        //NONE
     }
+
+    playlists = {}; // Store the playlists
     
     // Create an object for each interactive HTML element
     fldClientId;
     fldClientSecret;
     btnOpenDashboard;
     btnConnectToSpotify;
-    //fldPlaylist = Array(10).fill(null);
-    //fldPlaylistName = Array(10).fill(null);
+    fldPlaylistLink = [];
+    fldPlaylistName = [];
     always_skip_tracks;
     always_move_tracks;
     
     start() {
         console.log("ui-preferencesView.mjs: Start");
         this.bindElements();
+        this.getAllPrefs();
     }
 
     bindElements() {
@@ -37,8 +39,6 @@ export class MyView {
         this.fldClientSecret = document.getElementById('fldClientSecret');
         this.btnOpenDashboard = document.getElementById('btnOpenDashboard');
         this.btnConnectToSpotify = document.getElementById('btnConnectToSpotify');
-        //this.fldPlaylist
-        //this.fldPlaylistName
         this.always_skip_tracks = document.getElementById('always_skip_tracks');
         this.always_move_tracks = document.getElementById('always_move_tracks'); 
 
@@ -54,16 +54,28 @@ export class MyView {
         this.btnOpenDashboard.addEventListener('click', (event) => this.buttonPress(event.target.id));
         this.btnConnectToSpotify.addEventListener('click', (event) => this.buttonPress(event.target.id));
 
-        //this.fldClientId.addEventListener('input', (event) => {console.log(event.target.value);});
-        // Add event listeners for editing text fields
+        // Add event listeners for text fields
         this.fldClientId.addEventListener('input', (event) => {window.myApi.setPref('spotify-server_clientId', event.target.value);});
         this.fldClientSecret.addEventListener('input', (event) => {window.myApi.setPref('spotify-server_clientSecret', event.target.value);});
 
-        this.always_skip_tracks.addEventListener('input', (event) => {window.myApi.setPref('dayjob_always_skip_tracks', event.checked);});
-        this.always_move_tracks.addEventListener('input', (event) => {window.myApi.setPref('dayjob_always_move_tracks', event.checked);});
+        // Add event listeners for checkboxes
+        this.always_skip_tracks.addEventListener('input', (event) => {window.myApi.setPref('dayjob_always_skip_tracks', event.target.checked);});
+        this.always_move_tracks.addEventListener('input', (event) => {window.myApi.setPref('dayjob_always_move_tracks', event.target.checked);});
 
-
-    
+        // Bind and add event listeners for all playlist fields in a loop
+        for (let i = 0; i < 10; i++) {
+            // playlistId
+            let element = document.getElementById(`fldPlaylistId${i+1}`);
+            console.assert(element, `Element with id 'fldPlaylistId${i+1}' not found`);
+            element.addEventListener('input', (event) => this.setPlaylistLink(i, event.target.value));
+            this.fldPlaylistLink.push(element);
+            
+            // playlistName
+            element = document.getElementById(`fldPlaylistName${i+1}`);
+            console.assert(element, `Element with id 'fldPlaylistName${i+1}' not found`);
+            element.addEventListener('input', (event) => this.setPlaylistName(i, event.target.value));
+            this.fldPlaylistName.push(element); 
+        }
     }
 
     onUpdateUi(uiData){
@@ -74,6 +86,39 @@ export class MyView {
         console.log("MyView: Button pressed: " + data);
         window.myApi.buttonPress(data); 
     }
+
+    getAllPrefs(){
+        window.myApi.getPref('spotify-server_clientId', (result) => {if(result != undefined){this.fldClientId.value = result}});
+        window.myApi.getPref('spotify-server_clientSecret', (result) => {if(result != undefined){this.fldClientSecret.value = result}});
+        window.myApi.getPref('dayjob_always_skip_tracks', (result) => {if(result != undefined){this.always_skip_tracks.checked = result}}); 
+        window.myApi.getPref('dayjob_always_move_tracks', (result) => {if(result != undefined){this.always_move_tracks.checked = result}});
+        window.myApi.getPref('dayjob_playlists_v1', (result) => {
+            if(result != undefined){
+                this.playlists = result;
+                if (this.playlists != undefined){
+                    for (let i = 0; i < 10; i++) {
+                        this.fldPlaylistLink[i].value = this.playlists[i].playlistUri;
+                        this.fldPlaylistName[i].value = this.playlists[i].playlistName;
+                    }
+                }
+            }
+        });
+    }
+
+    setPlaylistLink(id, value){
+        console.log("MyView: Playlist link " + id + " field changed: " + value);
+        console.log(JSON.stringify(this.playlists));
+        this.playlists[id].playlistUri = value;
+        window.myApi.setPlaylists(this.playlists);  // Every time  key is pressed, save all playlists! 
+    }
+
+    setPlaylistName(id, value){
+        console.log("MyView: Playlist name " + id + " field changed: " + value);
+        this.playlists[id].playlistName = value;
+        window.myApi.setPlaylists(this.playlists);  // Every time  key is pressed, save all playlists! 
+    }
+
+
 
 }
 

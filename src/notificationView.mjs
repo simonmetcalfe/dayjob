@@ -71,7 +71,7 @@ export class MyView {
         this.buttonCta = document.getElementById('buttonCta');
         
         // Add event listeners for buttons
-        this.buttonCta.addEventListener("click", (event) => this.dynamicButtonPress());
+        this.buttonCta.addEventListener("click", (event) => this.onDynamicButtonPress());
 
         // Log if binding was not successful
         console.assert(this.title);
@@ -101,8 +101,8 @@ export class MyView {
 
     onUpdateUi(uiData){
         this.resetUi();
-        this.uiData = uiData; //Store so it is accessible by dynamicButtonPress
-        //TODO:  log.warn('Notification.js:  updateUI has received the following uiData JSON: ' + JSON.stringify(uiData));
+        this.uiData = uiData; //Store so it is accessible by onDynamicButtonPress
+        
         if (uiData.hasOwnProperty('title') && !uiData.hasOwnProperty('errorType')){
             this.title.innerHTML = uiData.title;
             this.title.style.display = 'block';
@@ -146,7 +146,7 @@ export class MyView {
         }
     }
     
-    dynamicButtonPress(data) {
+    onDynamicButtonPress(data) {
         if (this.uiData.buttonCta != undefined && this.uiData.buttonCta != null){
             let dynamicAction = this.uiData.buttonCta.action; // Look up the button's current action in uiData
             console.log("MyView: Dynamic button pressed with action: " + dynamicAction);

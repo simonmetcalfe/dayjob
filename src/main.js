@@ -41,7 +41,7 @@ const url = require('url')
  * -------------------------------------------------------------------------------------------------
  */
 
-const CSP = "default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none';";
+const CSP = "default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none'; img-src 'self' data:;";
 
 
 /**
