@@ -38,27 +38,32 @@
                   <label for="basic-url"><span class="badge badge-success mr-2">1</span>&nbsp;Create a Client ID for dayjob in your Spotify developer dashboard using the following settings.</label>
                   <table class="table table-bordered m-3">
                     <tr>
-                        <td>Application name</td>
+                        <td>App name</td>
                         <td>dayjob</td>
                     </tr>
                     <tr>
-                        <td>Description</td>
+                        <td>App description</td>
                         <td>Make great Spotify playlists while you work!</td>
                     </tr>
                     <tr>
-                        <td>Commercial app</td>
-                        <td>No</td>
+                        <td>Website</td>
+                        <td>(n/a)</td>
+                    </tr>
+                    <tr>
+                      <td>Redirect URIs</td>
+                      <td>http://localhost:8888/callback</td>
+                    </tr> 
+                    <tr>
+                      <td>Which API/SDKs are you planning to use?</td>
+                      <td>Web Playback SDK</td>
                     </tr>
                   </table>
-                  <label for="basic-url">Once created, edit it and add the following Redirect URI.</label>
+                  <label for="basic-url">You must log into the Spotify dashboard using your default browser or dayjob cannot complete the authentication process.</label>
                   <table class="table table-bordered m-3">
-                    <tr>
-                        <td>Redirect URI</td>
-                        <td>http://localhost:8888/callback</td>
-                    </tr>
+                    
                   </table>
                   <button type="button" id="btnOpenDashboard" class="btn btn-primary" >
-                      Open Spotify dashboard
+                      Open Spotify developer dashboard
                   </button>
                   <br/><br/>
                 </div>
@@ -66,7 +71,7 @@
             
               <div class="row mb-3">
                 <div class="col">
-                  <label for="basic-url"><span class="badge badge-success mr-2">2</span>&nbsp;Copy and paste the Client ID and Client secret provided by the dashboard into dayjob.</label>
+                  <label for="basic-url"><span class="badge badge-success mr-2">2</span>&nbsp;Once created, open the app you just created in the Spotify developer dashboard, press Settings, and then copy and paste the Client ID and Client secret into these fields.</label>
                   <div class="input-group m-3">
                       <div class="input-group-prepend">
                         <span class="input-group-text">Client ID</span>

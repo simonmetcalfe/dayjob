@@ -34,6 +34,14 @@ const url = require('url')
 
 /**
  * -------------------------------------------------------------------------------------------------
+ * Variables
+ * -------------------------------------------------------------------------------------------------
+ */
+
+let notificationTimer = null;
+
+/**
+ * -------------------------------------------------------------------------------------------------
  * Content Security Policy
  * 
  * Requried to prevent security warnings in the Chrome console(s).
@@ -124,13 +132,13 @@ const Menu = electron.Menu;
 
 const contextMenu = Menu.buildFromTemplate([
   // Item 0 - Preferences
-  { label: 'Preferences', click: function () { openPrefsWindow(); } },
+  { label: 'Preferences', click: () => { openPrefsWindow(); } },
   // Item 0 - About menu
-  { label: 'About dayjob', click: function () { openAbout(); } },
+  { label: 'About dayjob', click: () => { openAbout(); } },
   // Separator
   { type: 'separator' },
   // Item 1 - Quit
-  { label: 'Quit dayjob', click: function () { mb.app.quit(); } }
+  { label: 'Quit dayjob', click: () => { mb.app.quit(); } }
 ]);
 
 
@@ -196,7 +204,7 @@ function openPrefsWindow() {
     prefsWindow.show()
   })
 
-  prefsWindow.on('closed', function () {
+  prefsWindow.on('closed', () => {
     prefsWindow = null;
   });
   //await sleep(1000);
@@ -242,7 +250,7 @@ function openAbout() {
     aboutWindow.show()
   })
 
-  aboutWindow.on('closed', function () {
+  aboutWindow.on('closed', () => {
     aboutWindow = null;
   });
 }
@@ -283,13 +291,13 @@ function authoriseDayjob(){
       // Launch the auth URL
       log.warn('main.js:  Launching the Spotify authorisation URL...');
       spotifyServer.getAuthUrl()
-        .then(function (result) {
+        .then(result => {
           const handledErr = new Error("waiting_for_spotify_to_auth");
           logAndDisplayError(handledErr);
           shell.openExternal(result);
-        }).catch(function (err) {
+        }).catch(err => {
           logAndDisplayError(err)
-        })  
+        });
 
     } catch (error) {
       log.warn('main.js:  Unable to launch the Spotify authorisation URL...');
@@ -307,7 +315,7 @@ function authoriseDayjob(){
  * -------------------------------------------------------------------------------------------------
  */
 
-spotifyServer.getAuthEvents().on('auth_code_grant_error', function (err){ //TODO: Should this be replaced with catch
+spotifyServer.getAuthEvents().on('auth_code_grant_error', err => { 
   console.log('Main.js:  Auth event \'auth_code_grant_error\' has been raised by spotify-server.js, reporting the error.... ' +  err);
   const handledErr = new Error('error_authorising')
   handledErr.error = err;
@@ -315,30 +323,30 @@ spotifyServer.getAuthEvents().on('auth_code_grant_error', function (err){ //TODO
   spotifyServer.stopWebServer();
 })
 
-spotifyServer.getAuthEvents().on('auth_code_grant_success', function (result){ //TODO: function result
+spotifyServer.getAuthEvents().on('auth_code_grant_success', result => {
   spotifyServer.stopWebServer();
   console.log('Main.js:  Auth event \'auth_code_grant_success\' has been raised by spotify-server.js, now connecting API... ' +  result);
   connectApi();
 })
 
-spotifyServer.getAuthEvents().on('ready', function (result){   //TODO: function result
+spotifyServer.getAuthEvents().on('ready', result => {   
   // This is for information only.  The fuction checkIfWebServerReady() is now used to check if the web server is ready
   log.warn('Main.js:  Auth event \'ready\' has been raised by spotify-server.js.');
 })  
 
-spotifyServer.getAuthEvents().on('server_stopped', function (result){  //TODO: function result
+spotifyServer.getAuthEvents().on('server_stopped', result => {  
   // Information only
   log.warn('Main.js:  Auth event \'server_stopped\' has been raised by spotify-server.js.');
 })  
 
-spotifyServer.getAuthEvents().on('webserver_port_in_use', function (result){  //TODO: function result
+spotifyServer.getAuthEvents().on('webserver_port_in_use', result => {  
   log.warn('Main.js:  [ERROR] Auth event \'webserver_port_in_use\' has been raised by spotify-server.js.  Port 8888 is in use but required by dayjob to authorise with Spotify.  Ensure port is free and start dayjob again.  Error: ' + String(result.message));
   const handledErr = new Error("webserver_port_in_use");
   handledErr.error = result;
   logAndDisplayError(handledErr); 
 })  
 
-spotifyServer.getAuthEvents().on('webserver_general_error', function (result){  //TODO: function result
+spotifyServer.getAuthEvents().on('webserver_general_error', result => {  
     log.warn('Main.js:  [ERROR] Auth event \'webserver_general_error\' has been raised by spotify-server.js.  Error: ' + String(result.message));
     const handledErr = new Error("webserver_general_error");
     handledErr.error = result;
@@ -358,7 +366,7 @@ app.on('ready', () => {
 });
 
 // When menubar is loaded open the notification window to initialise it
-mb.on('ready', function ready() {
+mb.on('ready', () => {
   log.warn('main.js:  mb.on ready event occurred...');
 
   // Load content security policy
@@ -377,23 +385,23 @@ mb.on('ready', function ready() {
   // Trigger menubar notification window to align it to the toolbar
   mb.showWindow();  
 
-  mb.tray.on('click', function () {
+  mb.tray.on('click', () => {
     log.warn('main.js:  mb.tray.on click event occurred...');
   });
 
   //Context menu open
-  mb.tray.on('right-click', function () {
+  mb.tray.on('right-click', () => {
     log.warn('main.js:  mb.tray.on right-click event occurred...');
     mb.tray.popUpContextMenu(contextMenu);
   });
 })
 
 // Actions after the window has first been rendered
-mb.on('after-create-window', function ready() {
+mb.on('after-create-window', (ready) => {
   log.warn('main.js:  mb.on after-create-window event occurred...');
 
   // Menubar requires the window to be fully loaded before we can send data to it
-  mb.window.webContents.on('did-finish-load', function () {
+  mb.window.webContents.on('did-finish-load', () => {
     log.warn('main.js:  mb.window.webContents.on did-finish-load event occurred...');
     // Try connecting to Spotify on start-up and show welcome message or error status to user
     registerKeyboardShortcuts();
@@ -519,7 +527,7 @@ function keyPressed(key){
   if (key.modifiers.includes('Control') && key.modifiers.includes('Alt') && key.key == '='){
     log.warn('main.js:  Add/move track to specified playlist (+) shortcut pressed... THIS FEATURE ISN\'T SUPPORTED YET SORRY!');
     // Add logic for copy / move - as below
-    // Feature not supported yet, coming!
+    //TODO: Feature not supported yet, coming!
   }
 
 
@@ -563,7 +571,7 @@ function keyPressed(key){
       else {
         return Promise.reject(new Error('Unknown error adding or moving track'))
       } 
-    }).catch(function (err) {
+    }).catch(err => {
       logAndDisplayError(err)
     })
   }
@@ -580,13 +588,20 @@ function keyPressed(key){
  * -------------------------------------------------------------------------------------------------
  */
 
+
 function showNotification(uiData) {
   mb.window.webContents.send('updateUi', uiData);
-  //mb.showWindow();
-  mb.window.showInactive();
-  // When a notification occurs, close the window briefly after
-  function doAfterDelay() { mb.hideWindow(); }
-  setTimeout(doAfterDelay, 5000);
+  mb.window.showInactive(); 
+  // When a notification occurs, close the window briefly after, and reset timer if multiple notifications occur
+
+  if (notificationTimer) {
+    clearTimeout(notificationTimer);
+  }
+
+  notificationTimer = setTimeout(() => {
+      mb.window.hide(); // mb.hideWindow() no longer works when using mb.window.showInactive() instead of mb.showWindow()
+      notificationTimer = null;
+  }, 5000);
 }
 
 /**
@@ -664,7 +679,7 @@ ipcMain.handle('getVersionInfo', async () => { //TODO: Async and not consistent 
   }
 });
 
-ipcMain.on('buttonPress', function (event, data) {
+ipcMain.on('buttonPress', (event, data) => {
   log.warn('main.js:  Button press received with ID "' + data + '"');
   switch (data){
       case "btnOpenDashboard":      // Preferences dialog
@@ -720,7 +735,7 @@ ipcMain.handle('logAndDisplayError', async (event, msg) => {
  */
 
 // Quit when all windows are closed.
-app.on('window-all-closed', function () {
+app.on('window-all-closed', () => {
   log.warn('app:  window-all-closed event happened.');
   // On OS X it is common for applications and their menu bar
   // to stay active until the user quits explicitly with Cmd + Q
@@ -729,7 +744,7 @@ app.on('window-all-closed', function () {
   }
 })
 
-app.on('will-quit', function () {
+app.on('will-quit', () => {
   log.warn('app:  will-quit event happened.');
   // Unregister all shortcuts.
   globalShortcut.unregisterAll();

@@ -58,10 +58,10 @@ var scopes = ['user-read-private',
  * -------------------------------------------------------------------------------------------------
  */
 
-module.exports.getSpotifyUserId = function(){return spotifyUserId;}
-module.exports.getspotifyDisplayName = function(){return spotifyDisplayName;}
-module.exports.getWebServer = function(){return webServer;}
-module.exports.getAuthEvents = function(){return authEvents;}
+module.exports.getSpotifyUserId = () => {return spotifyUserId;}
+module.exports.getspotifyDisplayName = () => {return spotifyDisplayName;}
+module.exports.getWebServer = () => {return webServer;}
+module.exports.getAuthEvents = () => {return authEvents;}
 
 
 /**
@@ -75,7 +75,7 @@ module.exports.getAuthEvents = function(){return authEvents;}
  * @param  {number} length The length of the string
  * @return {string} The generated string
  */
-var generateRandomString = function (length) {
+var generateRandomString = (length) => {
     var text = '';
     var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 
@@ -103,12 +103,12 @@ authEvents = new events.EventEmitter();
 // Set a random state at startup to ensure webserver ignores requests without a 'state' query parameter 
 state = generateRandomString(16);
 
-module.exports.startWebServer = function(){
+module.exports.startWebServer = () => {
     return startWebServer()
 }
 
-function startWebServer(){ //TODO:  Find out if promise function
-    webServer = http.createServer(function (request, response) {
+function startWebServer(){ 
+    webServer = http.createServer ( (request, response) => {
         log.warn('spotify-server.js:  Attempting to start the webserver.');
         // Get object with all the parameters
         var parsedUrl = url.parse(request.url, true); // true to get query as object
@@ -148,7 +148,7 @@ function startWebServer(){ //TODO:  Find out if promise function
         }
         response.end();
 
-    }).listen(8888, function(){
+    }).listen(8888, () => {
         log.warn('spotify-server.js:  Webserver initialised and listening for Spotify authentication requests.');
         authEvents.emit('ready');
         return 'ready';
@@ -168,7 +168,7 @@ function startWebServer(){ //TODO:  Find out if promise function
 
 
 
-module.exports.checkIfWebServerReady = function(){
+module.exports.checkIfWebServerReady = () => {
     return checkIfWebServerReady();
 }
 
@@ -191,7 +191,7 @@ function checkIfWebServerReady() {
     });
 }
 
-module.exports.stopWebServer = function(){
+module.exports.stopWebServer = () => {
     return stopWebServer();
 }
 
@@ -237,7 +237,7 @@ initialiseSpotifyApiInstance() // Must be done on startup
  * 
  */
 
-module.exports.checkApiConnection = function () {
+module.exports.checkApiConnection = () => {
     return checkApiConnection();
 };
 
@@ -304,7 +304,7 @@ function checkApiConnection() {
  * -------------------------------------------------------------------------------------------------
  */
 
-module.exports.getAuthUrl = function () {
+module.exports.getAuthUrl = () => {
     return Promise.resolve().then(result => {
         initialiseSpotifyApiInstance(); // Instance must be re-created to set the clientId
         spotifyApi.resetAccessToken();
@@ -436,7 +436,7 @@ function getMyCurrentPlayingTrack() {
  * -------------------------------------------------------------------------------------------------
  */
 
-module.exports.addTracksToPlaylist = function (playlistId, tracks) {
+module.exports.addTracksToPlaylist = (playlistId, tracks) => {
     return addTracksToPlaylist(playlistId, tracks)
 }
 
@@ -459,7 +459,7 @@ function addTracksToPlaylist(playlistId, tracks){
  * -------------------------------------------------------------------------------------------------
  */
 
-module.exports.removeTracksFromPlaylist = function (playlistId, tracks) {
+module.exports.removeTracksFromPlaylist = (playlistId, tracks) => {
     return removeTracksFromPlaylist (playlistId, tracks) 
 }
 
@@ -498,7 +498,7 @@ function getPlaylist(playlistId) {
  * -------------------------------------------------------------------------------------------------
  */
 
-module.exports.getPlaylistName = function(playlistId) {
+module.exports.getPlaylistName = (playlistId) => {
     return getPlaylistName(playlistId);
 }
 
@@ -515,7 +515,7 @@ function getPlaylistName(playlistId){
  * -------------------------------------------------------------------------------------------------
  */
 
-module.exports.skipToNext = function() {
+module.exports.skipToNext = () => {
     return skipToNext();
 }
 function skipToNext(){
@@ -603,7 +603,7 @@ function parsePlayingTrackInfo(playingTrackJson){ //TODO:  Come back to this one
             handledErr.error = err;
             return Promise.reject(handledErr);
         })
-    }).then(function(result){
+    }).then(result => {
         return trackInfo;
     })
 }
@@ -618,7 +618,7 @@ function parsePlayingTrackInfo(playingTrackJson){ //TODO:  Come back to this one
  * 
  */
 
-module.exports.getPlayingTrackInfo = function() {
+module.exports.getPlayingTrackInfo = () => {
     return getPlayingTrackInfo();
 }
 
@@ -638,7 +638,7 @@ function getPlayingTrackInfo(){
  * -------------------------------------------------------------------------------------------------
  */
 
-module.exports.removePlayingTrackFromPlaylist = function() {
+module.exports.removePlayingTrackFromPlaylist = () => {
     return removePlayingTrackFromPlaylist()
 }
 
@@ -672,7 +672,7 @@ function removePlayingTrackFromPlaylist(){
  * -------------------------------------------------------------------------------------------------
  */
 
-module.exports.copyOrMovePlayingTrackToPlaylist = function(destPlaylistId, destPlaylistName, move) {
+module.exports.copyOrMovePlayingTrackToPlaylist = (destPlaylistId, destPlaylistName, move) => {
     if (move == 0) {return copyPlayingTrackToPlaylist(destPlaylistId, destPlaylistName);}
     if (move == 1) {return movePlayingTrackToPlaylist(destPlaylistId, destPlaylistName);}
 }
@@ -682,7 +682,7 @@ module.exports.copyOrMovePlayingTrackToPlaylist = function(destPlaylistId, destP
  * -------------------------------------------------------------------------------------------------
  */
 
-module.exports.copyPlayingTrackToPlaylist = function(destPlaylistId, destPlaylistName) {
+module.exports.copyPlayingTrackToPlaylist = (destPlaylistId, destPlaylistName) => {
     return copyPlayingTrackToPlaylist(destPlaylistId, destPlaylistName);
 }
 
@@ -710,20 +710,20 @@ function copyPlayingTrackToPlaylist(destPlaylistId, destPlaylistName){
  * -------------------------------------------------------------------------------------------------
  */
 
-module.exports.movePlayingTrackToPlaylist = function(destPlaylistId, destPlaylistName) {
+module.exports.movePlayingTrackToPlaylist = (destPlaylistId, destPlaylistName) => {
     return movePlayingTrackToPlaylist(destPlaylistId, destPlaylistName);
 }
 
 function movePlayingTrackToPlaylist(destPlaylistId, destPlaylistName){
     trackInfo = {};
     return getPlayingTrackInfo()
-        .then(result =>{
+        .then(result => {
             trackInfo = result;
             trackInfo.destPlaylistId = destPlaylistId;
             trackInfo.destPlaylistName = destPlaylistName;
             log.warn('spotify-server.js:  Attempting to add track (move step 1 of 2) ' + trackInfo.name + ' (' + trackInfo.uri + ') to ' + trackInfo.destPlaylistName + ' (' + trackInfo.destPlaylistId + ')');
             return addTracksToPlaylist(trackInfo.destPlaylistId, [trackInfo.uri]);
-        }).then(result =>{    
+        }).then(result => {    
             log.warn('spotify-server.js:  Added track to ' + trackInfo.destPlaylistName + ' (' + trackInfo.destPlaylistId + ')\n' +
                                             'Name   : ' + trackInfo.name + ' (' + trackInfo.uri + ')\n' + 
                                             'Artist : ' + trackInfo.artistName + '\n' + 
@@ -757,7 +757,7 @@ function movePlayingTrackToPlaylist(destPlaylistId, destPlaylistName){
  * -------------------------------------------------------------------------------------------------
  */
 
-module.exports.getPlaylistIdFromUriOrUrl = function(value){
+module.exports.getPlaylistIdFromUriOrUrl = (value) => {
     return getPlaylistIdFromUriOrUrl(value);
 }
 

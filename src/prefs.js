@@ -38,7 +38,7 @@ log.warn('prefs.js:  Updated last initalised date to ' + prefs_local.get('date_l
  * -------------------------------------------------------------------------------------------------
  */
 
-module.exports.setPref = function(key, val){
+module.exports.setPref = (key, val) => {
     log.warn('prefs.js:  Updated preference: ' + key) // + ':' + prefs_local.get(key) + ' to ' + val) ;
     prefs_local.set(key, val);
 }
@@ -49,7 +49,7 @@ module.exports.setPref = function(key, val){
  * -------------------------------------------------------------------------------------------------
  */
 
-module.exports.getPref  = function(key){
+module.exports.getPref  = (key) => {
     if (prefs_local.has(key)){
         var val = prefs_local.get(key);
         log.warn('prefs.js:  Retrieved preference: ' + key) // + ':' + val);
@@ -67,7 +67,7 @@ module.exports.getPref  = function(key){
  * -------------------------------------------------------------------------------------------------
  */
     
-module.exports.deletePref = function(key){
+module.exports.deletePref = (key) => {
     prefs_local.delete(key);
     log.warn('prefs.js:  Deleted preference: ' + key);
 }
