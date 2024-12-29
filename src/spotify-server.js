@@ -109,7 +109,7 @@ module.exports.startWebServer = function(){
 
 function startWebServer(){ //TODO:  Find out if promise function
     webServer = http.createServer(function (request, response) {
-        log.warn('spotify-servers.js:  Attempting to start the webserver.');
+        log.warn('spotify-server.js:  Attempting to start the webserver.');
         // Get object with all the parameters
         var parsedUrl = url.parse(request.url, true); // true to get query as object
         var queryAsObject = parsedUrl.query;
@@ -147,13 +147,26 @@ function startWebServer(){ //TODO:  Find out if promise function
                 })
         }
         response.end();
+
     }).listen(8888, function(){
-        log.warn('spotify-servers.js:  Webserver initialised and listening for Spotify authentication requests.');
+        log.warn('spotify-server.js:  Webserver initialised and listening for Spotify authentication requests.');
         authEvents.emit('ready');
-    }).on('error', function (err) { //TODO:  Catch
-        console.log("THERE IS A FUCKING ERROR")
-    })
+        return 'ready';
+
+    }).on('error', err => { 
+        log.warn('main.js:  An error occurred with the spotify-server web server and it was stopped: ' + JSON.stringify(err))
+        stopWebServer();
+        if (err.code == 'EADDRINUSE'){
+            authEvents.emit('webserver_port_in_use',err)    
+        }
+        else {
+            authEvents.emit('webserver_general_error',err)
+        }
+    });
 }
+
+
+
 
 module.exports.checkIfWebServerReady = function(){
     return checkIfWebServerReady();

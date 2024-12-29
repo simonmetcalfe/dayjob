@@ -266,76 +266,53 @@ function connectApi(){
 }
 
 function authoriseDayjob(){
-  
   if (spotifyServer.getWebServer() == undefined){
     // Start the web server if not already started
-    spotifyServer.startWebServer();  
-    
-    // Monitor the web server for errors
-    spotifyServer.getWebServer().on('error', function (err) { //TODO:  Should this be replaced with  catch?
-      log.warn('main.js:  An error occurred with the spotify-server web server: ' + JSON.stringify(err))
-      return Promise.reject(err)
-        .catch(err => {
-          if (err.code == 'EADDRINUSE'){
-            const handledErr = new Error("webserver_port_in_use")
-            handledErr.error = err;
-            log.warn('main.js:  [ERROR] Port 8888 is in use but required by dayjob to authorise with Spotify.  Ensure port is free and start dayjob again.  Error:  \n\n' + String(err.message));
-            logAndDisplayError(handledErr)
-            spotifyServer.stopWebServer();
-          }
-          else {
-            const handledErr = new Error("webserver_general_error")
-            handledErr.error = err;
-            logAndDisplayError(handledErr);
-            spotifyServer.stopWebServer();
-          }
-        })
-    });
+    spotifyServer.startWebServer();
   }
   else {
     log.warn('main.js:  The web server is already running.');
   }
-
-  /*
-  // Ensure the web server has started
+  // Ensure the web server has started before launching the auth URL
   (async () => {
     try {
-      console.log("ASYNC IS RUNNING");
       // Wait for the server to start
       const message = await spotifyServer.checkIfWebServerReady();
       console.log(message);
       
       // Launch the auth URL
-      console.log('Now launching the next event...');
+      log.warn('main.js:  Launching the Spotify authorisation URL...');
       spotifyServer.getAuthUrl()
         .then(function (result) {
+          const handledErr = new Error("waiting_for_spotify_to_auth");
+          logAndDisplayError(handledErr);
           shell.openExternal(result);
         }).catch(function (err) {
           logAndDisplayError(err)
         })  
 
     } catch (error) {
+      log.warn('main.js:  Unable to launch the Spotify authorisation URL...');
       console.error(error);
     }
   })();
-  */
 }
 
 
 /**
  * -------------------------------------------------------------------------------------------------
  * Monitor auth events from web server
+ * 
+ * 
  * -------------------------------------------------------------------------------------------------
- * When the 'ready' event is received the auth URL is launched so 
- * Spotify can authorise dayjob
  */
 
 spotifyServer.getAuthEvents().on('auth_code_grant_error', function (err){ //TODO: Should this be replaced with catch
-  spotifyServer.stopWebServer();
   console.log('Main.js:  Auth event \'auth_code_grant_error\' has been raised by spotify-server.js, reporting the error.... ' +  err);
   const handledErr = new Error('error_authorising')
   handledErr.error = err;
-  logAndDisplayError(handledErr)
+  logAndDisplayError(handledErr);
+  spotifyServer.stopWebServer();
 })
 
 spotifyServer.getAuthEvents().on('auth_code_grant_success', function (result){ //TODO: function result
@@ -345,13 +322,27 @@ spotifyServer.getAuthEvents().on('auth_code_grant_success', function (result){ /
 })
 
 spotifyServer.getAuthEvents().on('ready', function (result){   //TODO: function result
-  // This is for information only, and the fuction checkIfWebServerReady() is now used to check if the web server is ready
+  // This is for information only.  The fuction checkIfWebServerReady() is now used to check if the web server is ready
   log.warn('Main.js:  Auth event \'ready\' has been raised by spotify-server.js.');
 })  
 
 spotifyServer.getAuthEvents().on('server_stopped', function (result){  //TODO: function result
   // Information only
   log.warn('Main.js:  Auth event \'server_stopped\' has been raised by spotify-server.js.');
+})  
+
+spotifyServer.getAuthEvents().on('webserver_port_in_use', function (result){  //TODO: function result
+  log.warn('Main.js:  [ERROR] Auth event \'webserver_port_in_use\' has been raised by spotify-server.js.  Port 8888 is in use but required by dayjob to authorise with Spotify.  Ensure port is free and start dayjob again.  Error: ' + String(result.message));
+  const handledErr = new Error("webserver_port_in_use");
+  handledErr.error = result;
+  logAndDisplayError(handledErr); 
+})  
+
+spotifyServer.getAuthEvents().on('webserver_general_error', function (result){  //TODO: function result
+    log.warn('Main.js:  [ERROR] Auth event \'webserver_general_error\' has been raised by spotify-server.js.  Error: ' + String(result.message));
+    const handledErr = new Error("webserver_general_error");
+    handledErr.error = result;
+    logAndDisplayError(handledErr);
 })  
 
 
