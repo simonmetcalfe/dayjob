@@ -50,7 +50,6 @@ export class MyView {
     actionError;
     subDescription;
     buttonCta;
-    pingResultSpan; //TODO: delete me
     
     start() {
         console.log("notificationView.mjs: Start");
