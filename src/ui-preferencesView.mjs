@@ -24,8 +24,8 @@ export class MyView {
     btnConnectToSpotify;
     fldPlaylistLink = [];
     fldPlaylistName = [];
-    always_skip_tracks;
-    always_move_tracks;
+    chkAlwaysMoveTracks;
+    chkAlwaysMoveTracks;
     
     start() {
         console.log("ui-preferencesView.mjs: Start");
@@ -39,16 +39,16 @@ export class MyView {
         this.fldClientSecret = document.getElementById('fldClientSecret');
         this.btnOpenDashboard = document.getElementById('btnOpenDashboard');
         this.btnConnectToSpotify = document.getElementById('btnConnectToSpotify');
-        this.always_skip_tracks = document.getElementById('always_skip_tracks');
-        this.always_move_tracks = document.getElementById('always_move_tracks'); 
+        this.chkAlwaysSkipTracks = document.getElementById('chkAlwaysSkipTracks');
+        this.chkAlwaysMoveTracks = document.getElementById('chkAlwaysMoveTracks'); 
 
         // Log if binding was not successful
         console.assert(this.fldClientId); 
         console.assert(this.fldClientSecret);
         console.assert(this.btnOpenDashboard);
         console.assert(this.btnConnectToSpotify);
-        console.assert(this.always_skip_tracks);
-        console.assert(this.always_move_tracks);
+        console.assert(this.chkAlwaysSkipTracks);
+        console.assert(this.chkAlwaysMoveTracks);
         
         // Add event listeners for buttons
         this.btnOpenDashboard.addEventListener('click', (event) => this.buttonPress(event.target.id));
@@ -59,14 +59,14 @@ export class MyView {
         this.fldClientSecret.addEventListener('input', (event) => {window.myApi.setPref('spotify-server_clientSecret', event.target.value);});
 
         // Add event listeners for checkboxes
-        this.always_skip_tracks.addEventListener('input', (event) => {window.myApi.setPref('dayjob_always_skip_tracks', event.target.checked);});
-        this.always_move_tracks.addEventListener('input', (event) => {window.myApi.setPref('dayjob_always_move_tracks', event.target.checked);});
+        this.chkAlwaysSkipTracks.addEventListener('input', (event) => {window.myApi.setPref('dayjob_always_skip_tracks', event.target.checked);});
+        this.chkAlwaysMoveTracks.addEventListener('input', (event) => {window.myApi.setPref('dayjob_always_move_tracks', event.target.checked);});
 
         // Bind and add event listeners for all playlist fields in a loop
         for (let i = 0; i < 10; i++) {
-            // playlistId
-            let element = document.getElementById(`fldPlaylistId${i+1}`);
-            console.assert(element, `Element with id 'fldPlaylistId${i+1}' not found`);
+            // playlistLink
+            let element = document.getElementById(`fldPlaylistLink${i+1}`);
+            console.assert(element, `Element with id 'fldPlaylistLink${i+1}' not found`);
             element.addEventListener('input', (event) => this.setPlaylistLink(i, event.target.value));
             this.fldPlaylistLink.push(element);
             
@@ -90,8 +90,8 @@ export class MyView {
     getAllPrefs(){
         window.myApi.getPref('spotify-server_clientId', (result) => {if(result != undefined){this.fldClientId.value = result}});
         window.myApi.getPref('spotify-server_clientSecret', (result) => {if(result != undefined){this.fldClientSecret.value = result}});
-        window.myApi.getPref('dayjob_always_skip_tracks', (result) => {if(result != undefined){this.always_skip_tracks.checked = result}}); 
-        window.myApi.getPref('dayjob_always_move_tracks', (result) => {if(result != undefined){this.always_move_tracks.checked = result}});
+        window.myApi.getPref('dayjob_always_skip_tracks', (result) => {if(result != undefined){this.chkAlwaysSkipTracks.checked = result}}); 
+        window.myApi.getPref('dayjob_always_move_tracks', (result) => {if(result != undefined){this.chkAlwaysMoveTracks.checked = result}});
         window.myApi.getPref('dayjob_playlists_v1', (result) => {
             if(result != undefined){
                 this.playlists = result;

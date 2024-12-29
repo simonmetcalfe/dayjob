@@ -539,14 +539,7 @@ function keyPressed(key){
  */
 
 function showNotification(uiData) {
-  log.warn("sending web contents");
-  mb.window.webContents.send('update-counter', 1);
-  mb.window.webContents.send('pingNoResponse', 'testttt');
-  mb.window.webContents.send('pingX', 'simpler ping thing');
-  mb.window.webContents.send('pingY', 'pingaaaa');
-  mb.window.webContents.send('onPingInwards', 'testXXXXXX');
   mb.window.webContents.send('updateUi', uiData);
-  log.warn("done sending");
   //mb.showWindow();
   mb.window.showInactive();
   // When a notification occurs, close the window briefly after
@@ -616,22 +609,6 @@ function logAndDisplayError(err) {
  */
 
 //TODO - For consistency the old ipcMain.on functions could updated to ipcMain.handle 
-
-/*
-ipcMain.on("setTitle", (event, title) => this.onSetTitle(title));
-onSetTitle(title) {
-  console.log("MyApp: New title: " + title);
-  this.browserWindow.setTitle(title);
-};
-
-ipcMain.handle("ping", (event, data) => this.onPing(data));
-onPing(data) {
-  console.log("MyApp: Received ping with data: " + data);
-  let result = "Pong";
-  console.log("MyApp: Replying with result data: " + result);
-  return result;
-};
-*/
 
 ipcMain.handle('getVersionInfo', async () => {
   try {
