@@ -65,7 +65,7 @@ export class MyView {
     }
 
     getVersionInfo() {
-        console.log("MyView: Getting version info.");
+        console.log("aboutView.mjs: Getting version info.");
         window.myApi.getVersionInfo("getVersionInfo", (result) => {this.version.innerHTML = result.appVersion});        
     }
 }

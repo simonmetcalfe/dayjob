@@ -148,7 +148,7 @@ export class MyView {
     onDynamicButtonPress(data) {
         if (this.uiData.buttonCta != undefined && this.uiData.buttonCta != null){
             let dynamicAction = this.uiData.buttonCta.action; // Look up the button's current action in uiData
-            console.log("MyView: Dynamic button pressed with action: " + dynamicAction);
+            console.log("notificationView.mjs: Dynamic button pressed with action: " + dynamicAction);
             window.myApi.buttonPress(dynamicAction); 
         }
     }    

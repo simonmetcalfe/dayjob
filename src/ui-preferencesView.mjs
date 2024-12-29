@@ -83,7 +83,7 @@ export class MyView {
     }
 
     buttonPress(data) {
-        console.log("MyView: Button pressed: " + data);
+        console.log("ui-preferencesView.mjs: Button pressed: " + data);
         window.myApi.buttonPress(data); 
     }
 
@@ -106,14 +106,13 @@ export class MyView {
     }
 
     setPlaylistLink(id, value){
-        console.log("MyView: Playlist link " + id + " field changed: " + value);
-        console.log(JSON.stringify(this.playlists));
+        console.log("ui-preferencesView.mjs: Playlist link " + id + " field changed: " + value);
         this.playlists[id].playlistUri = value;
         window.myApi.setPlaylists(this.playlists);  // Every time  key is pressed, save all playlists! 
     }
 
     setPlaylistName(id, value){
-        console.log("MyView: Playlist name " + id + " field changed: " + value);
+        console.log("ui-preferencesView.mjs: Playlist name " + id + " field changed: " + value);
         this.playlists[id].playlistName = value;
         window.myApi.setPlaylists(this.playlists);  // Every time  key is pressed, save all playlists! 
     }

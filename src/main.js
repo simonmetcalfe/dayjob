@@ -612,19 +612,10 @@ function logAndDisplayError(err) {
 
 ipcMain.handle('getVersionInfo', async () => {
   try {
-      // Construct the path to the package.json file
       const packageJsonPath = path.join(__dirname, '../package.json');
-      console.log(packageJsonPath);
-
-      // Read and parse the package.json file
       const packageJson = JSON.parse(await fs.promises.readFile(packageJsonPath, 'utf8'));
-      console.log(packageJson.version);
-
-      // Log the retrieved version info
-      console.log('main.js: Retrieved app version info: ' + packageJson.version);
-
-      // Return the version info to the renderer process
-      return { appVersion: packageJson.version };
+      log.warn('main.js: Retrieved app version info: ' + packageJson.version);
+      return {appVersion: packageJson.version};
   } catch (error) {
       console.error('Failed to retrieve version info:', error);
       return { appVersion: null, error: error.message };
