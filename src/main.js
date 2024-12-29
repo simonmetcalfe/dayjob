@@ -134,33 +134,15 @@ const contextMenu = Menu.buildFromTemplate([
  * -------------------------------------------------------------------------------------------------
  */
 
-// Menubar v5.2.3 initalisation - reverted back to v5.2.3 due to menubar bug https://github.com/maxogden/menubar/issues/260
-/*
-const mb = menubar({webPreferences: {nodeIntegration: true}});
-mb.setOption('preload-window', true);
-mb.setOption('height', 200);
-mb.setOption('alwaysOnTop', true);
-mb.setOption('icon', app.getAppPath() + '/assets/IconTemplate.png')  // Set app icon
-mb.setOption('index', url.format({ // Set the initial page
-  pathname: path.join(app.getAppPath(), '/src/notification.html'), 
-  protocol: 'file:',
-  slashes: true
-}))
-*/
-
-// Menubar v7.1.0 initalisation
-
-//prefsWindow = new BrowserWindow({ maxWidth: 1024, maxHeight: 768, show: false, webPreferences: {nodeIntegration: true, contextIsolation: false, enableRemoteModule: true}});
- 
 const mb = menubar({preloadWindow: true,
                     alwaysOnTop:true,
                     browserWindow:{
                       height:230,
                       webPreferences: {
-                        nodeIntegration: true, 
+                        nodeIntegration: false, 
                         contextIsolation: true, 
-                        nodeIntegrationInWorker: true, 
-                        nodeIntegrationInSubFrames: true, 
+                        nodeIntegrationInWorker: false, 
+                        nodeIntegrationInSubFrames: false, 
                         sandbox: false, 
                         preload: path.resolve("./src/notificationPreload.mjs")
                       },
@@ -168,18 +150,6 @@ const mb = menubar({preloadWindow: true,
                     icon: app.getAppPath() + '/assets/IconTemplate.png',
                     index: 'about:blank' // Web page is loaded after menubar initialises and 
 });
-
-
-
-
-/*
-mb.window.loadURL(url.format({
-  pathname: path.join(app.getAppPath(), '/src/notification.html'),
-  protocol: 'file:',
-  slashes: true
-}))
-  */
-
 
 
 /**
@@ -197,10 +167,10 @@ function openPrefsWindow() {
                                     maxHeight: 768, 
                                     show: false, 
                                     webPreferences: {
-                                      nodeIntegration: true,
+                                      nodeIntegration: false,
                                       contextIsolation: true,
-                                      nodeIntegrationInWorker: true,
-                                      nodeIntegrationInSubFrames: true,
+                                      nodeIntegrationInWorker: false,
+                                      nodeIntegrationInSubFrames: false,
                                       sandbox: false, 
                                       preload: path.resolve("./src/ui-preferencesPreload.mjs")}});
 
@@ -240,10 +210,10 @@ function openAbout() {
                                     maxHeight: 450, 
                                     show: false, 
                                     webPreferences: {
-                                      nodeIntegration: true, 
+                                      nodeIntegration: false, 
                                       contextIsolation: true,
-                                      nodeIntegrationInWorker: true,
-                                      nodeIntegrationInSubFrames: true,
+                                      nodeIntegrationInWorker: false,
+                                      nodeIntegrationInSubFrames: false,
                                       sandbox: false, 
                                       preload: path.resolve("./src/aboutPreload.mjs")
                                     }
