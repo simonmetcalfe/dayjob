@@ -1,6 +1,6 @@
 {
   "name": "dayjob",
-  "version": "1.2.0",
+  "version": "1.2.0 RC2",
   "description": "Make great Spotify playlists while you work.",
   "author": "Simon Metcalfe",
   "keywords": [
@@ -21,7 +21,7 @@
     "url": "https://github.com/simonmetcalfe/dayjob.git"
   },
   "license": "MIT",
-  "main": "src/main.js",
+  "main": "src/main.cjs",
   "dependencies": {
     "bootstrap": "^5.3.3",
     "electron-log": "^5.2.4",
@@ -39,9 +39,11 @@
   },
   "scripts": {
     "start": "electron .",
-    "build-mac": "electron-packager . --platform=darwin --arch=x64 --overwrite --out=installers/_build-temp --ignore=/installers --ignore/assets_readme",
-    "build-win": "electron-packager . --platform=win32 --arch=x64 --overwrite --out=installers/_build-temp --ignore=/installers --ignore/assets_readme",
-    "package-mac": "electron-installer-dmg --overwrite ./installers/_build-temp/dayjob-darwin-x64/dayjob.app ./installers/osx/dayjob",
+    "build-mac-intel":   "electron-packager . --platform=darwin --arch=x64   --overwrite --out=installers/_build-temp --ignore=/installers --ignore/assets_readme",
+    "build-mac-silicon": "electron-packager . --platform=darwin --arch=arm64 --overwrite --out=installers/_build-temp --ignore=/installers --ignore/assets_readme",
+    "build-win":         "electron-packager . --platform=win32  --arch=x64   --overwrite --out=installers/_build-temp --ignore=/installers --ignore/assets_readme",
+    "package-mac-intel": "electron-installer-dmg --overwrite ./installers/_build-temp/dayjob-darwin-x64/dayjob.app ./installers/osx/dayjob",
+    "package-mac-silicon": "electron-installer-dmg --overwrite ./installers/_build-temp/dayjob-darwin-silicon/dayjob.app ./installers/osx/dayjob",
     "package-win": "electron-installer-windows --src build-temp/dayjob-win32-x64/ --dest installers/windows/dayjob"
   }
 }

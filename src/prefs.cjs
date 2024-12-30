@@ -1,6 +1,6 @@
 /**
  * -------------------------------------------------------------------------------------------------
- * Name:         prefs.js
+ * Name:         prefs.cjs
  * Description:  Module for managing default, loading and saving 
  *               of preferences using 'electron-store'
  *               
@@ -28,9 +28,9 @@ const prefs_local = new Store({
   });
 
 // Test read and write
-log.warn('prefs.js:  Loaded preferences module, last initialised on ' + prefs_local.get('date_last_init'));
+log.warn('prefs.cjs:  Loaded preferences module, last initialised on ' + prefs_local.get('date_last_init'));
 prefs_local.set('date_last_init', Date.now());
-log.warn('prefs.js:  Updated last initalised date to ' + prefs_local.get('date_last_init'));
+log.warn('prefs.cjs:  Updated last initalised date to ' + prefs_local.get('date_last_init'));
 
 /**
  * -------------------------------------------------------------------------------------------------
@@ -39,7 +39,7 @@ log.warn('prefs.js:  Updated last initalised date to ' + prefs_local.get('date_l
  */
 
 module.exports.setPref = (key, val) => {
-    log.warn('prefs.js:  Updated preference: ' + key) // + ':' + prefs_local.get(key) + ' to ' + val) ;
+    log.warn('prefs.cjs:  Updated preference: ' + key) // + ':' + prefs_local.get(key) + ' to ' + val) ;
     prefs_local.set(key, val);
 }
 
@@ -52,11 +52,11 @@ module.exports.setPref = (key, val) => {
 module.exports.getPref  = (key) => {
     if (prefs_local.has(key)){
         var val = prefs_local.get(key);
-        log.warn('prefs.js:  Retrieved preference: ' + key) // + ':' + val);
+        log.warn('prefs.cjs:  Retrieved preference: ' + key) // + ':' + val);
         return val; 
     }
     else {
-        log.warn('prefs.js:  Requested key not found: ' + key) 
+        log.warn('prefs.cjs:  Requested key not found: ' + key) 
         return undefined;
     }
 
@@ -69,5 +69,5 @@ module.exports.getPref  = (key) => {
     
 module.exports.deletePref = (key) => {
     prefs_local.delete(key);
-    log.warn('prefs.js:  Deleted preference: ' + key);
+    log.warn('prefs.cjs:  Deleted preference: ' + key);
 }

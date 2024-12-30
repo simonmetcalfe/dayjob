@@ -65,14 +65,14 @@ export class MyView {
         // Bind and add event listeners for all playlist fields in a loop
         for (let i = 0; i < 10; i++) {
             // playlistLink
-            let element = document.getElementById(`fldPlaylistLink${i+1}`);
-            console.assert(element, `Element with id 'fldPlaylistLink${i+1}' not found`);
+            let element = document.getElementById(`fldPlaylistLink${i}`);
+            console.assert(element, `Element with id 'fldPlaylistLink${i}' not found`);
             element.addEventListener('input', (event) => this.setPlaylistLink(i, event.target.value));
             this.fldPlaylistLink.push(element);
             
             // playlistName
-            element = document.getElementById(`fldPlaylistName${i+1}`);
-            console.assert(element, `Element with id 'fldPlaylistName${i+1}' not found`);
+            element = document.getElementById(`fldPlaylistName${i}`);
+            console.assert(element, `Element with id 'fldPlaylistName${i}' not found`);
             element.addEventListener('input', (event) => this.setPlaylistName(i, event.target.value));
             this.fldPlaylistName.push(element); 
         }
