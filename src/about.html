@@ -10,32 +10,23 @@
         <h4>Environment</h4>
         </div>
         <div id="list">
-            <span>Node.js <script>document.write(process.versions.node)</script></span></span><br>
-            <span>Chromium <script>document.write(process.versions.chrome)</script></span><br>
-            <span>Electron <script>document.write(process.versions.electron)</script></span><br>
+            <span>Node.js <span id='versionNode'></span></span><br>
+            <span>Chromium <span id='versionChrome'></span></span><br>
+            <span>Electron <span id='versionElectron'></span></span><br>
         </div>
         <h4>With thanks to the following</h4>
         <div id="credits">
-            <a href="#" onclick="openExternal('https://getbootstrap.com/');">Bootstrap</a><br>   
-            <a href="#" onclick="openExternal('https://github.com/megahertz/electron-log');">electron-log</a><br> 
-            <a href="#" onclick="openExternal('https://github.com/sindresorhus/electron-store');">electron-store</a><br>
-            <a href="#" onclick="openExternal('https://github.com/FortAwesome/Font-Awesome');">font-awesome</a><br>
-            <a href="#" onclick="openExternal('https://github.com/maxogden/menubar');">menubar</a><br>
-            <a href="#" onclick="openExternal('https://github.com/thelinmichael/spotify-web-api-node');">spotify-web-api-node</a><br>    
-            <a href="#" onclick="openExternal('http://electron.atom.io/');">Electron<span id="electron-version"></span></a><br>
-            <a href="#" onclick="openExternal('https://github.com/electron-userland/electron-packager');">electron-packager</a><br>
-            <a href="#" onclick="openExternal('https://github.com/electron-userland/electron-installer-dmg');">electron-installer-dmg</a><br>
-            <a href="#" onclick="openExternal('https://github.com/electron-userland/electron-installer-windows');">electron-installer-windows</a><br>
+            <a href="https://getbootstrap.com/" class="external">Bootstrap</a><br>   
+            <a href="https://github.com/megahertz/electron-log" class="external">electron-log</a><br> 
+            <a href="https://github.com/sindresorhus/electron-store" class="external"">electron-store</a><br>
+            <a href="https://github.com/FortAwesome/Font-Awesome" class="external"">font-awesome</a><br>
+            <a href="https://github.com/max-mapper/menubar" class="external"">menubar</a><br>
+            <a href="https://github.com/thelinmichael/spotify-web-api-node" class="external"">spotify-web-api-node</a><br>    
+            <a href="http://electron.atom.io/" class="external";">Electron<span id="electron-version"></span></a><br>
+            <a href="https://github.com/electron-userland/electron-packager" class="external"">electron-packager</a><br>
+            <a href="https://github.com/electron-userland/electron-installer-dmg" class="external"">electron-installer-dmg</a><br>
+            <a href="https://github.com/electron-userland/electron-installer-windows" class="external"">electron-installer-windows</a><br>
         </div>
     </body>
-    <script type="text/javascript">
-        /* Handle opening of links in the Shell */
-        var shell = require('electron').shell;
-        function openExternal(url) {
-            shell.openExternal(url);
-        }
-        /* Retrieve version info from package.json */
-        document.getElementById('version').innerHTML = ' ' + require('../package.json').version;
-        document.getElementById('electron-version').innerHTML = ' v' + process.versions.electron;
-    </script>
+    <script src="./aboutRenderer.mjs" type="module"></script>
 </html>

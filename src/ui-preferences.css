@@ -1,0 +1,44 @@
+/**
+ * -------------------------------------------------------------------------------------------------
+ * ui-preferences.css
+ * 
+ * Overrides Boostrap styles without the use of SASS
+ * Used by ui-preferences.html only
+ * Bootstrap CSS files are in node_modules/bootstrap
+ *
+ * -------------------------------------------------------------------------------------------------
+ */
+
+
+.btn-primary {
+    background-color: #1ED760; 
+    border-color: #18AC4D;   
+}
+
+.btn-primary:hover {
+    background-color: #18AC4D;
+    border-color: #18AC4D;    
+}
+
+.nav-link{
+    color: #1ED760;    
+}
+
+.nav-link:hover {
+    color: #18AC4D; 
+}
+
+.list-group-item.active {
+    background-color: #4D5154; 
+    border-color: #373B3E; 
+}
+
+.list-group-item:hover {
+    background-color: #373B3E; 
+    border-color: #373B3E; 
+}
+
+.badge {
+    background-color: #1ED760; 
+    border-color: #18AC4D;   
+}

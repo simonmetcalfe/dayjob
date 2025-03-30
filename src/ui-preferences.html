@@ -1,29 +1,30 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
     <head>
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
-        <!-- <link rel="stylesheet" href="dashboard.css"> -->
         <title>Dayjob Preferences</title>
         <!-- Bootstrap -->
-        <link rel="stylesheet" href="./bootstrap.css">
+        <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.css">
+        <link rel="stylesheet" href="ui-preferences.css">
     </head>
     <body>
+      <script src="../node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
       <div class="container m-3">
         <!---------------------------------------------------------------->
         <!-- Tab definitions -->
         <!---------------------------------------------------------------->
         <ul class="nav nav-tabs" id="myTab" role="tablist">
-          <li class="nav-item">
-            <a class="nav-link active" id="home-tab" data-toggle="tab" href="#spotify-connection" role="tab" aria-controls="spotify-connection" aria-selected="true">Spotify Connection</a>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="home-tab" data-bs-toggle="tab" data-bs-target="#spotify-connection" type="button" role="tab" aria-controls="spotify-connection" aria-selected="true">Spotify Connection</button>
           </li>
-          <li class="nav-item">
-            <a class="nav-link" id="playlists-tab" data-toggle="tab" href="#playlists" role="tab" aria-controls="playlists" aria-selected="false">Playlists</a>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="playlists-tab" data-bs-toggle="tab" data-bs-target="#playlists" type="button" role="tab" aria-controls="playlists" aria-selected="false">Playlists</button>
           </li>
-          <li class="nav-item">
-            <a class="nav-link" id="general-tab" data-toggle="tab" href="#advanced" role="tab" aria-controls="advanced" aria-selected="false">Advanced</a>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="general-tab" data-bs-toggle="tab" data-bs-target="#advanced" type="button" role="tab" aria-controls="advanced" aria-selected="false">Advanced</button>
           </li>
         </ul>
         <div class="tab-content" id="myTabContent">
@@ -34,37 +35,43 @@
             <div class="container m-3">
               <div class="row mb-3">
                 <div class="col">
-                  <label for="basic-url"><span class="badge badge-success mr-2">1</span>Create a Client ID for dayjob in your Spotify developer dashboard using the following settings.</label>
+                  <label for="basic-url"><span class="badge badge-success mr-2">1</span>&nbsp;Create a Client ID for dayjob in your Spotify developer dashboard using the following settings.</label>
                   <table class="table table-bordered m-3">
                     <tr>
-                        <td>Application name</td>
+                        <td>App name</td>
                         <td>dayjob</td>
                     </tr>
                     <tr>
-                        <td>Description</td>
+                        <td>App description</td>
                         <td>Make great Spotify playlists while you work!</td>
                     </tr>
                     <tr>
-                        <td>Commercial app</td>
-                        <td>No</td>
+                        <td>Website</td>
+                        <td>(n/a)</td>
+                    </tr>
+                    <tr>
+                      <td>Redirect URIs</td>
+                      <td>http://localhost:8888/callback</td>
+                    </tr> 
+                    <tr>
+                      <td>Which API/SDKs are you planning to use?</td>
+                      <td>Web Playback SDK</td>
                     </tr>
                   </table>
-                  <label for="basic-url">Once created, edit it and add the following Redirect URI.</label>
+                  <label for="basic-url">You must log into the Spotify dashboard using your default browser or dayjob cannot complete the authentication process.</label>
                   <table class="table table-bordered m-3">
-                    <tr>
-                        <td>Redirect URI</td>
-                        <td>http://localhost:8888/callback</td>
-                    </tr>
+                    
                   </table>
                   <button type="button" id="btnOpenDashboard" class="btn btn-primary" >
-                      Open Spotify dashboard
+                      Open Spotify developer dashboard
                   </button>
+                  <br/><br/>
                 </div>
               </div>
             
               <div class="row mb-3">
                 <div class="col">
-                  <label for="basic-url"><span class="badge badge-success mr-2">2</span>Copy and paste the Client ID and Client secret provided by the dashboard into dayjob.</label>
+                  <label for="basic-url"><span class="badge badge-success mr-2">2</span>&nbsp;Once created, open the app you just created in the Spotify developer dashboard, press Settings, and then copy and paste the Client ID and Client secret into these fields.</label>
                   <div class="input-group m-3">
                       <div class="input-group-prepend">
                         <span class="input-group-text">Client ID</span>
@@ -81,8 +88,8 @@
               </div>
               <div class="row mb-3">
                 <div class="col">
-                  <label for="basic-url"><span class="badge badge-success mr-2">3</span>Hit 'Connect to Spotify' and follow the prompts to authorise dayjob.</label>
-                  <br/>
+                  <label for="basic-url"><span class="badge badge-success mr-2">3</span>&nbsp;Hit 'Connect to Spotify' and follow the prompts to authorise dayjob.</label>
+                  <br/><br/>
                   <button type="button" id="btnConnectToSpotify" class="btn btn-primary">
                       Connect to Spotify
                   </button>
@@ -116,13 +123,13 @@
                           <div class="input-group-prepend">
                             <span class="input-group-text">Playlist link</span>
                           </div> 
-                          <input type="text" class="form-control" placeholder="https://open.spotify.com/playlist/a1b2c3d4e5f6g7h8i9j10" id="fldPlaylistId1" aria-label="playlist-id-1" aria-describedby="basic-addon1">
+                          <input type="text" class="form-control" placeholder="" id="fldPlaylistLink1" aria-label="playlist-link-1" aria-describedby="basic-addon1">
                       </div>
                       <div class="input-group mb-3">
                           <div class="input-group-prepend">
                             <span class="input-group-text">Playlist name</span>
                           </div>
-                          <input type="text" class="form-control" placeholder="My playlist" id="fldPlaylistName1" aria-label="playlist-name-1" aria-describedby="basic-addon1">
+                          <input type="text" class="form-control" placeholder="" id="fldPlaylistName1" aria-label="playlist-name-1" aria-describedby="basic-addon1">
                       </div>                      
                   </div>
               </div>
@@ -142,13 +149,13 @@
                           <div class="input-group-prepend">
                             <span class="input-group-text">Playlist link</span>
                           </div> 
-                          <input type="text" class="form-control" placeholder="https://open.spotify.com/playlist/a1b2c3d4e5f6g7h8i9j10" id="fldPlaylistId2" aria-label="playlist-id-2" aria-describedby="basic-addon1">
+                          <input type="text" class="form-control" placeholder="" id="fldPlaylistLink2" aria-label="playlist-link-2" aria-describedby="basic-addon1">
                       </div>
                       <div class="input-group mb-3">
                           <div class="input-group-prepend">
                             <span class="input-group-text">Playlist name</span>
                           </div>
-                          <input type="text" class="form-control" placeholder="My playlist" id="fldPlaylistName2" aria-label="playlist-name-2" aria-describedby="basic-addon1">
+                          <input type="text" class="form-control" placeholder="" id="fldPlaylistName2" aria-label="playlist-name-2" aria-describedby="basic-addon1">
                       </div>                      
                   </div>
               </div>
@@ -168,13 +175,13 @@
                           <div class="input-group-prepend">
                             <span class="input-group-text">Playlist link</span>
                           </div> 
-                          <input type="text" class="form-control" placeholder="https://open.spotify.com/playlist/a1b2c3d4e5f6g7h8i9j10" id="fldPlaylistId3" aria-label="playlist-id-3" aria-describedby="basic-addon1">
+                          <input type="text" class="form-control" placeholder="" id="fldPlaylistLink3" aria-label="playlist-link-3" aria-describedby="basic-addon1">
                       </div>
                       <div class="input-group mb-3">
                           <div class="input-group-prepend">
                             <span class="input-group-text">Playlist name</span>
                           </div>
-                          <input type="text" class="form-control" placeholder="My playlist" id="fldPlaylistName3" aria-label="playlist-name-3" aria-describedby="basic-addon1">
+                          <input type="text" class="form-control" placeholder="" id="fldPlaylistName3" aria-label="playlist-name-3" aria-describedby="basic-addon1">
                       </div>                      
                   </div>
               </div>
@@ -194,13 +201,13 @@
                           <div class="input-group-prepend">
                             <span class="input-group-text">Playlist link</span>
                           </div> 
-                          <input type="text" class="form-control" placeholder="https://open.spotify.com/playlist/a1b2c3d4e5f6g7h8i9j10" id="fldPlaylistId4" aria-label="playlist-id-4" aria-describedby="basic-addon1">
+                          <input type="text" class="form-control" placeholder="" id="fldPlaylistLink4" aria-label="playlist-link-4" aria-describedby="basic-addon1">
                       </div>
                       <div class="input-group mb-3">
                           <div class="input-group-prepend">
                             <span class="input-group-text">Playlist name</span>
                           </div>
-                          <input type="text" class="form-control" placeholder="My playlist" id="fldPlaylistName4" aria-label="playlist-name-4" aria-describedby="basic-addon1">
+                          <input type="text" class="form-control" placeholder="" id="fldPlaylistName4" aria-label="playlist-name-4" aria-describedby="basic-addon1">
                       </div>                      
                   </div>
               </div>
@@ -220,13 +227,13 @@
                           <div class="input-group-prepend">
                             <span class="input-group-text">Playlist link</span>
                           </div> 
-                          <input type="text" class="form-control" placeholder="https://open.spotify.com/playlist/a1b2c3d4e5f6g7h8i9j10" id="fldPlaylistId5" aria-label="playlist-id-5" aria-describedby="basic-addon1">
+                          <input type="text" class="form-control" placeholder="" id="fldPlaylistLink5" aria-label="playlist-link-5" aria-describedby="basic-addon1">
                       </div>
                       <div class="input-group mb-3">
                           <div class="input-group-prepend">
                             <span class="input-group-text">Playlist name</span>
                           </div>
-                          <input type="text" class="form-control" placeholder="My playlist" id="fldPlaylistName5" aria-label="playlist-name-5" aria-describedby="basic-addon1">
+                          <input type="text" class="form-control" placeholder="" id="fldPlaylistName5" aria-label="playlist-name-5" aria-describedby="basic-addon1">
                       </div>                      
                   </div>
               </div>
@@ -246,13 +253,13 @@
                           <div class="input-group-prepend">
                             <span class="input-group-text">Playlist link</span>
                           </div> 
-                          <input type="text" class="form-control" placeholder="https://open.spotify.com/playlist/a1b2c3d4e5f6g7h8i9j10" id="fldPlaylistId6" aria-label="playlist-id-6" aria-describedby="basic-addon1">
+                          <input type="text" class="form-control" placeholder="" id="fldPlaylistLink6" aria-label="playlist-link-6" aria-describedby="basic-addon1">
                       </div>
                       <div class="input-group mb-3">
                           <div class="input-group-prepend">
                             <span class="input-group-text">Playlist name</span>
                           </div>
-                          <input type="text" class="form-control" placeholder="My playlist" id="fldPlaylistName6" aria-label="playlist-name-6" aria-describedby="basic-addon1">
+                          <input type="text" class="form-control" placeholder="" id="fldPlaylistName6" aria-label="playlist-name-6" aria-describedby="basic-addon1">
                       </div>                      
                   </div>
               </div>
@@ -272,13 +279,13 @@
                           <div class="input-group-prepend">
                             <span class="input-group-text">Playlist link</span>
                           </div> 
-                          <input type="text" class="form-control" placeholder="https://open.spotify.com/playlist/a1b2c3d4e5f6g7h8i9j10" id="fldPlaylistId7" aria-label="playlist-id-7" aria-describedby="basic-addon1">
+                          <input type="text" class="form-control" placeholder="" id="fldPlaylistLink7" aria-label="playlist-link-7" aria-describedby="basic-addon1">
                       </div>
                       <div class="input-group mb-3">
                           <div class="input-group-prepend">
                             <span class="input-group-text">Playlist name</span>
                           </div>
-                          <input type="text" class="form-control" placeholder="My playlist" id="fldPlaylistName7" aria-label="playlist-name-7" aria-describedby="basic-addon1">
+                          <input type="text" class="form-control" placeholder="" id="fldPlaylistName7" aria-label="playlist-name-7" aria-describedby="basic-addon1">
                       </div>                      
                   </div>
               </div>
@@ -298,13 +305,13 @@
                           <div class="input-group-prepend">
                             <span class="input-group-text">Playlist link</span>
                           </div> 
-                          <input type="text" class="form-control" placeholder="https://open.spotify.com/playlist/a1b2c3d4e5f6g7h8i9j10" id="fldPlaylistId8" aria-label="playlist-id-8" aria-describedby="basic-addon1">
+                          <input type="text" class="form-control" placeholder="" id="fldPlaylistLink8" aria-label="playlist-link-8" aria-describedby="basic-addon1">
                       </div>
                       <div class="input-group mb-3">
                           <div class="input-group-prepend">
                             <span class="input-group-text">Playlist name</span>
                           </div>
-                          <input type="text" class="form-control" placeholder="My playlist" id="fldPlaylistName8" aria-label="playlist-name-8" aria-describedby="basic-addon1">
+                          <input type="text" class="form-control" placeholder="" id="fldPlaylistName8" aria-label="playlist-name-8" aria-describedby="basic-addon1">
                       </div>                      
                   </div>
               </div>
@@ -324,13 +331,13 @@
                           <div class="input-group-prepend">
                             <span class="input-group-text">Playlist link</span>
                           </div> 
-                          <input type="text" class="form-control" placeholder="https://open.spotify.com/playlist/a1b2c3d4e5f6g7h8i9j10" id="fldPlaylistId9" aria-label="playlist-id-9" aria-describedby="basic-addon1">
+                          <input type="text" class="form-control" placeholder="" id="fldPlaylistLink9" aria-label="playlist-link-9" aria-describedby="basic-addon1">
                       </div>
                       <div class="input-group mb-3">
                           <div class="input-group-prepend">
                             <span class="input-group-text">Playlist name</span>
                           </div>
-                          <input type="text" class="form-control" placeholder="My playlist" id="fldPlaylistName9" aria-label="playlist-name-9" aria-describedby="basic-addon1">
+                          <input type="text" class="form-control" placeholder="" id="fldPlaylistName9" aria-label="playlist-name-9" aria-describedby="basic-addon1">
                       </div>                      
                   </div>
               </div>
@@ -350,13 +357,13 @@
                           <div class="input-group-prepend">
                             <span class="input-group-text">Playlist link</span>
                           </div> 
-                          <input type="text" class="form-control" placeholder="https://open.spotify.com/playlist/a1b2c3d4e5f6g7h8i9j10" id="fldPlaylistId10" aria-label="playlist-id-10" aria-describedby="basic-addon1">
+                          <input type="text" class="form-control" placeholder="" id="fldPlaylistLink0" aria-label="playlist-link-0" aria-describedby="basic-addon1">
                       </div>
                       <div class="input-group mb-3">
                           <div class="input-group-prepend">
                             <span class="input-group-text">Playlist name</span>
                           </div>
-                          <input type="text" class="form-control" placeholder="My playlist" id="fldPlaylistName10" aria-label="playlist-name-10" aria-describedby="basic-addon1">
+                          <input type="text" class="form-control" placeholder="" id="fldPlaylistName0" aria-label="playlist-name-0" aria-describedby="basic-addon1">
                       </div>                      
                   </div>
               </div>
@@ -370,22 +377,22 @@
             <div class="container m-3">
                 <div class="row mb-3">
                   <div class="form-check">
-                    <input class="form-check-input" type="checkbox" value="" id="always_skip_tracks">
-                    <label class="form-check-label" for="always_skip_tracks">
+                    <input class="form-check-input" type="checkbox" value="" id="chkAlwaysSkipTracks">
+                    <label class="form-check-label" for="chkAlwaysSkipTracks">
                       Always skip tracks when removing from playlists
                     </label>
-                    <small id="always_skip_tracks_help" class="form-text text-muted">
+                    <small id="chkAlwaysSkipTracks_help" class="form-text text-muted">
                         When removing a track with CTRL + ALT + -, Spotify will skip to the next track without holding the SHIFT key.  Holding SHIFT then has the reverse effect and prevents skipping.  
                     </small>
                   </div>
                 </div>
                 <div class="row mb-3">
                   <div class="form-check">
-                    <input class="form-check-input" type="checkbox" value="" id="always_move_tracks">
-                    <label class="form-check-label" for="always_move_tracks">
+                    <input class="form-check-input" type="checkbox" value="" id="chkAlwaysMoveTracks">
+                    <label class="form-check-label" for="chkAlwaysMoveTracks">
                       Always move tracks to playlists (instead of copying them)
                     </label>
-                    <small id="always_move_tracks_help" class="form-text text-muted">
+                    <small id="chkAlwaysMoveTracks_help" class="form-text text-muted">
                         When adding tracks to playlists with CTRL + ALT + ##, they will be removed from the source playlist without holding the SHIFT key.  Holding SHIFT then has the reverse effect and copys the track.
                     </small>
                   </div>
@@ -394,20 +401,7 @@
           </div>
         </div>
       </div>
-
-      
-
-
     </body>
 
-  <script>
-      require('./ui-preferences.js');
-  </script>
-
-    <!---->
-    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-    <!-- <script src="./../node_modules/jquery/dist/jquery.min.js"></script> -->
-    <!-- Include all compiled plugins (below), or include individual files as needed -->
-    <!--<script src="./../node_modules/bootstrap/dist/js/bootstrap.min.js"></script> -->
-
+  <script src="./ui-preferencesRenderer.mjs" type="module"></script>
 </html>
