@@ -14,8 +14,8 @@
  * -------------------------------------------------------------------------------------------------
  */
 
-const Store = require('electron-store');
-var log = require('electron-log');
+import Store from 'electron-store';
+import log from 'electron-log';
 
 /**
  * -------------------------------------------------------------------------------------------------
@@ -38,7 +38,7 @@ log.warn('prefs.cjs:  Updated last initalised date to ' + prefs_local.get('date_
  * -------------------------------------------------------------------------------------------------
  */
 
-module.exports.setPref = (key, val) => {
+export function setPref(key, val) {
     log.warn('prefs.cjs:  Updated preference: ' + key) // + ':' + prefs_local.get(key) + ' to ' + val) ;
     prefs_local.set(key, val);
 }
@@ -49,7 +49,7 @@ module.exports.setPref = (key, val) => {
  * -------------------------------------------------------------------------------------------------
  */
 
-module.exports.getPref  = (key) => {
+export function getPref(key) {
     if (prefs_local.has(key)){
         var val = prefs_local.get(key);
         log.warn('prefs.cjs:  Retrieved preference: ' + key) // + ':' + val);
@@ -67,7 +67,7 @@ module.exports.getPref  = (key) => {
  * -------------------------------------------------------------------------------------------------
  */
     
-module.exports.deletePref = (key) => {
+export function deletePref(key) {
     prefs_local.delete(key);
     log.warn('prefs.cjs:  Deleted preference: ' + key);
 }

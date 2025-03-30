@@ -14,7 +14,7 @@
  * -------------------------------------------------------------------------------------------------
  */
 
-var log = require('electron-log');
+import log from 'electron-log';
 log.warn('spotify-server.cjs:  Script has started.')
 
 /**
@@ -23,11 +23,11 @@ log.warn('spotify-server.cjs:  Script has started.')
  * -------------------------------------------------------------------------------------------------
  */
 
-var SpotifyWebApi = require('spotify-web-api-node');
-var http = require("http");
-var url = require("url");
-const prefsLocal = require('./prefs.cjs');
-var events = require('events');
+import SpotifyWebApi from 'spotify-web-api-node';
+import http from "http";
+import url from "url";
+import * as prefsLocal from './prefs.mjs';
+import events from 'events';
 
 /**
  * -------------------------------------------------------------------------------------------------
@@ -35,14 +35,14 @@ var events = require('events');
  * -------------------------------------------------------------------------------------------------
  */
 
-var spotifyApi; // Where we store the instance of spotifyApi
-var webServer;
-var authEvents; // Event emitter to let main process know when auth has taken place
-var redirectUri = 'http://localhost:8888/callback';
-var state; //For dayjob to verify requests to the redirect URI
-var spotifyUserId;
-var spotifyDisplayName;
-var scopes = ['user-read-private', 
+let spotifyApi; // Where we store the instance of spotifyApi
+let webServer;
+let authEvents; // Event emitter to let main process know when auth has taken place
+const redirectUri = 'http://localhost:8888/callback';
+let state; //For dayjob to verify requests to the redirect URI
+let spotifyUserId;
+let spotifyDisplayName;
+const scopes = ['user-read-private', 
               'user-read-email', 
               'playlist-read-private', 
               'playlist-modify-private', 
@@ -58,10 +58,10 @@ var scopes = ['user-read-private',
  * -------------------------------------------------------------------------------------------------
  */
 
-module.exports.getSpotifyUserId = () => {return spotifyUserId;}
-module.exports.getspotifyDisplayName = () => {return spotifyDisplayName;}
-module.exports.getWebServer = () => {return webServer;}
-module.exports.getAuthEvents = () => {return authEvents;}
+export const getSpotifyUserId = () => spotifyUserId;
+export const getspotifyDisplayName = () => spotifyDisplayName;
+export const getWebServer = () => webServer;
+export const getAuthEvents = () => authEvents;
 
 
 /**
@@ -103,11 +103,7 @@ authEvents = new events.EventEmitter();
 // Set a random state at startup to ensure webserver ignores requests without a 'state' query parameter 
 state = generateRandomString(16);
 
-module.exports.startWebServer = () => {
-    return startWebServer()
-}
-
-function startWebServer(){ 
+export function startWebServer(){ 
     webServer = http.createServer ( (request, response) => {
         log.warn('spotify-server.cjs:  Attempting to start the webserver.');
         // Get object with all the parameters
@@ -154,7 +150,7 @@ function startWebServer(){
         return 'ready';
 
     }).on('error', err => { 
-        log.warn('main.cjs:  An error occurred with the spotify-server web server and it was stopped: ' + JSON.stringify(err))
+        log.warn('main.mjs:  An error occurred with the spotify-server web server and it was stopped: ' + JSON.stringify(err))
         stopWebServer();
         if (err.code == 'EADDRINUSE'){
             authEvents.emit('webserver_port_in_use',err)    
@@ -168,11 +164,7 @@ function startWebServer(){
 
 
 
-module.exports.checkIfWebServerReady = () => {
-    return checkIfWebServerReady();
-}
-
-function checkIfWebServerReady() {
+export function checkIfWebServerReady() {
     return new Promise((resolve, reject) => {
         if (webServer.listening) {
             // If the server is already listening, resolve immediately
@@ -191,11 +183,8 @@ function checkIfWebServerReady() {
     });
 }
 
-module.exports.stopWebServer = () => {
-    return stopWebServer();
-}
 
-function stopWebServer(){
+export function stopWebServer(){
     log.warn('spotify-server.cjs:  Attempting to stop the web server.');
     webServer
         .close() // Won't accept new connection
@@ -237,11 +226,7 @@ initialiseSpotifyApiInstance() // Must be done on startup
  * 
  */
 
-module.exports.checkApiConnection = () => {
-    return checkApiConnection();
-};
-
-function checkApiConnection() {
+export function checkApiConnection() {
     log.warn('spotify-server.cjs:  Checking the state of the API connection...')
     return Promise.resolve().then(result => {
         // User-editable proeprties must be checked for being an empty string as well as undefined
@@ -304,7 +289,7 @@ function checkApiConnection() {
  * -------------------------------------------------------------------------------------------------
  */
 
-module.exports.getAuthUrl = () => {
+export function getAuthUrl() {
     return Promise.resolve().then(result => {
         initialiseSpotifyApiInstance(); // Instance must be re-created to set the clientId
         spotifyApi.resetAccessToken();
@@ -362,8 +347,7 @@ function authCodeGrant() {
         // Calculate date of access token expiry in ms
         prefsLocal.setPref('spotify-server_token_expiration_date', new Date().getTime() + result.body.expires_in * 1000); //Convert seconds to ms
         log.warn('spotify-server.cjs:  Token expiration date set (ms):  ' + prefsLocal.getPref('spotify-server_token_expiration_date'));
-        return spotifyApi.getMe();
-        // TODO - is it necessary to call spotifyApi.getMe() just to log the users details - either it is not, or the users details should be saved to a variable instead
+        return spotifyApi.getMe();  // TODO - is it necessary to call spotifyApi.getMe() just to log the users details - either it is not, or the users details should be saved to a variable instead
     }).then(result => {
         // Success
         log.warn('spotify-server.cjs:  Connected successfully.  Retrieved data for ' + result.body.display_name);
@@ -436,11 +420,7 @@ function getMyCurrentPlayingTrack() {
  * -------------------------------------------------------------------------------------------------
  */
 
-module.exports.addTracksToPlaylist = (playlistId, tracks) => {
-    return addTracksToPlaylist(playlistId, tracks)
-}
-
-function addTracksToPlaylist(playlistId, tracks){
+export function addTracksToPlaylist(playlistId, tracks){
     // Needs playlistId, tracks
     // Example '3EsfV6XzCHU8SPNdbnFogK','["spotify:track:4iV5W9uYEdYUVa79Axb7Rh", "spotify:track:1301WleyT98MSxVHPZCA6M"]'
     return spotifyApi.addTracksToPlaylist(playlistId, tracks)
@@ -459,11 +439,8 @@ function addTracksToPlaylist(playlistId, tracks){
  * -------------------------------------------------------------------------------------------------
  */
 
-module.exports.removeTracksFromPlaylist = (playlistId, tracks) => {
-    return removeTracksFromPlaylist (playlistId, tracks) 
-}
 
-function removeTracksFromPlaylist (playlistId, tracks) {
+export function removeTracksFromPlaylist (playlistId, tracks) {
     // Needs playlistId, tracks, options, callback
     return spotifyApi.removeTracksFromPlaylist(playlistId, tracks)
         .catch(err => {  
@@ -498,11 +475,7 @@ function getPlaylist(playlistId) {
  * -------------------------------------------------------------------------------------------------
  */
 
-module.exports.getPlaylistName = (playlistId) => {
-    return getPlaylistName(playlistId);
-}
-
-function getPlaylistName(playlistId){
+export function getPlaylistName(playlistId){
     return getPlaylist(playlistId)
     .then(result => {
         log.warn('spotify-server.cjs:  Retrieved playlist name \'' + result.body.name + '\' for playlist \'' + playlistId + '\'');
@@ -515,10 +488,7 @@ function getPlaylistName(playlistId){
  * -------------------------------------------------------------------------------------------------
  */
 
-module.exports.skipToNext = () => {
-    return skipToNext();
-}
-function skipToNext(){
+export function skipToNext(){
     return spotifyApi.skipToNext()
         .then(result => {
             log.warn('spotify-server.cjs: Skipping track using Spotify API successful: ' + result);
@@ -538,7 +508,7 @@ function skipToNext(){
 // Returns a JSON object 'trackinfo'
 
 function parsePlayingTrackInfo(playingTrackJson){ //TODO:  Come back to this one
-    trackInfo = {
+    let trackInfo = {
         context:{}
     }
     return Promise.resolve().then(result => {
@@ -618,11 +588,7 @@ function parsePlayingTrackInfo(playingTrackJson){ //TODO:  Come back to this one
  * 
  */
 
-module.exports.getPlayingTrackInfo = () => {
-    return getPlayingTrackInfo();
-}
-
-function getPlayingTrackInfo(){ 
+export function getPlayingTrackInfo(){ 
     return checkApiConnection()
         .then(result => {
             log.warn('spotify-server.cjs:  Check API connection succeeded, now getting currently playing track info...');
@@ -638,12 +604,8 @@ function getPlayingTrackInfo(){
  * -------------------------------------------------------------------------------------------------
  */
 
-module.exports.removePlayingTrackFromPlaylist = () => {
-    return removePlayingTrackFromPlaylist()
-}
-
-function removePlayingTrackFromPlaylist(){
-    trackInfo = {};
+export function removePlayingTrackFromPlaylist(){
+    let trackInfo = {};
     return getPlayingTrackInfo()
         .then(result => {
             trackInfo = result;
@@ -672,7 +634,7 @@ function removePlayingTrackFromPlaylist(){
  * -------------------------------------------------------------------------------------------------
  */
 
-module.exports.copyOrMovePlayingTrackToPlaylist = (destPlaylistId, destPlaylistName, move) => {
+export const copyOrMovePlayingTrackToPlaylist = (destPlaylistId, destPlaylistName, move) => {
     if (move == 0) {return copyPlayingTrackToPlaylist(destPlaylistId, destPlaylistName);}
     if (move == 1) {return movePlayingTrackToPlaylist(destPlaylistId, destPlaylistName);}
 }
@@ -682,12 +644,8 @@ module.exports.copyOrMovePlayingTrackToPlaylist = (destPlaylistId, destPlaylistN
  * -------------------------------------------------------------------------------------------------
  */
 
-module.exports.copyPlayingTrackToPlaylist = (destPlaylistId, destPlaylistName) => {
-    return copyPlayingTrackToPlaylist(destPlaylistId, destPlaylistName);
-}
-
-function copyPlayingTrackToPlaylist(destPlaylistId, destPlaylistName){
-    trackInfo = {};
+export function copyPlayingTrackToPlaylist(destPlaylistId, destPlaylistName){
+    let trackInfo = {};
     return getPlayingTrackInfo()
         .then(result => {
             trackInfo = result;
@@ -710,12 +668,8 @@ function copyPlayingTrackToPlaylist(destPlaylistId, destPlaylistName){
  * -------------------------------------------------------------------------------------------------
  */
 
-module.exports.movePlayingTrackToPlaylist = (destPlaylistId, destPlaylistName) => {
-    return movePlayingTrackToPlaylist(destPlaylistId, destPlaylistName);
-}
-
-function movePlayingTrackToPlaylist(destPlaylistId, destPlaylistName){
-    trackInfo = {};
+export function movePlayingTrackToPlaylist(destPlaylistId, destPlaylistName){
+    let trackInfo = {};
     return getPlayingTrackInfo()
         .then(result => {
             trackInfo = result;
@@ -757,11 +711,7 @@ function movePlayingTrackToPlaylist(destPlaylistId, destPlaylistName){
  * -------------------------------------------------------------------------------------------------
  */
 
-module.exports.getPlaylistIdFromUriOrUrl = (value) => {
-    return getPlaylistIdFromUriOrUrl(value);
-}
-
-function getPlaylistIdFromUriOrUrl(value){
+export function getPlaylistIdFromUriOrUrl(value){
     var playlistId = '';
     if (value.includes('spotify:playlist:')){
         // Playlist URI format (no longer supported on new clients): spotify:playlist:7wc5E787OhRM7eYwPQ1jia 
