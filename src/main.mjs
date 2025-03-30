@@ -4,6 +4,22 @@ import 'v8-compile-cache';
 
 /**
  * -------------------------------------------------------------------------------------------------
+ * Squirrel event handling (Windows install, update, uninstall, start menu icon creation etc.)
+ * -------------------------------------------------------------------------------------------------
+ */
+
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+
+// Handle Squirrel events
+if (require('electron-squirrel-startup')) {
+  app.quit();
+}
+
+
+
+/**
+ * -------------------------------------------------------------------------------------------------
  * Logging & app start
  * -------------------------------------------------------------------------------------------------
  */
