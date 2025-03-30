@@ -1,6 +1,6 @@
 {
   "name": "dayjob",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Make great Spotify playlists while you work.",
   "author": "Simon Metcalfe",
   "keywords": [
@@ -25,6 +25,7 @@
   "dependencies": {
     "bootstrap": "5.3.3",
     "electron-log": "5.3.2",
+    "electron-squirrel-startup": "1.0.1",
     "electron-store": "10.0.1",
     "font-awesome": "4.7.0",
     "menubar": "9.5.1",
@@ -32,18 +33,20 @@
     "v8-compile-cache": "2.4.0"
   },
   "devDependencies": {
-    "electron": "35.0.2",
+    "electron": "32.3.3",
     "electron-installer-dmg": "5.0.1",
     "electron-installer-windows": "3.0.0",
     "electron-packager": "17.1.2"
   },
   "scripts": {
     "start": "electron .",
-    "build-mac-silicon":   "electron-packager . --platform=darwin --arch=arm64 --overwrite --out=builds/_build-temp --ignore=/builds --ignore=/assets_readme",
-    "build-mac-intel":     "electron-packager . --platform=darwin --arch=x64   --overwrite --out=builds/_build-temp --ignore=/builds --ignore=/assets_readme",
-    "build-win":           "electron-packager . --platform=win32  --arch=x64   --overwrite --out=builds/_build-temp --ignore=/builds --ignore=/assets_readme",
-    "package-mac-silicon": "electron-installer-dmg --overwrite ./builds/_build-temp/dayjob-darwin-arm64/dayjob.app ./builds/dayjob-mac-silicon",
-    "package-mac-intel":   "electron-installer-dmg --overwrite ./builds/_build-temp/dayjob-darwin-x64/dayjob.app ./builds/dayjob-mac-intel",
-    "package-win":         "electron-installer-windows --src ./builds/_build-temp/dayjob-win32-x64/ --dest ./builds/dayjob-win-x64"
+    "build-mac-silicon": "electron-packager . --platform=darwin --arch=arm64 --overwrite --out=bld/_build-temp --ignore=/bld --ignore=/assets_readme",
+    "build-mac-intel": "electron-packager . --platform=darwin --arch=x64   --overwrite --out=bld/_build-temp --ignore=/bld --ignore=/assets_readme",
+    "build-win": "electron-packager . --platform=win32  --arch=x64   --overwrite --out=bld/_build-temp --ignore=/bld --ignore=/assets_readme",
+    "build-all": "npm run build-mac-silicon && npm run build-mac-intel && npm run build-win",
+    "package-mac-silicon": "electron-installer-dmg --overwrite ./bld/_build-temp/dayjob-darwin-arm64/dayjob.app ./bld/dayjob_mac_arm-$npm_package_version",
+    "package-mac-intel": "electron-installer-dmg --overwrite ./bld/_build-temp/dayjob-darwin-x64/dayjob.app ./bld/dayjob_mac_x64-$npm_package_version",
+    "package-win": "electron-installer-windows --src ./bld/_build-temp/dayjob-win32-x64/ --dest ./bld --name dayjob_win_x64",
+    "package-all": "npm run package-mac-silicon && npm run package-mac-intel && npm run package-win"
   }
 }

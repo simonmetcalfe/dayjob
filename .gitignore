@@ -67,4 +67,4 @@ typings/
 yarn.lock
 .DS_Store
 *.plist
-/builds
+/bld
