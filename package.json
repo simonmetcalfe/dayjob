@@ -23,17 +23,17 @@
   "license": "MIT",
   "main": "src/main.mjs",
   "dependencies": {
-    "bootstrap": "5.3.3",
-    "electron-log": "5.3.2",
+    "bootstrap": "5.3.8",
+    "electron-log": "5.4.4",
     "electron-squirrel-startup": "1.0.1",
-    "electron-store": "10.0.1",
+    "electron-store": "11.0.2",
     "font-awesome": "4.7.0",
-    "menubar": "9.5.1",
+    "menubar": "9.5.3",
     "spotify-web-api-node": "5.0.2",
     "v8-compile-cache": "2.4.0"
   },
   "devDependencies": {
-    "electron": "32.3.3",
+    "electron": "43.2.0",
     "electron-installer-dmg": "5.0.1",
     "electron-installer-windows": "3.0.0",
     "electron-packager": "17.1.2"
