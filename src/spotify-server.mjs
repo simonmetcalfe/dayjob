@@ -38,7 +38,12 @@ import events from 'events';
 let spotifyApi; // Where we store the instance of spotifyApi
 let webServer;
 let authEvents; // Event emitter to let main process know when auth has taken place
-const redirectUri = 'http://localhost:8888/callback';
+// Spotify's docs state a loopback redirect URI can be registered without a port and completed dynamically at request time,
+// but the Spotify dashboard's own validation currently rejects a portless entry as "not secure", so a fixed port must be
+// registered and used here instead.  53829 sits in the IANA private/dynamic port range (49152-65535), away from the
+// defaults of common local dev tools (e.g. Jupyter's 8888) that caused this port to be silently shadowed before.
+const authCallbackPort = 53829;
+const redirectUri = 'http://127.0.0.1:' + authCallbackPort + '/callback';
 let state; //For dayjob to verify requests to the redirect URI
 let spotifyUserId;
 let spotifyDisplayName;
@@ -144,8 +149,8 @@ export function startWebServer(){
         }
         response.end();
 
-    }).listen(8888, () => {
-        log.warn('spotify-server.cjs:  Webserver initialised and listening for Spotify authentication requests.');
+    }).listen(authCallbackPort, '127.0.0.1', () => { // Bound explicitly to loopback (not the wildcard address) so another app's fixed-port loopback binding can't silently steal our traffic
+        log.warn('spotify-server.cjs:  Webserver initialised and listening for Spotify authentication requests on ' + redirectUri);
         authEvents.emit('ready');
         return 'ready';
 

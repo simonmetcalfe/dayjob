@@ -61,7 +61,7 @@ dayjob will prompt you to set up the Spotify connection on first use, but you us
    - App or Hardware Description: _Make great Spotify playlists while you work_
    - What are you building?: _Desktop app_
    - Commercial: _No_
-   - Redirect URI: _http://localhost:8888/callback_
+   - Redirect URI: _http://127.0.0.1:53829/callback_
 1. Enter the Client ID and secret into dayjob
 1. Click _Connect to Spotify_ and follow the prompts to authorise
 
