@@ -1,6 +1,6 @@
 {
   "name": "dayjob",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Make great Spotify playlists while you work.",
   "author": "Simon Metcalfe",
   "keywords": [
@@ -22,31 +22,36 @@
   },
   "license": "MIT",
   "main": "src/main.mjs",
+  "overrides": {
+    "yauzl": "3.3.1"
+  },
   "dependencies": {
-    "bootstrap": "5.3.3",
-    "electron-log": "5.3.2",
+    "bootstrap": "5.3.8",
+    "electron-log": "5.4.4",
     "electron-squirrel-startup": "1.0.1",
-    "electron-store": "10.0.1",
+    "electron-store": "11.0.2",
     "font-awesome": "4.7.0",
-    "menubar": "9.5.1",
+    "menubar": "9.5.3",
     "spotify-web-api-node": "5.0.2",
     "v8-compile-cache": "2.4.0"
   },
   "devDependencies": {
-    "electron": "32.3.3",
-    "electron-installer-dmg": "5.0.1",
-    "electron-installer-windows": "3.0.0",
-    "electron-packager": "17.1.2"
+    "@electron-forge/cli": "7.11.2",
+    "@electron-forge/maker-dmg": "7.11.2",
+    "@electron-forge/maker-squirrel": "7.11.2",
+    "electron": "43.2.0"
   },
   "scripts": {
     "start": "electron .",
-    "build-mac-silicon": "electron-packager . --platform=darwin --arch=arm64 --overwrite --out=bld/_build-temp --ignore=/bld --ignore=/assets_readme",
-    "build-mac-intel": "electron-packager . --platform=darwin --arch=x64   --overwrite --out=bld/_build-temp --ignore=/bld --ignore=/assets_readme",
-    "build-win": "electron-packager . --platform=win32  --arch=x64   --overwrite --out=bld/_build-temp --ignore=/bld --ignore=/assets_readme",
+    "build-mac-silicon": "electron-forge package --platform=darwin --arch=arm64",
+    "build-mac-intel": "electron-forge package --platform=darwin --arch=x64",
+    "build-win": "electron-forge package --platform=win32 --arch=x64",
     "build-all": "npm run build-mac-silicon && npm run build-mac-intel && npm run build-win",
-    "package-mac-silicon": "electron-installer-dmg --overwrite ./bld/_build-temp/dayjob-darwin-arm64/dayjob.app ./bld/dayjob_mac_arm-$npm_package_version",
-    "package-mac-intel": "electron-installer-dmg --overwrite ./bld/_build-temp/dayjob-darwin-x64/dayjob.app ./bld/dayjob_mac_x64-$npm_package_version",
-    "package-win": "electron-installer-windows --src ./bld/_build-temp/dayjob-win32-x64/ --dest ./bld --name dayjob_win_x64",
-    "package-all": "npm run package-mac-silicon && npm run package-mac-intel && npm run package-win"
+    "package-mac-silicon": "electron-forge make --platform=darwin --arch=arm64 --skip-package",
+    "package-mac-intel": "electron-forge make --platform=darwin --arch=x64 --skip-package",
+    "prepackage-win": "node scripts/fix-electron-winstaller-7z.js",
+    "package-win": "electron-forge make --platform=win32 --arch=x64 --skip-package",
+    "package-all": "npm run package-mac-silicon && npm run package-mac-intel && npm run package-win",
+    "build-package-all": "npm run build-all && npm run package-all"
   }
 }

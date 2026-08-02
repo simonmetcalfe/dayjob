@@ -38,7 +38,12 @@ import events from 'events';
 let spotifyApi; // Where we store the instance of spotifyApi
 let webServer;
 let authEvents; // Event emitter to let main process know when auth has taken place
-const redirectUri = 'http://localhost:8888/callback';
+// Spotify's docs state a loopback redirect URI can be registered without a port and completed dynamically at request time,
+// but the Spotify dashboard's own validation currently rejects a portless entry as "not secure", so a fixed port must be
+// registered and used here instead.  53829 sits in the IANA private/dynamic port range (49152-65535), away from the
+// defaults of common local dev tools (e.g. Jupyter's 8888) that caused this port to be silently shadowed before.
+const authCallbackPort = 53829;
+const redirectUri = 'http://127.0.0.1:' + authCallbackPort + '/callback';
 let state; //For dayjob to verify requests to the redirect URI
 let spotifyUserId;
 let spotifyDisplayName;
@@ -144,8 +149,8 @@ export function startWebServer(){
         }
         response.end();
 
-    }).listen(8888, () => {
-        log.warn('spotify-server.cjs:  Webserver initialised and listening for Spotify authentication requests.');
+    }).listen(authCallbackPort, '127.0.0.1', () => { // Bound explicitly to loopback (not the wildcard address) so another app's fixed-port loopback binding can't silently steal our traffic
+        log.warn('spotify-server.cjs:  Webserver initialised and listening for Spotify authentication requests on ' + redirectUri);
         authEvents.emit('ready');
         return 'ready';
 
@@ -378,11 +383,32 @@ function refreshAccessToken() {
             // Save the access token so that it's used in future calls (setAccessToken does not return a Promise)
             spotifyApi.setAccessToken(result.body.access_token);
             prefsLocal.setPref('spotify-server_access_token', result.body.access_token);
+            if (result.body.refresh_token != undefined) {
+                // Spotify does not always rotate the refresh token, but if it does the old one may no longer be valid, so it must be saved
+                log.warn('spotify-server.cjs:  A new refresh token was issued during refresh: ' + result.body.refresh_token);
+                spotifyApi.setRefreshToken(result.body.refresh_token);
+                prefsLocal.setPref('spotify-server_refresh_token', result.body.refresh_token);
+            }
             // Calculate date of access token expiry in ms
             prefsLocal.setPref('spotify-server_token_expiration_date', new Date().getTime() + (result.body.expires_in * 1000)); //Convert seconds to ms
             log.warn('spotify-server.cjs:  The access token expiration date refreshed (ms):  ' + new Date().getTime() + " / " + prefsLocal.getPref('spotify-server_token_expiration_date'));
             return 'access_token_refreshed';
         }).catch(err => { 
+            if (err.body != undefined && err.body.error == 'invalid_grant') {
+                // Refresh token has expired or been revoked (e.g. Spotify's 6-month refresh token expiry).  It cannot be retried, so discard it and force re-authorisation
+                log.warn('spotify-server.cjs:  [ERROR] Refresh token is invalid (' + err.body.error_description + ').  Discarding stored auth data and re-launching auth URL.');
+                spotifyApi.resetAccessToken();
+                spotifyApi.resetRefreshToken();
+                prefsLocal.deletePref('spotify-server_access_token');
+                prefsLocal.deletePref('spotify-server_refresh_token');
+                prefsLocal.deletePref('spotify-server_authorizationCode');
+                prefsLocal.deletePref('spotify-server_token_expiration_date');
+                spotifyDisplayName = undefined;
+                spotifyUserId = undefined;
+                const handledErr = new Error("refresh_token_expired")
+                handledErr.error = err;
+                return Promise.reject(handledErr);
+            }
             log.warn('spotify-server.cjs:  [ERROR] Could not refresh access token.  It is possible the user revoked access to dayjob.  Clearing auth data and re-launching auth URL.  Error ' + err.message);
             // Handle spotifyApi.refreshAccessToken promise error gracefully
             const handledErr = new Error("cannot_refresh_access_token")

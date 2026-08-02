@@ -354,7 +354,7 @@ spotifyServer.getAuthEvents().on('server_stopped', result => {
 })  
 
 spotifyServer.getAuthEvents().on('webserver_port_in_use', result => {  
-  log.warn('main.mjs:  [ERROR] Auth event \'webserver_port_in_use\' has been raised by spotify-server.mjs.  Port 8888 is in use but required by dayjob to authorise with Spotify.  Ensure port is free and start dayjob again.  Error: ' + String(result.message));
+  log.warn('main.mjs:  [ERROR] Auth event \'webserver_port_in_use\' has been raised by spotify-server.mjs.  dayjob could not open a local port to authorise with Spotify.  Error: ' + String(result.message));
   const handledErr = new Error("webserver_port_in_use");
   handledErr.error = result;
   logAndDisplayError(handledErr); 

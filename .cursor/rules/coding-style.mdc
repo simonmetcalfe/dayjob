@@ -1,0 +1,9 @@
+---
+description: Preserve existing coding style and avoid unnecessary restructuring
+alwaysApply: true
+---
+
+# Coding Style
+
+- Use the existing coding style, including the exact structure of how promises are currently written.
+- Do not change any existing comments or restructure any existing code unless it needs to be changed to accommodate the new changes.
