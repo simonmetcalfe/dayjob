@@ -94,7 +94,10 @@ A list of known issues and tech debt is maintained in GitHub which I might get r
 
 ## Building
 
-- The output of the build and package scripts are saved to the /bld directory
+Building and packaging is handled by [Electron Forge](https://www.electronforge.io/), configured in `forge.config.js`.
+
+- `npm run build-*` packages the app into `bld/<name>-<platform>-<arch>`
+- `npm run package-*` builds a distributable installer (`.dmg` on macOS, Squirrel.Windows `Setup.exe` on Windows) into `bld/make`
 
 | Script                                                   | Description                                                    |
 | -------------------------------------------------------- | -------------------------------------------------------------- |
@@ -103,9 +106,12 @@ A list of known issues and tech debt is maintained in GitHub which I might get r
 | npm run build-win && npm run package-win                 | Builds and packages the app for Windows (x64)                  |
 | npm run build-all && npm run package-all                 | Builds and packages the app for all platforms                  |
 
-- If building for Windows on MacOS, it may be necessary to install the development version of Wine. Uninstall wine-stable (if installed) then install:
+- If building for Windows on MacOS, Wine and Mono are required:
 
-`brew install --cask wine@devel`
+`brew install --cask wine-stable`
+
+  `wine-stable` is Intel-only and runs under Rosetta on Apple Silicon; that's fine for now (there's no arm64-native, Gatekeeper-passing open-source Wine build for macOS yet — `wine@devel` is no more native than `wine-stable`, just newer). Both `wine-stable` and `wine@devel` are deprecated in Homebrew (scheduled for removal from `homebrew-cask` on 2026-09-01) because neither passes the macOS Gatekeeper check, so `brew install` will keep working until then but print a deprecation warning. Revisit this once Rosetta 2 itself is removed (Apple has signalled this for macOS 28, 2027) — likely candidates at that point are [gcenx/wine](https://github.com/Gcenx/homebrew-wine) or CrossOver's native ARM64 builds (in preview as of mid-2026).
+- `package-win` depends on `electron-winstaller`'s bundled 7-Zip binary, which its own install script mis-selects on Apple Silicon (copies the arm64 Windows binary, which Wine's x64 build can't execute). `npm run package-win` runs `scripts/fix-electron-winstaller-7z.js` first to force the x64 variant; this is why that pre-step exists.
 
 ## Support
 
