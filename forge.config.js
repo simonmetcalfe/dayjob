@@ -1,5 +1,5 @@
 module.exports = {
-  outDir: 'bld',
+  outDir: 'bld/_build-temp',
   packagerConfig: {
     ignore: ['/bld', '/assets_readme', '/\\.cursor', '/CLAUDE\\.md', '/forge\\.config\\.js']
   },
@@ -15,5 +15,8 @@ module.exports = {
         name: 'dayjob'
       }
     }
-  ]
+  ],
+  hooks: {
+    postMake: require('./scripts/rename-installers')
+  }
 };

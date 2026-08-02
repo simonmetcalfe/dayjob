@@ -96,8 +96,8 @@ A list of known issues and tech debt is maintained in GitHub which I might get r
 
 Building and packaging is handled by [Electron Forge](https://www.electronforge.io/), configured in `forge.config.js`.
 
-- `npm run build-*` packages the app into `bld/<name>-<platform>-<arch>`
-- `npm run package-*` builds a distributable installer (`.dmg` on macOS, Squirrel.Windows `Setup.exe` on Windows) into `bld/make`
+- `npm run build-*` packages the app into `bld/_build-temp/<name>-<platform>-<arch>`
+- `npm run package-*` builds a distributable installer (`.dmg` on macOS, Squirrel.Windows `Setup.exe`/`.nupkg`/`RELEASES` on Windows) and copies it into `bld` using the project's naming convention (e.g. `dayjob_mac_arm-1.2.2.dmg`, `dayjob_win_x64-1.2.2-setup.exe`) — see `scripts/rename-installers.js`
 
 | Script                                                   | Description                                                    |
 | -------------------------------------------------------- | -------------------------------------------------------------- |
@@ -105,6 +105,7 @@ Building and packaging is handled by [Electron Forge](https://www.electronforge.
 | npm run build-mac-intel && npm run package-mac-intel     | Builds and packages the app for Mac Intel (x64) processors     |
 | npm run build-win && npm run package-win                 | Builds and packages the app for Windows (x64)                  |
 | npm run build-all && npm run package-all                 | Builds and packages the app for all platforms                  |
+| npm run build-package-all                                | Shorthand for `build-all` followed by `package-all`             |
 
 - If building for Windows on MacOS, Wine and Mono are required:
 

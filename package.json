@@ -51,6 +51,7 @@
     "package-mac-intel": "electron-forge make --platform=darwin --arch=x64 --skip-package",
     "prepackage-win": "node scripts/fix-electron-winstaller-7z.js",
     "package-win": "electron-forge make --platform=win32 --arch=x64 --skip-package",
-    "package-all": "npm run package-mac-silicon && npm run package-mac-intel && npm run package-win"
+    "package-all": "npm run package-mac-silicon && npm run package-mac-intel && npm run package-win",
+    "build-package-all": "npm run build-all && npm run package-all"
   }
 }
